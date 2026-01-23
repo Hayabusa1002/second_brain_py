@@ -1,117 +1,117 @@
-# Entidades del Dominio
+# Domain Entities
 
-Este documento define las entidades centrales del dominio para el proyecto *Second Brain*.  
-Es la fuente de verdad sobre qué existe en el sistema y cómo se relacionan los conceptos.
-
----
-
-## Principios de diseño
-
-* Simplicidad antes que sofisticación
-* Relaciones explícitas
-* Sin reglas de negocio implícitas
-* Backend-driven, web primero
+This document defines the core domain entities for the *Second Brain* project.  
+It is the single source of truth for what exists in the system and how concepts relate to each other.
 
 ---
 
-## Usuario
+## Design principles
 
-Representa a una persona que puede acceder al sistema y operar según su rol.
-
-**Campos:**
-
-* `id`: Identificador único del usuario.
-* `nombre`: Nombre completo.
-* `email`: Correo electrónico (único).
-* `password_hash`: Hash de la contraseña.
-* `estado`: Estado del usuario dentro del sistema. Valores posibles: `activo`, `inactivo`, `baneado`, `suspendido`, etc.
-* `rol`: Rol asignado (admin, usuario, etc.).
-* `fecha_creacion`: Fecha de creación del usuario.
-* `fecha_actualizacion`: Última modificación.
-
-**Notas:**
-
-* El campo `estado` controla el acceso y comportamiento del usuario en el sistema.
-* Un usuario con estado distinto de `activo` no debería poder autenticarse.
-* Un usuario puede ser dueño de una o más cuentas.
+* Simplicity over sophistication
+* Explicit relationships
+* No implicit business rules
+* Backend-driven, web first
 
 ---
 
-## Cuenta
+## User
 
-Agrupa transacciones y define si el dinero es individual o compartido.
+Represents a person who can access the system and operate according to their role.
 
-**Campos:**
+**Fields:**
 
-* `id`: Identificador único de la cuenta.
-* `nombre`: Nombre descriptivo de la cuenta.
-* `tipo`: Tipo de cuenta. Valores posibles: `individual`, `compartida`.
-* `propietarios`: Lista de usuarios asociados a la cuenta.
-* `fecha_creacion`: Fecha de creación de la cuenta.
-* `fecha_actualizacion`: Última modificación.
+* `id`: Unique user identifier.
+* `name`: Full name.
+* `email`: Email address (unique).
+* `password_hash`: Password hash.
+* `status`: User status within the system. Possible values: `active`, `inactive`, `banned`, `suspended`, etc.
+* `role`: Assigned role (admin, user, etc.).
+* `created_at`: User creation date.
+* `updated_at`: Last update date.
 
-**Notas:**
+**Notes:**
 
-* Toda transacción pertenece exactamente a una cuenta.
-* Las cuentas compartidas deben tener más de un propietario.
-* Las cuentas individuales tienen exactamente un propietario.
-* Un usuario puede ser propietario de múltiples cuentas.
-
----
-
-## Categoría
-
-Clasifica una transacción según su naturaleza.
-
-**Campos:**
-
-* `id`: Identificador único de la categoría.
-* `nombre`: Nombre de la categoría.
-* `tipo`: Tipo de categoría. Valores posibles: `ingreso`, `gasto`.
-* `fecha_creacion`: Fecha de creación de la categoría.
-* `fecha_actualizacion`: Última modificación.
-
-**Notas:**
-
-* Una transacción tiene exactamente una categoría.
-* En v0.2 las categorías son globales (no específicas por usuario).
-* El tipo de la categoría debe ser consistente con el tipo de la transacción.
+* The `status` field controls user access and behavior within the system.
+* A user with a status other than `active` should not be able to authenticate.
+* A user can own one or more accounts.
 
 ---
 
-## Transacción
+## Account
 
-Representa un movimiento financiero dentro de una cuenta.
+Groups transactions and defines whether money is individual or shared.
 
-**Campos:**
+**Fields:**
 
-* `id`: Identificador único de la transacción.
-* `fecha`: Fecha en la que ocurre la transacción.
-* `monto`: Valor numérico siempre positivo.
-* `tipo`: Tipo de transacción. Valores posibles: `ingreso`, `gasto`.
-* `categoria`: Categoría asociada a la transacción.
-* `cuenta`: Cuenta a la que pertenece la transacción.
-* `creado_por`: Usuario que registró la transacción.
-* `descripcion`: Texto opcional para mayor detalle.
-* `fecha_creacion`: Fecha de creación del registro.
-* `fecha_actualizacion`: Última modificación.
+* `id`: Unique account identifier.
+* `name`: Descriptive account name.
+* `type`: Account type. Possible values: `individual`, `shared`.
+* `owners`: List of users associated with the account.
+* `created_at`: Account creation date.
+* `updated_at`: Last update date.
 
-**Notas:**
+**Notes:**
 
-* El signo del monto se deriva del tipo (`ingreso` o `gasto`), no se almacena.
-* No pueden existir transacciones sin cuenta o categoría.
-* `creado_por` indica quién registró la transacción, no necesariamente el propietario de la cuenta.
+* Every transaction belongs to exactly one account.
+* Shared accounts must have more than one owner.
+* Individual accounts must have exactly one owner.
+* A user can own multiple accounts.
 
 ---
 
-## Relación entre entidades
+## Category
 
-Usuario → Cuenta → Transacción → Categoría
+Classifies a transaction by its nature.
 
-* Los usuarios son dueños de cuentas.
-* Las cuentas agrupan transacciones.
-* Las transacciones se clasifican por categorías.
+**Fields:**
+
+* `id`: Unique category identifier.
+* `name`: Category name.
+* `type`: Category type. Possible values: `income`, `expense`.
+* `created_at`: Category creation date.
+* `updated_at`: Last update date.
+
+**Notes:**
+
+* A transaction has exactly one category.
+* In v0.2, categories are global (not user-specific).
+* The category type must be consistent with the transaction type.
 
 ---
 
-Este documento debe actualizarse antes de modificar o agregar conceptos del dominio.
+## Transaction
+
+Represents a financial movement within an account.
+
+**Fields:**
+
+* `id`: Unique transaction identifier.
+* `date`: Date when the transaction occurs.
+* `amount`: Numeric value, always positive.
+* `type`: Transaction type. Possible values: `income`, `expense`.
+* `category`: Category associated with the transaction.
+* `account`: Account to which the transaction belongs.
+* `created_by`: User who registered the transaction.
+* `description`: Optional text for additional details.
+* `created_at`: Record creation date.
+* `updated_at`: Last update date.
+
+**Notes:**
+
+* The sign of the amount is derived from the transaction type and is not stored.
+* Transactions cannot exist without an account or category.
+* `created_by` indicates who registered the transaction, not necessarily the account owner.
+
+---
+
+## Entity relationships
+
+User → Account → Transaction → Category
+
+* Users own accounts.
+* Accounts group transactions.
+* Transactions are classified by categories.
+
+---
+
+This document must be updated before modifying or adding domain concepts.

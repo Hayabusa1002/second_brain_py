@@ -1,70 +1,70 @@
-# Reglas de Negocio del Dominio
+# Domain Business Rules
 
-Este documento define las **reglas e invariantes del dominio** del proyecto *Second Brain*.
-Estas reglas deben cumplirse siempre, independientemente de la interfaz, API o tecnología utilizada.
-
----
-
-## Principios
-
-* Las reglas viven en el dominio, no en la UI
-* Deben ser explícitas y verificables
-* No dependen de la base de datos
-* Cualquier violación es un error del sistema
+This document defines the **business rules and invariants of the domain** for the *Second Brain* project.  
+These rules must always be enforced, regardless of the interface, API, or technology used.
 
 ---
 
-## Reglas sobre Usuario
+## Principles
 
-1. Un usuario con `estado` distinto de `activo` no puede autenticarse.
-2. Un usuario `baneado` no puede realizar ninguna acción dentro del sistema.
-3. Un usuario `inactivo` no puede crear ni modificar información.
-4. El cambio de estado de un usuario debe quedar registrado (auditable en el futuro).
-
----
-
-## Reglas sobre Cuenta
-
-5. Toda cuenta debe tener al menos un propietario.
-6. Las cuentas de tipo `individual` deben tener exactamente un propietario.
-7. Las cuentas de tipo `compartida` deben tener dos o más propietarios.
-8. Solo los propietarios de una cuenta pueden visualizarla.
-9. Solo los propietarios de una cuenta pueden registrar transacciones en ella.
+* Rules live in the domain, not in the UI
+* They must be explicit and verifiable
+* They are independent of the database
+* Any violation is a system error
 
 ---
 
-## Reglas sobre Categoría
+## User Rules
 
-10. Toda categoría debe tener un tipo (`ingreso` o `gasto`).
-11. El tipo de la categoría debe ser consistente con el tipo de la transacción.
-12. Las categorías no pueden eliminarse si existen transacciones asociadas.
-
----
-
-## Reglas sobre Transacción
-
-13. Toda transacción debe pertenecer a una cuenta válida.
-14. Toda transacción debe tener una categoría válida.
-15. El monto de una transacción debe ser siempre positivo.
-16. El signo del movimiento se deriva del tipo de transacción y no se almacena.
-17. El usuario que crea una transacción debe ser propietario de la cuenta.
-18. No se permite modificar el tipo de una transacción una vez creada.
+1. A user with a `status` other than `active` cannot authenticate.
+2. A `banned` user cannot perform any action within the system.
+3. An `inactive` user cannot create or modify information.
+4. Any change to a user’s status must be recorded (auditable in the future).
 
 ---
 
-## Reglas de Acceso y Visibilidad
+## Account Rules
 
-19. Un usuario solo puede acceder a información de cuentas donde sea propietario.
-20. En cuentas compartidas, todos los propietarios tienen el mismo nivel de acceso.
-21. Las acciones deben validarse tanto por estado del usuario como por pertenencia a la cuenta.
+5. Every account must have at least one owner.
+6. Accounts of type `individual` must have exactly one owner.
+7. Accounts of type `shared` must have two or more owners.
+8. Only account owners can view an account.
+9. Only account owners can register transactions in an account.
+
+---
+
+## Category Rules
+
+10. Every category must have a type (`income` or `expense`).
+11. The category type must be consistent with the transaction type.
+12. Categories cannot be deleted if there are associated transactions.
 
 ---
 
-## Evolución del Dominio
+## Transaction Rules
 
-22. Toda nueva funcionalidad debe respetar estas reglas o extenderlas explícitamente.
-23. Si una regla cambia, este documento debe actualizarse antes de implementar el cambio.
+13. Every transaction must belong to a valid account.
+14. Every transaction must have a valid category.
+15. The transaction amount must always be positive.
+16. The sign of the movement is derived from the transaction type and is not stored.
+17. The user who creates a transaction must be an owner of the account.
+18. The transaction type cannot be modified once the transaction is created.
 
 ---
-_
-Este documento complementa a `entities.md` y `use_cases.md` y define el comportamiento obligatorio del dominio.
+
+## Access and Visibility Rules
+
+19. A user can only access information from accounts they own.
+20. In shared accounts, all owners have the same level of access.
+21. Actions must be validated both by user status and account ownership.
+
+---
+
+## Domain Evolution
+
+22. Any new functionality must respect these rules or explicitly extend them.
+23. If a rule changes, this document must be updated before implementing the change.
+
+---
+
+This document complements `entities.md` and `use_cases.md` and defines the mandatory behavior of the domain.

@@ -1,24 +1,24 @@
 # Backend
 
-API REST para la gestión de finanzas en pareja.
+REST API for managing personal and shared finances as a couple.
 
-## Responsabilidades
-- Autenticación
-- Usuarios y parejas
-- Ingresos y gastos
-- Categorías y presupuestos
+## Responsibilities
+- Authentication
+- Users and shared accounts
+- Income and expenses
+- Categories and budgets
 
 ## Stack
 - FastAPI
 - PostgreSQL
 - Docker
 
-## Requisitos
+## Requirements
 - Python 3.10+
 
-## Documentación técnica inicial
+## Initial Technical Documentation
 
-### Instalación
+### Installation
 ```
 cd backend
 python -m venv .venv
@@ -26,17 +26,17 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-### Ejecutar servidor
+### Run server
 ```
 uvicorn app.main:app --reload
 ```
 
-### Detener servidor
+### Stop server
 ```
 Ctrl + C
 ```
 
-### Endpoint
+### Health endpoint
 ```
 http://127.0.0.1:8000/health
 ```

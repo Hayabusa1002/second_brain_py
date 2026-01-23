@@ -1,96 +1,96 @@
-# Casos de Uso del Dominio
+# Domain Use Cases
 
-Este documento describe los casos de uso principales del sistema *Second Brain*.
-Define **qué puede hacer el usuario** y **cómo interactúa con las entidades**, sin entrar en detalles técnicos de implementación.
-
----
-
-## Principios
-
-* Centrados en el usuario
-* Independientes de la UI
-* Basados en el dominio, no en la base de datos
-* Evolutivos
+This document describes the main use cases of the *Second Brain* system.  
+It defines **what the user can do** and **how they interact with the entities**, without going into technical implementation details.
 
 ---
 
-## UC-01: Registro de usuario
+## Principles
 
-**Actor:** Usuario
-
-**Descripción:**
-Permite a una persona crear una cuenta para acceder al sistema.
-
-**Flujo principal:**
-
-1. El usuario ingresa nombre, email y contraseña.
-2. El sistema valida que el email no exista.
-3. Se crea el usuario con estado `activo`.
-
-**Reglas:**
-
-* El email debe ser único.
-* La contraseña se almacena como hash.
+* User-centered
+* UI-independent
+* Domain-driven, not database-driven
+* Evolutive
 
 ---
 
-## UC-02: Crear cuenta
+## UC-01: User registration
 
-**Actor:** Usuario autenticado
+**Actor:** User
 
-**Descripción:**
-Permite crear una cuenta financiera individual o compartida.
+**Description:**  
+Allows a person to create an account to access the system.
 
-**Flujo principal:**
+**Main flow:**
 
-1. El usuario define nombre y tipo de cuenta.
-2. Asigna uno o más propietarios.
-3. El sistema crea la cuenta.
+1. The user enters name, email, and password.
+2. The system validates that the email does not already exist.
+3. The user is created with `active` status.
 
-**Reglas:**
+**Rules:**
 
-* Las cuentas individuales deben tener un único propietario.
-* Las cuentas compartidas deben tener al menos dos propietarios.
-
----
-
-## UC-03: Registrar transacción
-
-**Actor:** Usuario autenticado
-
-**Descripción:**
-Permite registrar un ingreso o gasto en una cuenta.
-
-**Flujo principal:**
-
-1. El usuario selecciona cuenta y categoría.
-2. Define fecha, monto y tipo.
-3. El sistema registra la transacción.
-
-**Reglas:**
-
-* El monto debe ser positivo.
-* El tipo determina el signo lógico del movimiento.
+* The email must be unique.
+* The password is stored as a hash.
 
 ---
 
-## UC-04: Consultar movimientos
+## UC-02: Create account
 
-**Actor:** Usuario autenticado
+**Actor:** Authenticated user
 
-**Descripción:**
-Permite visualizar transacciones propias o compartidas.
+**Description:**  
+Allows creating an individual or shared financial account.
 
-**Flujo principal:**
+**Main flow:**
 
-1. El usuario selecciona una cuenta.
-2. Aplica filtros por fecha, tipo o categoría.
-3. El sistema muestra el listado.
+1. The user defines the account name and type.
+2. Assigns one or more owners.
+3. The system creates the account.
 
-**Reglas:**
+**Rules:**
 
-* El usuario solo puede ver cuentas donde sea propietario.
+* Individual accounts must have a single owner.
+* Shared accounts must have at least two owners.
 
 ---
 
-Este documento debe mantenerse alineado con `entities.md`.
+## UC-03: Register transaction
+
+**Actor:** Authenticated user
+
+**Description:**  
+Allows registering an income or expense in an account.
+
+**Main flow:**
+
+1. The user selects an account and category.
+2. Defines date, amount, and type.
+3. The system registers the transaction.
+
+**Rules:**
+
+* The amount must be positive.
+* The type determines the logical sign of the movement.
+
+---
+
+## UC-04: View transactions
+
+**Actor:** Authenticated user
+
+**Description:**  
+Allows viewing personal or shared transactions.
+
+**Main flow:**
+
+1. The user selects an account.
+2. Applies filters by date, type, or category.
+3. The system displays the list.
+
+**Rules:**
+
+* The user can only view accounts where they are an owner.
+
+---
+
+This document must remain aligned with `entities.md`.

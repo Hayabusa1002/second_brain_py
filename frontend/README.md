@@ -1,13 +1,13 @@
 # Frontend
 
-Aplicación web para la gestión de finanzas.
+Web application for financial management.
 
-## Objetivo
-Interfaz clara para:
-- Registrar ingresos y gastos
-- Ver gastos personales y compartidos
-- Analizar por categorías
+## Objective
+Clear and simple interface to:
+- Record income and expenses
+- View personal and shared expenses
+- Analyze data by categories
 
 ## Stack
 - React
-- SPA
+- Single Page Application (SPA)

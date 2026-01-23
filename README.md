@@ -1,18 +1,18 @@
 # Second Brain
 
-Aplicación para gestionar finanzas personales y compartidas en pareja.
+Application to manage personal and shared finances as a couple.
 
-## Objetivo
-Registrar y analizar ingresos y gastos:
-- personales
-- compartidos
-con categorías, presupuestos y reportes claros.
+## Objective
+Record and analyze income and expenses:
+- personal
+- shared  
+with clear categories, budgets, and reports.
 
-## Stack previsto
+## Planned Stack
 - Backend: FastAPI (Python)
 - Frontend: React
-- Base de datos: PostgreSQL
-- Infraestructura: Docker + Ubuntu
+- Database: PostgreSQL
+- Infrastructure: Docker + Ubuntu
 
-## Documentación
+## Documentation
 - Roadmap: docs/roadmap.md
