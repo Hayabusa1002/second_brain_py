@@ -33,9 +33,9 @@ Tareas:
 * [x] Definir estructura del proyecto
 * [x] Crear .gitignore
 * [x] Crear README.md general
-* [ ] Backend con FastAPI funcionando
-* [ ] Endpoint /health
-* [ ] Documentación técnica inicial
+* [x] Backend con FastAPI funcionando
+* [x] Endpoint /health
+* [x] Documentación técnica inicial
 
 ---
 
