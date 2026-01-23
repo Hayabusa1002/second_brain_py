@@ -1,97 +1,152 @@
 # Roadmap – Second Brain (Finanzas)
 
-## Visión
-Aplicación privada para gestionar finanzas personales y compartidas en pareja,
-con separación clara entre gastos individuales y conjuntos, y preparada para escalar.
+Roadmap vivo, incremental y pragmático.
+Cada versión debe dejar el proyecto usable, aunque sea mínimo.
 
 ---
 
-## Alcance inicial
-- Web primero
-- Registro manual de ingresos y gastos
-- Uso privado (2 usuarios)
-- Escalable a futuro
+## Objetivo del proyecto
+
+Crear una aplicación para gestionar finanzas compartidas en pareja que permita:
+
+* Ver ingresos y gastos individuales y conjuntos
+* Clasificar movimientos por categorías
+* Mantener control simple, claro y privado
+* Escalar gradualmente (web → mobile, manual → masivo)
 
 ---
 
-## Fase 0 – Fundaciones
-**Objetivo:** base técnica sólida
+## v0.1 – Base técnica y conceptual (MVP técnico)
 
-- Git y documentación
-- Backend y frontend separados
-- Docker y Docker Compose
-- PostgreSQL
-- Variables de entorno
+Objetivo: Tener la base del proyecto lista y funcional a nivel técnico.
 
----
+Alcance:
 
-## Fase 1 – Usuarios y Parejas
-**Objetivo:** dos usuarios, una pareja
+* Proyecto inicializado
+* Estructura definida
+* API levantando
+* Documentación base
 
-- Registro y login
-- Autenticación JWT
-- Crear pareja
-- Invitar / unir pareja
-- Roles (owner / member)
+Tareas:
 
----
-
-## Fase 2 – Ingresos y Gastos
-**Objetivo:** núcleo del sistema
-
-- Ingresos personales
-- Gastos personales
-- Ingresos compartidos
-- Gastos compartidos
-- CRUD de transacciones
+* [x] Inicializar repositorio Git
+* [x] Definir estructura del proyecto
+* [x] Crear .gitignore
+* [x] Crear README.md general
+* [ ] Backend con FastAPI funcionando
+* [ ] Endpoint /health
+* [ ] Documentación técnica inicial
 
 ---
 
-## Fase 3 – Categorías y Presupuestos
-**Objetivo:** entender en qué se va el dinero
+## v0.2 – Modelo de datos y dominio
 
-- Categorías personales
-- Categorías compartidas
-- Presupuestos mensuales
-- Alertas visuales
+Objetivo: Definir claramente el negocio antes de construir UI.
 
----
+Alcance:
 
-## Fase 4 – Dashboards
-**Objetivo:** visibilidad clara
+* Entidades claras
+* Relaciones definidas
+* Datos aún en memoria
 
-- Totales personales
-- Totales compartidos
-- Comparativo entre usuarios
-- Gastos por categoría
+Tareas:
 
----
+* [ ] Definir entidades principales
 
-## Fase 5 – Importación CSV / Excel
-**Objetivo:** carga masiva
-
-- Subida de archivos
-- Mapeo de columnas
-- Preview antes de guardar
+  * Usuario
+  * Cuenta
+  * Transacción
+  * Categoría
+* [ ] Definir qué es compartido vs individual
+* [ ] Documentar reglas de negocio
+* [ ] Crear modelos en backend
 
 ---
 
-## Fase 6 – Seguridad y Calidad
-- Logs
-- Backups
-- Rate limiting
-- Tests básicos
+## v0.3 – Backend funcional mínimo
+
+Objetivo: Poder registrar y consultar movimientos vía API.
+
+Alcance:
+
+* CRUD básico
+* Persistencia simple (memoria / JSON)
+
+Tareas:
+
+* [ ] Crear endpoints de transacciones
+* [ ] Crear endpoints de categorías
+* [ ] Servicio de cálculo de balances
+* [ ] Separación controller / service / repository
 
 ---
 
-## Fase 7 – Deploy
-- Ubuntu Server
-- AWS Free Tier
-- HTTPS
-- CI/CD simple
+## v0.4 – Frontend web básico
+
+Objetivo: Usar el sistema sin tocar herramientas externas.
+
+Alcance:
+
+* UI simple
+* Sin autenticación todavía
+
+Tareas:
+
+* [ ] Página de listado de gastos
+* [ ] Formulario de ingreso manual
+* [ ] Filtros por categoría
+* [ ] Vista individual vs compartida
 
 ---
 
-## Fase 8 – Mobile
-- Flutter o React Native
-- Reutilización total del backend
+## v0.5 – Importación masiva
+
+Objetivo: Cargar datos históricos fácilmente.
+
+Alcance:
+
+* CSV / Excel
+
+Tareas:
+
+* [ ] Definir formato de archivo
+* [ ] Endpoint de importación
+* [ ] Validación de datos
+* [ ] Feedback de errores
+
+---
+
+## v0.6 – Usuarios y privacidad
+
+Objetivo: Control de acceso básico.
+
+Alcance:
+
+* Login simple
+* Sesiones locales
+
+Tareas:
+
+* [ ] Autenticación básica
+* [ ] Asociación de datos por usuario
+
+---
+
+## v1.0 – Escalabilidad
+
+Objetivo: Proyecto usable a largo plazo.
+
+Alcance:
+
+* Mobile-ready
+* Backend estable
+
+Ideas futuras:
+
+* App móvil
+* Deploy en cloud
+* Backups automáticos
+
+---
+
+Regla del roadmap: no avanzar de versión sin que la anterior sea estable.
