@@ -12,10 +12,15 @@ second_brain/
 ├─ docs/
 │  ├─ roadmap.md
 │  ├─ project_structure.md
-│  └─ decisions.md
+│  ├─ decisions.md
+│  └─ domain/
+│     ├─ entities.md
+│     ├─ use_cases.md
+│     └─ business_rules.md
 │
 ├─ backend/
 │  ├─ README.md
+│  ├─ .venv/
 │  ├─ app/
 │  │  ├─ __init__.py
 │  │  ├─ main.py
