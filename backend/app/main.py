@@ -1,7 +1,16 @@
-from fastapi import FastAPI
+# app/main.py
+from app.db.session import SessionLocal
+from app.models.user import User
 
-app = FastAPI(title="Second Brain API", version="0.1.0")
+def test_connection():
+    db = SessionLocal()
+    try:
+        user = User(name="luis daniel", email="ldfg1002@gmail.com")
+        db.add(user)
+        db.commit()
+        print("Usuario creado")
+    finally:
+        db.close()
 
-@app.get("/health")
-def health():
-    return {"status": "ok"}
+if __name__ == "__main__":
+    test_connection()
