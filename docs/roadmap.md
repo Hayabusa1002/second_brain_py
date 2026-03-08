@@ -58,7 +58,7 @@ Build an application to manage shared finances as a couple, allowing users to:
   * Category
 * [x] Define shared vs individual concepts
 * [x] Document business rules
-* [ ] Create backend models
+* [x] Create backend models
 
 ---
 

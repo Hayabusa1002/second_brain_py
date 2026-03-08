@@ -21,34 +21,39 @@ second_brain/
 │
 ├─ backend/
 │  ├─ README.md
+│  ├─ requirements.txt
 │  ├─ .venv/
-│  ├─ app/
-│  │  ├─ __init__.py
-│  │  ├─ main.py
-│  │  │
-│  │  ├─ core/
-│  │  │  ├─ __init__.py
-│  │  │  └─ config.py
-│  │  │
-│  │  ├─ db/
-│  │  │  ├─ __init__.py
-│  │  │  ├─ base.py
-│  │  │  ├─ session.py
-│  │  │  └─ init_db.py
-│  │  │
-│  │  ├─ controllers/
-│  │  │  └─ health_controller.py
-│  │  │
-│  │  ├─ services/
-│  │  │  └─ __init__.py
-│  │  │
-│  │  ├─ models/
-│  │  │  └─ __init__.py
-│  │  │
-│  │  └─ repositories/
-│  │     └─ __init__.py
-│  │
-│  └─ requirements.txt
+│  ├─ .env
+│  └─ app/
+│     ├─ __init__.py
+│     ├─ main.py
+│     │
+│     ├─ core/
+│     │  ├─ __init__.py
+│     │  └─ config.py
+│     │
+│     ├─ db/
+│     │  ├─ __init__.py
+│     │  ├─ base.py
+│     │  ├─ session.py
+│     │  └─ init_db.py
+│     │
+│     ├─ controllers/
+│     │  └─ __init__.py
+│     │
+│     ├─ services/
+│     │  └─ __init__.py
+│     │
+│     ├─ models/
+│     │  ├─ __init__.py
+│     │  ├─ user.py
+│     │  ├─ account.py
+│     │  ├─ category.py
+│     │  ├─ transaction.py
+│     │  └─ account_owner.py
+│     │
+│     └─ repositories/
+│        └─ __init__.py
 │
 ├─ frontend/
 │  ├─ README.md
