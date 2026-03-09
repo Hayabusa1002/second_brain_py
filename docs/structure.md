@@ -38,12 +38,6 @@ second_brain/
 │     │  ├─ session.py
 │     │  └─ init_db.py
 │     │
-│     ├─ controllers/
-│     │  └─ __init__.py
-│     │
-│     ├─ services/
-│     │  └─ __init__.py
-│     │
 │     ├─ models/
 │     │  ├─ __init__.py
 │     │  ├─ user.py
@@ -52,8 +46,24 @@ second_brain/
 │     │  ├─ transaction.py
 │     │  └─ account_owner.py
 │     │
-│     └─ repositories/
-│        └─ __init__.py
+│     ├─ controllers/
+│     │  └─ __init__.py
+│     │
+│     ├─ routers/
+│     │  ├─ transactions.py
+│     │  └─ categories.py
+│     │
+│     ├─ services/
+│     │  ├─ transaction_service.py
+│     │  └─ balance_service.py
+│     │
+│     ├─ repositories/
+│     │  ├─ transaction_repository.py
+│     │  └─ category_repository.py
+│     │
+│     └─ schemas/
+│        ├─ transaction.py
+│        └─ category.py
 │
 ├─ frontend/
 │  ├─ README.md
@@ -87,6 +97,14 @@ Responsible for:
 - settings
 - logging
 
+### DB
+Responsible for:
+- SQLAlchemy infraestructure
+
+### Models
+- Domain entities
+- Represent business concepts
+
 ### Controllers
 Responsible for:
 - Receiving HTTP requests
@@ -94,23 +112,29 @@ Responsible for:
 - Orchestrating services
 - Returning responses
 
+### Routers
+Responsible for:
+- Define API routes
+- Mapping HTTP methods and paths to controllers
+- Grouping endpoints by resource
+
 ### Services
+Responsible for:
 - Business logic
 - Calculation rules
 - Aggregations
 
-### DB
-Responsible for:
-- SQLAlchemy **infraestructure**
-
-### Models
-- Domain entities
-- Represent business concepts
-
 ### Repositories
+Responsible for:
 - Data access
 - Initially: memory / CSV
 - Later: database
+
+### Schemas
+Responsible for:
+- Request validation
+- Response serialization
+- Defining API data contracts
 
 ---
 
