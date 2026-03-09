@@ -11,3 +11,9 @@ class TransactionRepository:
 
     def list(self):
         return self._transactions
+    
+    def get_by_account(self, account_id):
+        return [
+            t for t in self.transactions
+            if t.account_id == account_id
+        ]
