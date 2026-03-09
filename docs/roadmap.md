@@ -75,8 +75,8 @@ Build an application to manage shared finances as a couple, allowing users to:
 
 * [x] Create transaction endpoints
 * [x] Create category endpoints
-* [ ] Balance calculation service
-* [ ] Controller / service / repository separation
+* [x] Balance calculation service
+* [x] Controller / service / repository separation
 
 ---
 
