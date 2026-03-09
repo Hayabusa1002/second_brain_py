@@ -9,10 +9,10 @@ router = APIRouter()
 repository = TransactionRepository()
 service = TransactionService(repository)
 
-@router.post("/transactions")
-def create_transaction(data: TransactionCreate):
-    return service.create_transaction(data)
-
 @router.get("/transactions")
 def list_transactions():
     return service.list_transactions()
+
+@router.post("/transactions")
+def create_transaction(data: TransactionCreate):
+    return service.create_transaction(data)

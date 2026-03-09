@@ -1,8 +1,8 @@
-# app/main.py
-from app.db.init_db import init_db
+from fastapi import FastAPI
 
-def main():
-    init_db()
+from app.routers import transactions, categories
 
-if __name__ == "__main__":
-    main()
+app = FastAPI()
+
+app.include_router(transactions.router)
+app.include_router(categories.router)
