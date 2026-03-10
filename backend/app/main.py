@@ -1,9 +1,15 @@
 from fastapi import FastAPI
-
-from app.routers import transactions, categories, accounts
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 app = FastAPI()
 
-app.include_router(transactions.router)
-app.include_router(categories.router)
-app.include_router(accounts.router)
+app.mount(
+    "/static",
+    StaticFiles(directory="../frontend/web"),
+    name="static"
+)
+
+@app.get("/")
+def index():
+    return FileResponse("../frontend/web/index.html")
