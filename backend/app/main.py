@@ -12,4 +12,4 @@ app.mount(
 
 @app.get("/")
 def index():
-    return FileResponse("../frontend/web/index.html")
+    return FileResponse("../frontend/web/pages/transactions/add.html")
