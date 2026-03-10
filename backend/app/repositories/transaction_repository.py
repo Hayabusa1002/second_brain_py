@@ -1,19 +1,17 @@
 from typing import List
 from app.models.transaction import Transaction
 
+transactions_db: List[Transaction] = []
 class TransactionRepository:
-    def __init__(self):
-        self._transactions: List[Transaction] = []
-
-    def add(self, transaction: Transaction):
-        self._transactions.append(transaction)
+    def add(self, transaction: Transaction) -> Transaction:
+        transactions_db.append(transaction)
         return transaction
 
-    def list(self):
-        return self._transactions
-    
-    def get_by_account(self, account_id):
+    def list(self) -> List[Transaction]:
+        return transactions_db
+
+    def get_by_account(self, account_id) -> List[Transaction]:
         return [
-            t for t in self.transactions
+            t for t in transactions_db
             if t.account_id == account_id
         ]

@@ -40,7 +40,7 @@ Represents a person who can access and interact with the system.
 
 Represents a financial account where transactions are recorded.
 
-### Attributes
+### Account Attributes
 
 - `id` (UUID)
 - `name` (string)
@@ -48,7 +48,7 @@ Represents a financial account where transactions are recorded.
 - `owners` (list of Users)
 - `created_at` (datetime)
 
-### Notes
+### Account Notes
 
 - Must have at least one owner
 - Ownership rules depend on account type
@@ -59,14 +59,14 @@ Represents a financial account where transactions are recorded.
 
 Represents a classification for transactions.
 
-### Attributes
+### Category Attributes
 
 - `id` (UUID)
 - `name` (string)
 - `type` (enum: `income`, `expense`)
 - `created_at` (datetime)
 
-### Notes
+### Category Notes
 
 - Category type must match transaction type
 - Cannot be deleted if linked to transactions
@@ -77,7 +77,7 @@ Represents a classification for transactions.
 
 Represents a financial movement within an account.
 
-### Attributes
+### Transaction Attributes
 
 - `id` (UUID)
 - `account_id` (UUID)
@@ -88,7 +88,7 @@ Represents a financial movement within an account.
 - `created_by` (User)
 - `created_at` (datetime)
 
-### Notes
+### Transaction Notes
 
 - Amount is always positive
 - The logical sign is derived from the transaction type

@@ -6,7 +6,7 @@
 
 ## General repository structure
 
-```
+```text
 second_brain/
 │
 ├─ docs/
@@ -91,47 +91,48 @@ second_brain/
 ## Backend – Lightweight MVC
 
 ### Core
-Responsible for:
+
 - Global configuration
 - env vars
 - settings
 - logging
 
 ### DB
-Responsible for:
+
 - SQLAlchemy infraestructure
 
 ### Models
+
 - Domain entities
 - Represent business concepts
 
 ### Controllers
-Responsible for:
+
 - Receiving HTTP requests
 - Basic input validation
 - Orchestrating services
 - Returning responses
 
 ### Routers
-Responsible for:
+
 - Define API routes
 - Mapping HTTP methods and paths to controllers
 - Grouping endpoints by resource
 
 ### Services
-Responsible for:
+
 - Business logic
 - Calculation rules
 - Aggregations
 
 ### Repositories
-Responsible for:
+
 - Data access
 - Initially: memory / CSV
 - Later: database
 
 ### Schemas
-Responsible for:
+
 - Request validation
 - Response serialization
 - Defining API data contracts
@@ -141,11 +142,13 @@ Responsible for:
 ## Frontend
 
 ### Phase 1
+
 - HTML + JavaScript
 - Fetch API
 - No framework
 
 ### Future phase
+
 - React / Vue
 - Reuses backend without changes
 

@@ -12,4 +12,8 @@ app.mount(
 
 @app.get("/")
 def index():
+    return FileResponse("../frontend/web/pages/transactions/show.html")
+
+@app.get("/transactions/add")
+def add_page():
     return FileResponse("../frontend/web/pages/transactions/add.html")

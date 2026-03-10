@@ -1,19 +1,24 @@
-async function loadExpenses() {
-  const response = await fetch("/transactions")
-  const data = await response.json()
-  const table = document.querySelector("#expenses-table tbody")
+import { getTransactions } from "../api/transactions.js"
 
-  data.forEach(tx => {
-    const row = document.createElement("tr")
+async function loadTransactions() {
+  try {
+    const transactions = await getTransactions()
+    const table = document.querySelector("#transactions-table")
 
-    row.innerHTML = `
-      <td>${tx.date}</td>
-      <td>${tx.category_id}</td>
-      <td>${tx.amount}</td>
-    `
+    transactions.forEach(t => {
+      const row = document.createElement("tr")
 
-    table.appendChild(row)
-  })
+      row.innerHTML = `
+        <td>${t.date}</td>
+        <td>${t.amount}</td>
+        <td>${t.type}</td>
+      `
+
+      table.appendChild(row)
+    })
+  } catch (error) {
+    console.error(error)
+  }
 }
 
-loadExpenses()
+loadTransactions()

@@ -25,45 +25,45 @@ These rules must always be enforced, regardless of the interface, API, or techno
 
 ## Account Rules
 
-5. Every account must have at least one owner.
-6. Accounts of type `individual` must have exactly one owner.
-7. Accounts of type `shared` must have two or more owners.
-8. Only account owners can view an account.
-9. Only account owners can register transactions in an account.
+1. Every account must have at least one owner.
+2. Accounts of type `individual` must have exactly one owner.
+3. Accounts of type `shared` must have two or more owners.
+4. Only account owners can view an account.
+5. Only account owners can register transactions in an account.
 
 ---
 
 ## Category Rules
 
-10. Every category must have a type (`income` or `expense`).
-11. The category type must be consistent with the transaction type.
-12. Categories cannot be deleted if there are associated transactions.
+1. Every category must have a type (`income` or `expense`).
+2. The category type must be consistent with the transaction type.
+3. Categories cannot be deleted if there are associated transactions.
 
 ---
 
 ## Transaction Rules
 
-13. Every transaction must belong to a valid account.
-14. Every transaction must have a valid category.
-15. The transaction amount must always be positive.
-16. The sign of the movement is derived from the transaction type and is not stored.
-17. The user who creates a transaction must be an owner of the account.
-18. The transaction type cannot be modified once the transaction is created.
+1. Every transaction must belong to a valid account.
+2. Every transaction must have a valid category.
+3. The transaction amount must always be positive.
+4. The sign of the movement is derived from the transaction type and is not stored.
+5. The user who creates a transaction must be an owner of the account.
+6. The transaction type cannot be modified once the transaction is created.
 
 ---
 
 ## Access and Visibility Rules
 
-19. A user can only access information from accounts they own.
-20. In shared accounts, all owners have the same level of access.
-21. Actions must be validated both by user status and account ownership.
+1. A user can only access information from accounts they own.
+2. In shared accounts, all owners have the same level of access.
+3. Actions must be validated both by user status and account ownership.
 
 ---
 
 ## Domain Evolution
 
-22. Any new functionality must respect these rules or explicitly extend them.
-23. If a rule changes, this document must be updated before implementing the change.
+1. Any new functionality must respect these rules or explicitly extend them.
+2. If a rule changes, this document must be updated before implementing the change.
 
 ---
 
