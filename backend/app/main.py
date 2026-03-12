@@ -2,13 +2,23 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
+from app.routers import transactions, categories, accounts
+
 app = FastAPI()
+
+app.include_router(transactions.router)
+app.include_router(categories.router)
+app.include_router(accounts.router)
 
 app.mount(
     "/static",
     StaticFiles(directory="../frontend/web"),
     name="static"
 )
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 @app.get("/")
 def index():

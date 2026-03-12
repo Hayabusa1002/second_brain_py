@@ -8,17 +8,18 @@ document
 
     const form = event.target
     const data = {
-      amount: form.amount.value,
+      amount: parseFloat(form.amount.value),
       type: form.type.value,
-      date: form.date.value
+      date: form.date.value,
+      description: form.description.value || null,
     }
 
     try {
       await createTransaction(data)
-      alert("Transaction created")
+      alert("Transaction saved")
       form.reset()
     } catch (error) {
       console.error(error)
-      alert("Error creating transaction")
+      alert("Error saving transaction")
     }
   })

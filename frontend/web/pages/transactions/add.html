@@ -1,14 +1,41 @@
-<form id="expense-form">
-    <input name="amount" placeholder="Amount" />
-    
-    <input name="date" type="date" />
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Add Transaction</title>
+</head>
+<body>
+    <h1>Add Transaction</h1>
 
-    <select name="type">
-        <option value="expense">Expense</option>
-        <option value="income">Income</option>
-    </select>
+    <a href="/">← Back to list</a>
 
-    <button type="submit">Save</button>
-</form>
+    <form id="transaction-form">
+        <label>
+            Amount
+            <input name="amount" type="number" step="0.01" min="0.01" placeholder="0.00" required />
+        </label>
 
-<script type="module" src="/static/js/transactions/add.js"></script>
+        <label>
+            Type
+            <select name="type">
+                <option value="expense">Expense</option>
+                <option value="income">Income</option>
+            </select>
+        </label>
+
+        <label>
+            Date
+            <input name="date" type="date" required />
+        </label>
+
+        <label>
+            Description
+            <input name="description" type="text" placeholder="Optional" />
+        </label>
+
+        <button type="submit">Save</button>
+    </form>
+
+    <script type="module" src="/static/js/transactions/add.js"></script>
+</body>
+</html>

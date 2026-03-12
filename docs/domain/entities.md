@@ -23,7 +23,7 @@ Represents a person who can access the system and operate according to their rol
 * `id`: Unique user identifier.
 * `name`: Full name.
 * `email`: Email address (unique).
-* `password_hash`: Password hash.
+* `password`: Password hash.
 * `status`: User status within the system. Possible values: `active`, `inactive`, `banned`, `suspended`, etc.
 * `role`: Assigned role (admin, user, etc.).
 * `created_at`: User creation date.

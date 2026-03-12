@@ -1,13 +1,26 @@
-<table id="expenses-table">
-    <thead>
-        <tr>
-            <th>Date</th>
-            <th>Category</th>
-            <th>Amount</th>
-        </tr>
-    </thead>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Transactions</title>
+</head>
+<body>
+    <h1>Transactions</h1>
 
-    <tbody></tbody>
-</table>
+    <a href="/transactions/add">+ Add transaction</a>
 
-<script type="module" src="/static/js/transactions/show.js"></script>
+    <table id="transactions-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script type="module" src="/static/js/transactions/show.js"></script>
+</body>
+</html>
