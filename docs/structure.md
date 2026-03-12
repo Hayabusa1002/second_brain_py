@@ -47,7 +47,7 @@ second_brain/
 │     │  └─ account_owner.py
 │     │
 │     ├─ controllers/
-│     │  └─ __init__.py
+│     │  └─ transaction_controller.py
 │     │
 │     ├─ routers/
 │     │  ├─ transactions.py
@@ -58,19 +58,28 @@ second_brain/
 │     │  └─ balance_service.py
 │     │
 │     ├─ repositories/
-│     │  ├─ transaction_repository.py
-│     │  └─ category_repository.py
+│     │  └─ transaction_repository.py
 │     │
 │     └─ schemas/
-│        ├─ transaction.py
 │        └─ category.py
 │
 ├─ frontend/
 │  ├─ README.md
 │  └─ web/
-│     ├─ index.html
+│     ├─ pages/
+│     │  └─ transactions/
+│     │     ├─ show.html
+│     │     └─ add.html
+│     │
 │     ├─ css/
+│     │
 │     └─ js/
+│        ├─ api/
+│        │  └─ transactions.js
+│        │
+│        └─ transactions/
+│           ├─ show.js
+│           └─ add.js
 │
 ├─ .gitignore
 └─ README.md

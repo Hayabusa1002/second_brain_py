@@ -91,8 +91,8 @@ Build an application to manage shared finances as a couple, allowing users to:
 
 **Tasks:**
 
-* [ ] Expense list page
-* [ ] Manual input form
+* [x] Expense list page
+* [x] Manual input form
 * [ ] Category filters
 * [ ] Individual vs shared view
 
