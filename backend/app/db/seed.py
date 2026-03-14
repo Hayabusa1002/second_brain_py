@@ -1,7 +1,10 @@
 import uuid
 from sqlalchemy.orm import Session
+from app.models.user import User
 from app.models.category import Category, CategoryType
 from app.models.account import Account, AccountType
+
+DEFAULT_USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000099")
 
 DEFAULT_CATEGORIES = [
     {"id": uuid.UUID("10000000-0000-0000-0000-000000000001"), "name": "Salary",        "type": CategoryType.income},
@@ -21,6 +24,14 @@ DEFAULT_ACCOUNTS = [
 ]
 
 def seed(db: Session) -> None:
+    if not db.query(User).filter(User.id == DEFAULT_USER_ID).first():
+        db.add(User(
+            id=DEFAULT_USER_ID,
+            name="Default User",
+            email="default@secondbrain.app",
+            password="placeholder"
+        ))
+
     if not db.query(Category).first():
         for data in DEFAULT_CATEGORIES:
             db.add(Category(**data))

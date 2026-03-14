@@ -3,6 +3,8 @@ from typing import Optional
 from uuid import UUID
 from app.models.transaction import Transaction
 from app.repositories.transaction_repository import TransactionRepository
+
+DEFAULT_USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000099")
 class TransactionService:
     def __init__(self, repository: TransactionRepository):
         self.repository = repository
@@ -14,7 +16,8 @@ class TransactionService:
             category_id=data.category_id,
             amount=data.amount,
             type=data.type,
-            date=data.date
+            date=data.date,
+            created_by=DEFAULT_USER_ID
         )
         return self.repository.add(transaction)
 

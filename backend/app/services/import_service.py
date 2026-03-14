@@ -13,6 +13,8 @@ from app.schemas.bulk_import import ImportError, ImportResult
 
 REQUIRED_COLUMNS = {"date", "amount", "type", "category", "account"}
 
+DEFAULT_USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000099")
+
 class ImportService:
     def __init__(
         self,
@@ -41,7 +43,7 @@ class ImportService:
         errors: List[ImportError] = []
 
         for i, row in df.iterrows():
-            row_num = i + 2  # row 1 = header, so data starts at 2
+            row_num = i + 2
             error = self._import_row(row, row_num)
             if error:
                 errors.append(error)
@@ -90,10 +92,11 @@ class ImportService:
             id=uuid.uuid4(),
             account_id=account.id,
             category_id=category.id,
+            created_by=DEFAULT_USER_ID,
             amount=amount,
             type=t_type,
             date=date,
-            created_at=datetime.now(UTC),
+            created_at=datetime.now(UTC)
         ))
 
         # no error
