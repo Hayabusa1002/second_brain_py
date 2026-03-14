@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import datetime, UTC
 from decimal import Decimal, InvalidOperation
 from typing import List
+from uuid import UUID
 
 from app.models.transaction import Transaction
 from app.repositories.transaction_repository import TransactionRepository
@@ -13,9 +14,8 @@ from app.schemas.bulk_import import ImportError, ImportResult
 
 REQUIRED_COLUMNS = {"date", "amount", "type", "category", "account"}
 
-DEFAULT_USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000099")
-
 class ImportService:
+
     def __init__(
         self,
         transaction_repo: TransactionRepository,
@@ -26,7 +26,7 @@ class ImportService:
         self.category_repo    = category_repo
         self.account_repo     = account_repo
 
-    def import_file(self, content: bytes, filename: str) -> ImportResult:
+    def import_file(self, content: bytes, filename: str, created_by_id: UUID) -> ImportResult:
         if filename.endswith(".csv"):
             df = pd.read_csv(io.BytesIO(content))
         elif filename.endswith((".xlsx", ".xls")):
@@ -44,7 +44,7 @@ class ImportService:
 
         for i, row in df.iterrows():
             row_num = i + 2
-            error = self._import_row(row, row_num)
+            error = self._import_row(row, row_num, created_by_id)
             if error:
                 errors.append(error)
             else:
@@ -52,8 +52,7 @@ class ImportService:
 
         return ImportResult(total=len(df), imported=imported, errors=errors)
 
-    def _import_row(self, row, row_num: int):
-        # Validate date
+    def _import_row(self, row, row_num: int, created_by_id: UUID):
         try:
             date = pd.to_datetime(row["date"]).date()
         except Exception:
@@ -92,11 +91,11 @@ class ImportService:
             id=uuid.uuid4(),
             account_id=account.id,
             category_id=category.id,
-            created_by=DEFAULT_USER_ID,
+            created_by=created_by_id,
             amount=amount,
             type=t_type,
             date=date,
-            created_at=datetime.now(UTC)
+            created_at=datetime.now(UTC),
         ))
 
         # no error

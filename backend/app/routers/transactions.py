@@ -4,13 +4,12 @@ from fastapi import APIRouter, Query, UploadFile, File, HTTPException, Depends
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 
-from app.db.deps import get_db
+from app.db.deps import get_db, get_current_user
 from app.controllers.transaction_controller import TransactionController
 from app.services.transaction_service import TransactionService
 from app.repositories.transaction_repository import TransactionRepository
 from app.schemas.transaction import TransactionCreate, TransactionResponse
 from app.schemas.bulk_import import ImportResult
-
 
 router = APIRouter()
 
@@ -33,7 +32,8 @@ def list_transactions(
     type: Optional[str] = Query(default=None),
     category_id: Optional[UUID] = Query(default=None),
     account_id: Optional[UUID] = Query(default=None),
-    controller: TransactionController = Depends(get_controller)
+    controller: TransactionController = Depends(get_controller),
+    current_user=Depends(get_current_user),
 ):
     return controller.list_transactions(type=type, category_id=category_id, account_id=account_id)
 
@@ -42,8 +42,9 @@ def list_transactions(
 def create_transaction(
     data: TransactionCreate,
     controller: TransactionController = Depends(get_controller),
+    current_user=Depends(get_current_user)
 ):
-    return controller.create_transaction(data)
+    return controller.create_transaction(data, current_user)
 
 
 @router.get("/transactions/import/template", response_class=PlainTextResponse)
@@ -59,10 +60,11 @@ def download_template():
 async def import_transactions(
     file: UploadFile = File(...),
     controller: TransactionController = Depends(get_controller),
+    current_user=Depends(get_current_user)
 ):
     if not any(file.filename.lower().endswith(ext) for ext in (".csv", ".xlsx", ".xls")):
         raise HTTPException(status_code=400, detail="Unsupported format. Use .csv or .xlsx")
     try:
-        return await controller.import_transactions(file)
+        return await controller.import_transactions(file, current_user)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

@@ -2,12 +2,11 @@ from typing import List
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.db.deps import get_db
+from app.db.deps import get_db, get_current_user
 from app.controllers.category_controller import CategoryController
 from app.services.category_service import CategoryService
 from app.repositories.category_repository import CategoryRepository
 from app.schemas.category import CategoryCreate, CategoryResponse
-
 
 router = APIRouter()
 
@@ -19,13 +18,17 @@ def get_controller(db: Session = Depends(get_db)) -> CategoryController:
 
 
 @router.get("/categories", response_model=List[CategoryResponse])
-def list_categories(controller: CategoryController = Depends(get_controller)):
+def list_categories(
+    controller: CategoryController = Depends(get_controller),
+    current_user=Depends(get_current_user)
+):
     return controller.list_categories()
 
 
 @router.post("/categories", response_model=CategoryResponse, status_code=201)
 def create_category(
     data: CategoryCreate,
-    controller: CategoryController = Depends(get_controller)
+    controller: CategoryController = Depends(get_controller),
+    current_user=Depends(get_current_user)
 ):
     return controller.create_category(data)
