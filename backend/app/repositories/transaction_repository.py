@@ -1,8 +1,11 @@
 from typing import List, Optional
 from uuid import UUID
 from sqlalchemy.orm import Session
+
 from app.models.transaction import Transaction
+
 class TransactionRepository:
+    
     def __init__(self, db: Session):
         self.db = db
 

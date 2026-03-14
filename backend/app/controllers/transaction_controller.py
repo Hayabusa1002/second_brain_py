@@ -6,7 +6,9 @@ from fastapi import UploadFile
 from app.services.import_service import ImportService
 from app.repositories.category_repository import CategoryRepository
 from app.repositories.account_repository import AccountRepository
+
 class TransactionController:
+
     def __init__(self, service, db: Session):
         self.service = service
         self.db = db
@@ -18,7 +20,7 @@ class TransactionController:
         self,
         type: Optional[str] = None,
         category_id: Optional[UUID] = None,
-        account_id: Optional[UUID] = None,
+        account_id: Optional[UUID] = None
     ):
         return self.service.list_transactions(type=type, category_id=category_id, account_id=account_id)
 

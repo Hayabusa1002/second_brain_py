@@ -1,5 +1,7 @@
 from app.services.category_service import CategoryService
+
 class CategoryController:
+    
     def __init__(self, service: CategoryService):
         self.service = service
 

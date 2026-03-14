@@ -13,6 +13,7 @@ class UserStatus(str, enum.Enum):
     active = "active"
     inactive = "inactive"
     banned = "banned"
+
 class User(Base):
     __tablename__ = "users"
 

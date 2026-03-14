@@ -7,9 +7,11 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.db.base import Base
+
 class TransactionType(str, enum.Enum):
     income  = "income"
     expense = "expense"
+
 class Transaction(Base):
     __tablename__ = "transactions"
 

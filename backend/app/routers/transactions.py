@@ -11,6 +11,7 @@ from app.repositories.transaction_repository import TransactionRepository
 from app.schemas.transaction import TransactionCreate, TransactionResponse
 from app.schemas.bulk_import import ImportResult
 
+
 router = APIRouter()
 
 TEMPLATE_CSV = """date,amount,type,category,account,description
@@ -20,10 +21,12 @@ TEMPLATE_CSV = """date,amount,type,category,account,description
 2026-01-18,15000,expense,Entertainment,Shared,Movie night
 """
 
+
 def get_controller(db: Session = Depends(get_db)) -> TransactionController:
     repository = TransactionRepository(db)
     service    = TransactionService(repository)
     return TransactionController(service, db)
+
 
 @router.get("/transactions", response_model=List[TransactionResponse])
 def list_transactions(
@@ -34,12 +37,14 @@ def list_transactions(
 ):
     return controller.list_transactions(type=type, category_id=category_id, account_id=account_id)
 
+
 @router.post("/transactions", response_model=TransactionResponse)
 def create_transaction(
     data: TransactionCreate,
     controller: TransactionController = Depends(get_controller),
 ):
     return controller.create_transaction(data)
+
 
 @router.get("/transactions/import/template", response_class=PlainTextResponse)
 def download_template():
@@ -48,6 +53,7 @@ def download_template():
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=import_template.csv"}
     )
+
 
 @router.post("/transactions/import", response_model=ImportResult)
 async def import_transactions(

@@ -1,8 +1,10 @@
 import uuid
 from sqlalchemy.orm import Session
+
 from app.models.user import User
 from app.models.category import Category, CategoryType
 from app.models.account import Account, AccountType
+
 
 DEFAULT_USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000099")
 
@@ -23,7 +25,9 @@ DEFAULT_ACCOUNTS = [
     {"id": uuid.UUID("00000000-0000-0000-0000-000000000002"), "name": "Shared",   "type": AccountType.shared},
 ]
 
+
 def seed(db: Session) -> None:
+    
     if not db.query(User).filter(User.id == DEFAULT_USER_ID).first():
         db.add(User(
             id=DEFAULT_USER_ID,

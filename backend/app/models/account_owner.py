@@ -3,6 +3,7 @@ from sqlalchemy.dialects.postgresql import UUID
 
 from app.db.base import Base
 
+
 account_owners = Table(
     "account_owners",
     Base.metadata,

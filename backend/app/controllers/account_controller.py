@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session
 from app.services.account_service import AccountService
 from app.services.balance_service import BalanceService
 from app.repositories.transaction_repository import TransactionRepository
+
 class AccountController:
+    
     def __init__(self, service: AccountService, db: Session):
         self.service = service
         self.db = db
