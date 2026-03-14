@@ -115,6 +115,22 @@ Build an application to manage shared finances as a couple, allowing users to:
 
 ---
 
+## v0.5.1 – PostgreSQL
+
+**Objective:** Replace local memory for PostgreSQL
+
+**Scope:**
+
+* PostgreSQL
+
+**Tasks:**
+
+* [x] Alembic
+* [x] Updated backend
+* [x] Create default user
+
+---
+
 ## v0.6 – Users and privacy
 
 **Objective:** Basic access control.
