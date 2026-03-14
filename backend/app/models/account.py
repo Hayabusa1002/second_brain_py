@@ -2,7 +2,7 @@ import uuid
 import enum
 from datetime import datetime, UTC
 
-from sqlalchemy import Column, String, DateTime, Enum
+from sqlalchemy import Column, String, DateTime, Enum, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -20,5 +20,6 @@ class Account(Base):
     name = Column(String, nullable=False)
     type = Column(Enum(AccountType), nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     owners = relationship("User", secondary=account_owners, back_populates="accounts")
     transactions = relationship("Transaction", back_populates="account", cascade="all, delete-orphan")

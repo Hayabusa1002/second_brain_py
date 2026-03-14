@@ -1,4 +1,4 @@
-import uuid
+from uuid import UUID
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
@@ -13,10 +13,10 @@ class AccountController:
         self.db = db
         self.balance_service = BalanceService()
 
-    def list_accounts(self):
-        return self.service.list_accounts()
+    def list_accounts(self, user_id: UUID):
+        return self.service.list_accounts(user_id=user_id)
 
-    def get_balance(self, account_id: uuid.UUID):
+    def get_balance(self, account_id: UUID):
         account = self.service.get_account(account_id)
         if not account:
             raise HTTPException(status_code=404, detail="Account not found")
