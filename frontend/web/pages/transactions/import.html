@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Import Transactions</title>
+</head>
+<body>
+    <h1>Import Transactions</h1>
+
+    <a href="/">← Back to list</a>
+
+    <p>Upload a <strong>.csv</strong> or <strong>.xlsx</strong> file with the following columns:</p>
+    <code>date, amount, type, category, account, description (optional)</code>
+    <br /><br />
+    <a href="/transactions/import/template" download>Download template CSV</a>
+
+    <br /><br />
+
+    <form id="import-form">
+        <input type="file" id="file-input" accept=".csv,.xlsx,.xls" required />
+        <button type="submit">Import</button>
+    </form>
+
+    <div id="result" style="display:none;">
+        <h2>Result</h2>
+        <p id="result-summary"></p>
+        <div id="error-section" style="display:none;">
+            <h3>Errors</h3>
+            <table id="error-table">
+                <thead>
+                    <tr><th>Row</th><th>Error</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="module" src="/static/js/transactions/import.js"></script>
+</body>
+</html>

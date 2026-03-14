@@ -13,11 +13,15 @@ second_brain/
 │  ├─ roadmap.md
 │  ├─ structure.md
 │  ├─ decisions.md
-│  └─ domain/
-│     ├─ entities.md
-│     ├─ use_cases.md
-│     ├─ business_rules.md
-│     └─ models.md
+│  │
+│  ├─ domain/
+│  │  ├─ entities.md
+│  │  ├─ use_cases.md
+│  │  ├─ business_rules.md
+│  │  └─ models.md
+│  │
+│  └─ features/
+│     └─ bulk_import.md
 │
 ├─ backend/
 │  ├─ README.md
@@ -29,11 +33,9 @@ second_brain/
 │     ├─ main.py
 │     │
 │     ├─ core/
-│     │  ├─ __init__.py
 │     │  └─ config.py
 │     │
 │     ├─ db/
-│     │  ├─ __init__.py
 │     │  ├─ base.py
 │     │  ├─ session.py
 │     │  └─ init_db.py
@@ -47,21 +49,32 @@ second_brain/
 │     │  └─ account_owner.py
 │     │
 │     ├─ controllers/
-│     │  └─ transaction_controller.py
+│     │  ├─ transaction_controller.py
+│     │  ├─ category_controller.py
+│     │  └─ account_controller.py
 │     │
 │     ├─ routers/
 │     │  ├─ transactions.py
-│     │  └─ categories.py
+│     │  ├─ categories.py
+│     │  └─ accounts.py
 │     │
 │     ├─ services/
 │     │  ├─ transaction_service.py
-│     │  └─ balance_service.py
+│     │  ├─ balance_service.py
+│     │  ├─ category_service.py
+│     │  ├─ account_service.py
+│     │  └─ import_service.py
 │     │
 │     ├─ repositories/
-│     │  └─ transaction_repository.py
+│     │  ├─ transaction_repository.py
+│     │  ├─ category_repository.py
+│     │  └─ account_repository.py
 │     │
 │     └─ schemas/
-│        └─ category.py
+│        ├─ transaction.py
+│        ├─ category.py
+│        ├─ account.py
+│        └─ bulk_import.py
 │
 ├─ frontend/
 │  ├─ README.md
@@ -69,17 +82,22 @@ second_brain/
 │     ├─ pages/
 │     │  └─ transactions/
 │     │     ├─ show.html
-│     │     └─ add.html
+│     │     ├─ add.html
+│     │     └─ import.html
 │     │
 │     ├─ css/
 │     │
 │     └─ js/
 │        ├─ api/
-│        │  └─ transactions.js
+│        │  ├─ transactions.js
+│        │  ├─ categories.js
+│        │  ├─ accounts.js
+│        │  └─ imports.js
 │        │
 │        └─ transactions/
 │           ├─ show.js
-│           └─ add.js
+│           ├─ add.js
+│           └─ import.js
 │
 ├─ .gitignore
 └─ README.md

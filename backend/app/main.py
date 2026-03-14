@@ -27,3 +27,7 @@ def index():
 @app.get("/transactions/add")
 def add_page():
     return FileResponse("../frontend/web/pages/transactions/add.html")
+
+@app.get("/transactions/import")
+def import_page():
+    return FileResponse("../frontend/web/pages/transactions/import.html")
