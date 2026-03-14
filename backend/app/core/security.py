@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timedelta, UTC
-from passlib.context import CryptContext
+import bcrypt
 from jose import jwt
 
 from app.core.config import settings
@@ -8,19 +8,19 @@ from app.core.config import settings
 ALGORITHM                = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 7
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 def _safe(password: str) -> str:
     return password.encode("utf-8")[:72].decode("utf-8", errors="ignore")
 
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(_safe(password))
+    pw = password.encode("utf-8")[:72]
+    return bcrypt.hashpw(pw, bcrypt.gensalt()).decode()
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(_safe(plain), hashed)
+    pw = plain.encode("utf-8")[:72]
+    return bcrypt.checkpw(pw, hashed.encode())
 
 
 def create_access_token(user_id: uuid.UUID) -> str:
