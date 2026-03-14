@@ -14,6 +14,10 @@ class UserStatus(str, enum.Enum):
     inactive = "inactive"
     banned = "banned"
 
+class UserRole(str, enum.Enum):
+    owner   = "owner"
+    partner = "partner"
+
 class User(Base):
     __tablename__ = "users"
 
@@ -22,6 +26,7 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     password = Column(String, nullable=False)
     status = Column(Enum(UserStatus), default=UserStatus.active, nullable=False)
+    role = Column(Enum(UserRole), default=UserRole.owner, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     accounts = relationship("Account", secondary=account_owners, back_populates="owners")

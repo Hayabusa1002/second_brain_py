@@ -1,12 +1,15 @@
+import enum
 from uuid import UUID
 from datetime import datetime
 from pydantic import BaseModel, EmailStr, field_validator
 
+from app.models.user import UserRole
 
 class UserCreate(BaseModel):
     name:     str
     email:    EmailStr
     password: str
+    role:     UserRole = UserRole.partner
 
     @field_validator("password")
     @classmethod
@@ -19,15 +22,14 @@ class UserLogin(BaseModel):
     email:    EmailStr
     password: str
 
-
 class UserResponse(BaseModel):
     id:         UUID
     name:       str
     email:      str
+    role:       UserRole
     created_at: datetime
 
     model_config = {"from_attributes": True}
-
 
 class TokenResponse(BaseModel):
     access_token: str

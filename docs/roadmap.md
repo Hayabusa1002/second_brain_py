@@ -160,9 +160,9 @@ Build an application to manage shared finances as a couple, allowing users to:
 
 ### Backend Stable
 
-* [ ] User roles (`owner` / `partner`)
+* [x] User roles (`owner` / `partner`)
 * [ ] Endpoint `GET /accounts` filter by user
-* [ ] Endpoint `POST /transactions` assign `created_by` from token (not from body)
+* [x] Endpoint `POST /transactions` assign `created_by` from token (not from body)
 * [ ] Errors management (400, 401, 404, 422 with consistant messages)
 * [ ] Enviroment variables `.env` validated (pydantic settings)
 

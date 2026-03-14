@@ -1,7 +1,7 @@
 import uuid
 from sqlalchemy.orm import Session
 
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.models.category import Category, CategoryType
 from app.models.account import Account, AccountType
 from app.core.security import hash_password
@@ -33,7 +33,8 @@ def seed(db: Session) -> None:
             id=DEFAULT_USER_ID,
             name="Default User",
             email="default@secondbrain.app",
-            password=hash_password("not-for-login")
+            password=hash_password("placeholder"),
+            role=UserRole.owner
         ))
 
     if not db.query(Category).first():
