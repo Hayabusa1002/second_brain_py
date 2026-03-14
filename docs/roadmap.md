@@ -149,18 +149,33 @@ Build an application to manage shared finances as a couple, allowing users to:
 
 ## v1.0 – Scalability
 
-**Objective:** Long-term usable project.
-
+**Objective:** Mobile-ready + Stable backend.
 **Scope:**
 
-* Mobile-ready
+* Mobile-ready frontend
 * Stable backend
+* Infrastructure
 
-**Future ideas:**
+**Tasks:**
 
-* Mobile app
-* Cloud deployment
-* Automatic backups
+### Backend Stable
+
+* [ ] User roles (`owner` / `partner`)
+* [ ] Endpoint `GET /accounts` filter by user
+* [ ] Endpoint `POST /transactions` assign `created_by` from token (not from body)
+* [ ] Errors management (400, 401, 404, 422 with consistant messages)
+* [ ] Enviroment variables `.env` validated (pydantic settings)
+
+### Mobile-ready frontend
+
+* [ ] Layout responsive (CSS Grid/Flexbox base)
+* [ ] Correct viewport in all the templates
+* [ ] Usable forms in mobile
+
+### Infrastructure
+
+* [ ] functional `docker-compose.yml` (app + PostgreSQL)
+* [ ] Deploy on cloud server (Railway, Render, o VPS)
 
 ---
 
