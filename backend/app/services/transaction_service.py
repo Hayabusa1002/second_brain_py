@@ -1,5 +1,4 @@
 import uuid
-from datetime import datetime, UTC
 from typing import Optional
 from uuid import UUID
 from app.models.transaction import Transaction
@@ -15,8 +14,7 @@ class TransactionService:
             category_id=data.category_id,
             amount=data.amount,
             type=data.type,
-            date=data.date,
-            created_at=datetime.now(UTC),
+            date=data.date
         )
         return self.repository.add(transaction)
 

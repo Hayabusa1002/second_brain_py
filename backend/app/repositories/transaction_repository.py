@@ -1,11 +1,15 @@
 from typing import List, Optional
 from uuid import UUID
+from sqlalchemy.orm import Session
 from app.models.transaction import Transaction
-
-transactions_db: List[Transaction] = []
 class TransactionRepository:
+    def __init__(self, db: Session):
+        self.db = db
+
     def add(self, transaction: Transaction) -> Transaction:
-        transactions_db.append(transaction)
+        self.db.add(transaction)
+        self.db.commit()
+        self.db.refresh(transaction)
         return transaction
 
     def list(
@@ -14,14 +18,14 @@ class TransactionRepository:
         category_id: Optional[UUID] = None,
         account_id: Optional[UUID] = None,
     ) -> List[Transaction]:
-        result = transactions_db
+        query = self.db.query(Transaction)
         if type:
-            result = [t for t in result if t.type == type]
+            query = query.filter(Transaction.type == type)
         if category_id:
-            result = [t for t in result if t.category_id == category_id]
+            query = query.filter(Transaction.category_id == category_id)
         if account_id:
-            result = [t for t in result if t.account_id == account_id]
-        return result
+            query = query.filter(Transaction.account_id == account_id)
+        return query.all()
 
     def get_by_account(self, account_id: UUID) -> List[Transaction]:
-        return [t for t in transactions_db if t.account_id == account_id]
+        return self.db.query(Transaction).filter(Transaction.account_id == account_id).all()

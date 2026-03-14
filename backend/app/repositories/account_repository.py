@@ -1,31 +1,16 @@
-import uuid
-from datetime import datetime, UTC
-from dataclasses import dataclass, field
 from typing import List, Optional
-from app.models.account import AccountType
-
-# UUIDs that match with default values in schemas/transaction.py
-_INDIVIDUAL_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
-_SHARED_ID     = uuid.UUID("00000000-0000-0000-0000-000000000002")
-
-@dataclass
-class AccountRecord:
-    id: uuid.UUID
-    name: str
-    type: AccountType
-    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
-
-accounts_db: List[AccountRecord] = [
-    AccountRecord(id=_INDIVIDUAL_ID, name="Personal",  type=AccountType.individual),
-    AccountRecord(id=_SHARED_ID,     name="Shared",    type=AccountType.shared),
-]
-
+from uuid import UUID
+from sqlalchemy.orm import Session
+from app.models.account import Account
 class AccountRepository:
-    def list(self) -> List[AccountRecord]:
-        return accounts_db
+    def __init__(self, db: Session):
+        self.db = db
 
-    def get_by_id(self, account_id: uuid.UUID) -> Optional[AccountRecord]:
-        return next((a for a in accounts_db if a.id == account_id), None)
-    
-    def get_by_name(self, name: str) -> Optional[AccountRecord]:
-        return next((a for a in accounts_db if a.name.lower() == name.lower().strip()), None)
+    def list(self) -> List[Account]:
+        return self.db.query(Account).all()
+
+    def get_by_id(self, account_id: UUID) -> Optional[Account]:
+        return self.db.query(Account).filter(Account.id == account_id).first()
+
+    def get_by_name(self, name: str) -> Optional[Account]:
+        return self.db.query(Account).filter(Account.name.ilike(name.strip())).first()

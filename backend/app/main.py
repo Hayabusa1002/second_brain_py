@@ -1,10 +1,24 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
+from app.db.init_db import init_db
+from app.db.seed import seed
+from app.db.session import SessionLocal
 from app.routers import transactions, categories, accounts
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    db = SessionLocal()
+    try:
+        seed(db)
+    finally:
+        db.close()
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 app.include_router(transactions.router)
 app.include_router(categories.router)
