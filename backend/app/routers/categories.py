@@ -19,8 +19,7 @@ def get_controller(db: Session = Depends(get_db)) -> CategoryController:
 
 @router.get("/categories", response_model=List[CategoryResponse])
 def list_categories(
-    controller: CategoryController = Depends(get_controller),
-    current_user=Depends(get_current_user)
+    controller: CategoryController = Depends(get_controller)
 ):
     return controller.list_categories()
 
