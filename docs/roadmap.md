@@ -108,7 +108,7 @@ Build an application to manage shared finances as a couple, allowing users to:
 
 **Tasks:**
 
-* [ ] Define file format
+* [x] Define file format
 * [ ] Import endpoint
 * [ ] Data validation
 * [ ] Error feedback
