@@ -35,7 +35,12 @@ def list_transactions(
     controller: TransactionController = Depends(get_controller),
     current_user=Depends(get_current_user),
 ):
-    return controller.list_transactions(type=type, category_id=category_id, account_id=account_id)
+    return controller.list_transactions(
+        type=type,
+        category_id=category_id,
+        account_id=account_id,
+        user_id=current_user.id
+    )
 
 
 @router.post("/transactions", response_model=TransactionResponse)

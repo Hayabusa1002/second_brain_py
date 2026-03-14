@@ -17,11 +17,12 @@ class TransactionRepository:
 
     def list(
         self,
+        user_id: UUID,
         type: Optional[str] = None,
         category_id: Optional[UUID] = None,
         account_id: Optional[UUID] = None,
     ) -> List[Transaction]:
-        query = self.db.query(Transaction)
+        query = self.db.query(Transaction).filter(Transaction.created_by == user_id)
         if type:
             query = query.filter(Transaction.type == type)
         if category_id:

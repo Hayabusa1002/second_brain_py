@@ -18,11 +18,17 @@ class TransactionController:
 
     def list_transactions(
         self,
+        user_id: UUID,
         type: Optional[str] = None,
         category_id: Optional[UUID] = None,
         account_id: Optional[UUID] = None
     ):
-        return self.service.list_transactions(type=type, category_id=category_id, account_id=account_id)
+        return self.service.list_transactions(
+            user_id=user_id,
+            type=type,
+            category_id=category_id,
+            account_id=account_id
+        )
 
     async def import_transactions(self, file: UploadFile, current_user):
         content = await file.read()

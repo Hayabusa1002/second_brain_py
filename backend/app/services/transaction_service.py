@@ -21,10 +21,5 @@ class TransactionService:
         )
         return self.repository.add(transaction)
 
-    def list_transactions(
-        self,
-        type: Optional[str] = None,
-        category_id: Optional[UUID] = None,
-        account_id: Optional[UUID] = None,
-    ):
-        return self.repository.list(type=type, category_id=category_id, account_id=account_id)
+    def list_transactions(self, user_id: UUID, type=None, category_id=None, account_id=None):
+        return self.repository.list(user_id=user_id, type=type, category_id=category_id, account_id=account_id)
