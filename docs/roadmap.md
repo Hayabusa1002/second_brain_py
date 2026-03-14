@@ -142,8 +142,8 @@ Build an application to manage shared finances as a couple, allowing users to:
 
 **Tasks:**
 
-* [ ] Basic authentication
-* [ ] User-based data association
+* [x] Basic authentication
+* [x] User-based data association
 
 ---
 

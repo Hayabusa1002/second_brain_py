@@ -10,7 +10,6 @@
 second_brain/
 │
 ├─ docs/
-│  ├─ alembic.bash
 │  ├─ roadmap.md
 │  ├─ structure.md
 │  ├─ decisions.md
@@ -22,7 +21,10 @@ second_brain/
 │  │  └─ models.md
 │  │
 │  └─ features/
-│     └─ bulk_import.md
+│     ├─ bulk_import.md
+│     ├─ alembic.bash
+│     ├─ generate_hash.py
+│     └─ secret_key.py
 │
 ├─ backend/
 │  ├─ README.md
@@ -32,16 +34,18 @@ second_brain/
 │  ├─ .env
 │  │
 │  ├─ app/
-│  │  ├─ __init__.py
 │  │  ├─ main.py
 │  │  │
 │  │  ├─ core/
-│  │  │  └─ config.py
+│  │  │  ├─ config.py
+│  │  │  └─ security.py
 │  │  │
 │  │  ├─ db/
 │  │  │  ├─ base.py
 │  │  │  ├─ session.py
-│  │  │  └─ init_db.py
+│  │  │  ├─ init_db.py
+│  │  │  ├─ deps.py
+│  │  │  └─ seed.py
 │  │  │
 │  │  ├─ models/
 │  │  │  ├─ __init__.py
@@ -54,30 +58,36 @@ second_brain/
 │  │  ├─ controllers/
 │  │  │  ├─ transaction_controller.py
 │  │  │  ├─ category_controller.py
-│  │  │  └─ account_controller.py
+│  │  │  ├─ account_controller.py
+│  │  │  └─ auth_controller.py
 │  │  │
 │  │  ├─ routers/
 │  │  │  ├─ transactions.py
 │  │  │  ├─ categories.py
-│  │  │  └─ accounts.py
+│  │  │  ├─ accounts.py
+│  │  │  └─ auth.py
 │  │  │
 │  │  ├─ services/
 │  │  │  ├─ transaction_service.py
 │  │  │  ├─ balance_service.py
 │  │  │  ├─ category_service.py
 │  │  │  ├─ account_service.py
-│  │  │  └─ import_service.py
+│  │  │  ├─ import_service.py
+│  │  │  ├─ auth_service.py
+│  │  │  └─ user_service.py
 │  │  │
 │  │  ├─ repositories/
 │  │  │  ├─ transaction_repository.py
 │  │  │  ├─ category_repository.py
-│  │  │  └─ account_repository.py
+│  │  │  ├─ account_repository.py
+│  │  │  └─ user_repository.py
 │  │  │
 │  │  └─ schemas/
 │  │     ├─ transaction.py
 │  │     ├─ category.py
 │  │     ├─ account.py
-│  │     └─ bulk_import.py
+│  │     ├─ bulk_import.py
+│  │     └─ user.py
 │  │
 │  └─migrations/
 │     ├─ versions/
@@ -89,6 +99,10 @@ second_brain/
 │  ├─ README.md
 │  └─ web/
 │     ├─ pages/
+│     │  ├─ auth/
+│     │  │  ├─ login.html
+│     │  │  └─ register.html
+│     │  │
 │     │  └─ transactions/
 │     │     ├─ show.html
 │     │     ├─ add.html
@@ -101,7 +115,14 @@ second_brain/
 │        │  ├─ transactions.js
 │        │  ├─ categories.js
 │        │  ├─ accounts.js
-│        │  └─ imports.js
+│        │  ├─ imports.js
+│        │  ├─ auth.js
+│        │  └─ base.js
+│        │
+│        ├─ auth/
+│        │  ├─ guard.js
+│        │  ├─ login.js
+│        │  └─ register.js
 │        │
 │        └─ transactions/
 │           ├─ show.js
