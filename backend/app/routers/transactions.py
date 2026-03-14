@@ -1,5 +1,6 @@
-from fastapi import APIRouter
-from typing import List
+from typing import List, Optional
+from uuid import UUID
+from fastapi import APIRouter, Query
 
 from app.controllers.transaction_controller import TransactionController
 from app.services.transaction_service import TransactionService
@@ -13,8 +14,11 @@ service = TransactionService(repository)
 controller = TransactionController(service)
 
 @router.get("/transactions", response_model=List[TransactionResponse])
-def list_transactions():
-    return controller.list_transactions()
+def list_transactions(
+    type: Optional[str] = Query(default=None),
+    category_id: Optional[UUID] = Query(default=None)
+):
+    return controller.list_transactions(type=type, category_id=category_id)
 
 @router.post("/transactions", response_model=TransactionResponse)
 def create_transaction(data: TransactionCreate):
