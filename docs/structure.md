@@ -10,6 +10,7 @@
 second_brain/
 │
 ├─ docs/
+│  ├─ alembic.bash
 │  ├─ roadmap.md
 │  ├─ structure.md
 │  ├─ decisions.md
@@ -26,55 +27,63 @@ second_brain/
 ├─ backend/
 │  ├─ README.md
 │  ├─ requirements.txt
+│  ├─ alembic.ini
 │  ├─ .venv/
 │  ├─ .env
-│  └─ app/
-│     ├─ __init__.py
-│     ├─ main.py
-│     │
-│     ├─ core/
-│     │  └─ config.py
-│     │
-│     ├─ db/
-│     │  ├─ base.py
-│     │  ├─ session.py
-│     │  └─ init_db.py
-│     │
-│     ├─ models/
-│     │  ├─ __init__.py
-│     │  ├─ user.py
-│     │  ├─ account.py
-│     │  ├─ category.py
-│     │  ├─ transaction.py
-│     │  └─ account_owner.py
-│     │
-│     ├─ controllers/
-│     │  ├─ transaction_controller.py
-│     │  ├─ category_controller.py
-│     │  └─ account_controller.py
-│     │
-│     ├─ routers/
-│     │  ├─ transactions.py
-│     │  ├─ categories.py
-│     │  └─ accounts.py
-│     │
-│     ├─ services/
-│     │  ├─ transaction_service.py
-│     │  ├─ balance_service.py
-│     │  ├─ category_service.py
-│     │  ├─ account_service.py
-│     │  └─ import_service.py
-│     │
-│     ├─ repositories/
-│     │  ├─ transaction_repository.py
-│     │  ├─ category_repository.py
-│     │  └─ account_repository.py
-│     │
-│     └─ schemas/
-│        ├─ transaction.py
-│        ├─ category.py
-│        ├─ account.py
-│        └─ bulk_import.py
+│  │
+│  ├─ app/
+│  │  ├─ __init__.py
+│  │  ├─ main.py
+│  │  │
+│  │  ├─ core/
+│  │  │  └─ config.py
+│  │  │
+│  │  ├─ db/
+│  │  │  ├─ base.py
+│  │  │  ├─ session.py
+│  │  │  └─ init_db.py
+│  │  │
+│  │  ├─ models/
+│  │  │  ├─ __init__.py
+│  │  │  ├─ user.py
+│  │  │  ├─ account.py
+│  │  │  ├─ category.py
+│  │  │  ├─ transaction.py
+│  │  │  └─ account_owner.py
+│  │  │
+│  │  ├─ controllers/
+│  │  │  ├─ transaction_controller.py
+│  │  │  ├─ category_controller.py
+│  │  │  └─ account_controller.py
+│  │  │
+│  │  ├─ routers/
+│  │  │  ├─ transactions.py
+│  │  │  ├─ categories.py
+│  │  │  └─ accounts.py
+│  │  │
+│  │  ├─ services/
+│  │  │  ├─ transaction_service.py
+│  │  │  ├─ balance_service.py
+│  │  │  ├─ category_service.py
+│  │  │  ├─ account_service.py
+│  │  │  └─ import_service.py
+│  │  │
+│  │  ├─ repositories/
+│  │  │  ├─ transaction_repository.py
+│  │  │  ├─ category_repository.py
+│  │  │  └─ account_repository.py
+│  │  │
+│  │  └─ schemas/
+│  │     ├─ transaction.py
+│  │     ├─ category.py
+│  │     ├─ account.py
+│  │     └─ bulk_import.py
+│  │
+│  └─migrations/
+│     ├─ versions/
+│     ├─ env.py
+│     ├─ README.md
+│     └─ script.py.mako
 │
 ├─ frontend/
 │  ├─ README.md
