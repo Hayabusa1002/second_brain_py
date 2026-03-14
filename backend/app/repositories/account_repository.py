@@ -26,3 +26,6 @@ class AccountRepository:
 
     def get_by_id(self, account_id: uuid.UUID) -> Optional[AccountRecord]:
         return next((a for a in accounts_db if a.id == account_id), None)
+    
+    def get_by_name(self, name: str) -> Optional[AccountRecord]:
+        return next((a for a in accounts_db if a.name.lower() == name.lower().strip()), None)

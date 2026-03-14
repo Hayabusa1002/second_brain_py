@@ -29,6 +29,9 @@ class CategoryRepository:
 
     def get_by_id(self, category_id: uuid.UUID) -> Optional[CategoryRecord]:
         return next((c for c in categories_db if c.id == category_id), None)
+    
+    def get_by_name(self, name: str) -> Optional[CategoryRecord]:
+        return next((c for c in categories_db if c.name.lower() == name.lower().strip()), None)
 
     def add(self, category: CategoryRecord) -> CategoryRecord:
         categories_db.append(category)
