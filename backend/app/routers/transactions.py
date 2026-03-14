@@ -16,9 +16,10 @@ controller = TransactionController(service)
 @router.get("/transactions", response_model=List[TransactionResponse])
 def list_transactions(
     type: Optional[str] = Query(default=None),
-    category_id: Optional[UUID] = Query(default=None)
+    category_id: Optional[UUID] = Query(default=None),
+    account_id: Optional[UUID] = Query(default=None),
 ):
-    return controller.list_transactions(type=type, category_id=category_id)
+    return controller.list_transactions(type=type, category_id=category_id, account_id=account_id)
 
 @router.post("/transactions", response_model=TransactionResponse)
 def create_transaction(data: TransactionCreate):

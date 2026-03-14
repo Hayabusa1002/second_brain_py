@@ -1,8 +1,10 @@
 import { createTransaction } from "../api/transactions.js"
 import { getCategories } from "../api/categories.js"
+import { getAccounts } from "../api/accounts.js"
 
 const typeSelect     = document.getElementById("type-select")
 const categorySelect = document.getElementById("category-select")
+const accountSelect  = document.getElementById("account-select")
 
 let allCategories = []
 
@@ -14,8 +16,14 @@ function renderCategories(type) {
 }
 
 async function init() {
-    allCategories = await getCategories()
+    const [categories, accounts] = await Promise.all([getCategories(), getAccounts()])
+
+    allCategories = categories
     renderCategories(typeSelect.value)
+
+    accountSelect.innerHTML = accounts
+        .map(a => `<option value="${a.id}">${a.name} (${a.type})</option>`)
+        .join("")
 }
 
 typeSelect.addEventListener("change", () => renderCategories(typeSelect.value))
@@ -27,6 +35,7 @@ document
 
         const form = event.target
         const data = {
+            account_id:  form.account_id.value,
             amount:      parseFloat(form.amount.value),
             type:        form.type.value,
             date:        form.date.value,

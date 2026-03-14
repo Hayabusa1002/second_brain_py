@@ -18,8 +18,12 @@ class TransactionService:
             date=data.date,
             created_at=datetime.now(UTC),
         )
-
         return self.repository.add(transaction)
 
-    def list_transactions(self, type: Optional[str] = None, category_id: Optional[UUID] = None):
-        return self.repository.list(type=type, category_id=category_id)
+    def list_transactions(
+        self,
+        type: Optional[str] = None,
+        category_id: Optional[UUID] = None,
+        account_id: Optional[UUID] = None,
+    ):
+        return self.repository.list(type=type, category_id=category_id, account_id=account_id)

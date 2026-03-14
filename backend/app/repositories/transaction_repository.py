@@ -8,13 +8,20 @@ class TransactionRepository:
         transactions_db.append(transaction)
         return transaction
 
-    def list(self, type: Optional[str] = None, category_id: Optional[UUID] = None) -> List[Transaction]:
+    def list(
+        self,
+        type: Optional[str] = None,
+        category_id: Optional[UUID] = None,
+        account_id: Optional[UUID] = None,
+    ) -> List[Transaction]:
         result = transactions_db
         if type:
             result = [t for t in result if t.type == type]
         if category_id:
             result = [t for t in result if t.category_id == category_id]
+        if account_id:
+            result = [t for t in result if t.account_id == account_id]
         return result
 
-    def get_by_account(self, account_id) -> List[Transaction]:
+    def get_by_account(self, account_id: UUID) -> List[Transaction]:
         return [t for t in transactions_db if t.account_id == account_id]
