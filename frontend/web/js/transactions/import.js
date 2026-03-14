@@ -1,12 +1,14 @@
+import { requireAuth } from "../auth/guard.js"
 import { importTransactions } from "../api/imports.js"
+
+requireAuth()
 
 document
     .getElementById("import-form")
     .addEventListener("submit", async (event) => {
         event.preventDefault()
 
-        const fileInput = document.getElementById("file-input")
-        const file = fileInput.files[0]
+        const file = document.getElementById("file-input").files[0]
         if (!file) return
 
         try {
@@ -25,7 +27,7 @@ function renderResult(result) {
     const errorTbody   = document.querySelector("#error-table tbody")
 
     section.style.display = "block"
-    summary.textContent = `Total rows: ${result.total} | Imported: ${result.imported} | Errors: ${result.errors.length}`
+    summary.textContent   = `Total rows: ${result.total} | Imported: ${result.imported} | Errors: ${result.errors.length}`
 
     errorTbody.innerHTML = ""
 

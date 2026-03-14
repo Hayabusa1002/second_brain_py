@@ -1,6 +1,9 @@
+import { requireAuth } from "../auth/guard.js"
 import { createTransaction } from "../api/transactions.js"
 import { getCategories } from "../api/categories.js"
 import { getAccounts } from "../api/accounts.js"
+
+requireAuth()
 
 const typeSelect     = document.getElementById("type-select")
 const categorySelect = document.getElementById("category-select")

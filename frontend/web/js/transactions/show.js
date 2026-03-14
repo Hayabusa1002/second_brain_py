@@ -1,6 +1,9 @@
+import { requireAuth, logout } from "../auth/guard.js"
 import { getTransactions } from "../api/transactions.js"
 import { getCategories } from "../api/categories.js"
 import { getAccounts } from "../api/accounts.js"
+
+requireAuth()
 
 let categoryMap = {}
 let accountMap  = {}
@@ -50,7 +53,7 @@ async function loadTransactions(filters = {}) {
 
 function getFilters() {
     return {
-        account_id:  document.getElementById("filter-account").value    || undefined,
+        account_id:  document.getElementById("filter-account").value   || undefined,
         type:        document.getElementById("filter-type").value       || undefined,
         category_id: document.getElementById("filter-category").value   || undefined,
     }
@@ -64,6 +67,7 @@ document.getElementById("btn-clear").addEventListener("click", () => {
     document.getElementById("filter-category").value = ""
     loadTransactions()
 })
+document.getElementById("btn-logout").addEventListener("click", logout)
 
 async function init() {
     await loadFiltersData()
