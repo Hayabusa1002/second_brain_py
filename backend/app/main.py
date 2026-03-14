@@ -6,7 +6,8 @@ from fastapi.responses import FileResponse
 from app.db.init_db import init_db
 from app.db.seed import seed
 from app.db.session import SessionLocal
-from app.routers import transactions, categories, accounts
+from app.routers import transactions, categories, accounts, auth
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -18,8 +19,10 @@ async def lifespan(app: FastAPI):
         db.close()
     yield
 
+
 app = FastAPI(lifespan=lifespan)
 
+app.include_router(auth.router)
 app.include_router(transactions.router)
 app.include_router(categories.router)
 app.include_router(accounts.router)
@@ -30,9 +33,18 @@ app.mount(
     name="static"
 )
 
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+@app.get("/login")
+def login_page():
+    return FileResponse("../frontend/web/pages/auth/login.html")
+
+@app.get("/register")
+def register_page():
+    return FileResponse("../frontend/web/pages/auth/register.html")
 
 @app.get("/")
 def index():

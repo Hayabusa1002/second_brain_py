@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.models.user import User
 from app.models.category import Category, CategoryType
 from app.models.account import Account, AccountType
-
+from app.core.security import hash_password
 
 DEFAULT_USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000099")
 
@@ -27,13 +27,13 @@ DEFAULT_ACCOUNTS = [
 
 
 def seed(db: Session) -> None:
-    
+
     if not db.query(User).filter(User.id == DEFAULT_USER_ID).first():
         db.add(User(
             id=DEFAULT_USER_ID,
             name="Default User",
             email="default@secondbrain.app",
-            password="placeholder"
+            password=hash_password("not-for-login")
         ))
 
     if not db.query(Category).first():
