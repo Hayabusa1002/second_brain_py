@@ -8,6 +8,7 @@ from app.controllers.account_controller import AccountController
 from app.services.account_service import AccountService
 from app.repositories.account_repository import AccountRepository
 from app.schemas.account import AccountResponse
+from app.core.exceptions import NotFoundError
 
 router = APIRouter()
 
@@ -33,3 +34,5 @@ def get_balance(
     current_user=Depends(get_current_user)
 ):
     return controller.get_balance(account_id)
+
+raise NotFoundError("Account")

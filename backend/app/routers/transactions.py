@@ -10,6 +10,7 @@ from app.services.transaction_service import TransactionService
 from app.repositories.transaction_repository import TransactionRepository
 from app.schemas.transaction import TransactionCreate, TransactionResponse
 from app.schemas.bulk_import import ImportResult
+from app.core.exceptions import NotFoundError
 
 router = APIRouter()
 
@@ -73,3 +74,5 @@ async def import_transactions(
         return await controller.import_transactions(file, current_user)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+raise NotFoundError("Transaction")

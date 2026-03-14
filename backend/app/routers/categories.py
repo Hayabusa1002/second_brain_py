@@ -7,6 +7,7 @@ from app.controllers.category_controller import CategoryController
 from app.services.category_service import CategoryService
 from app.repositories.category_repository import CategoryRepository
 from app.schemas.category import CategoryCreate, CategoryResponse
+from app.core.exceptions import NotFoundError
 
 router = APIRouter()
 
@@ -31,3 +32,5 @@ def create_category(
     current_user=Depends(get_current_user)
 ):
     return controller.create_category(data)
+
+raise NotFoundError("Category")

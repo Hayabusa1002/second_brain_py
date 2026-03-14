@@ -7,6 +7,7 @@ from app.services.auth_service import AuthService
 from app.services.user_service import UserService
 from app.repositories.user_repository import UserRepository
 from app.schemas.user import UserCreate, UserLogin, TokenResponse
+from app.core.exceptions import NotFoundError
 
 router = APIRouter()
 
@@ -26,3 +27,5 @@ def register(data: UserCreate, controller: AuthController = Depends(get_controll
 @router.post("/auth/login", response_model=TokenResponse)
 def login(data: UserLogin, controller: AuthController = Depends(get_controller)):
     return controller.login(data)
+
+raise NotFoundError("Auth")

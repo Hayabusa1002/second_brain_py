@@ -3,6 +3,15 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
+from fastapi.exceptions import RequestValidationError
+from jose import JWTError
+from app.core.exceptions import (
+    AppError, app_error_handler,
+    validation_error_handler,
+    jwt_error_handler,
+    generic_error_handler
+)
+
 from app.db.init_db import init_db
 from app.db.seed import seed
 from app.db.session import SessionLocal
@@ -57,3 +66,9 @@ def add_page():
 @app.get("/transactions/import")
 def import_page():
     return FileResponse("../frontend/web/pages/transactions/import.html")
+
+# Error handlers
+app.add_exception_handler(AppError, app_error_handler)
+app.add_exception_handler(RequestValidationError, validation_error_handler)
+app.add_exception_handler(JWTError, jwt_error_handler)
+app.add_exception_handler(Exception, generic_error_handler)
