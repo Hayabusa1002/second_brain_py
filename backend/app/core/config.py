@@ -1,8 +1,16 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
+    # Database
     DATABASE_URL: str
-    SECRET_KEY:   str
+
+    # Security
+    SECRET_KEY: str
+    ACCESS_TOKEN_EXPIRE_DAYS: int = 7
+
+    # App
+    APP_ENV: str = "development"
+    DEBUG: bool = True
 
     model_config = SettingsConfigDict(
         env_file=".env",

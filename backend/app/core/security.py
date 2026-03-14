@@ -5,8 +5,8 @@ from jose import jwt
 
 from app.core.config import settings
 
-ALGORITHM                = "HS256"
-ACCESS_TOKEN_EXPIRE_DAYS = 7
+# Sign algorithm that JWT use to generate and verify tokens
+ALGORITHM = "HS256"
 
 
 def _safe(password: str) -> str:
@@ -24,7 +24,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 
 def create_access_token(user_id: uuid.UUID) -> str:
-    expire  = datetime.now(UTC) + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
+    expire  = datetime.now(UTC) + timedelta(days=settings.ACCESS_TOKEN_EXPIRE_DAYS)
     payload = {"sub": str(user_id), "exp": expire}
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=ALGORITHM)
 

@@ -36,6 +36,12 @@ app.include_router(transactions.router)
 app.include_router(categories.router)
 app.include_router(accounts.router)
 
+# Error handlers
+app.add_exception_handler(AppError, app_error_handler)
+app.add_exception_handler(RequestValidationError, validation_error_handler)
+app.add_exception_handler(JWTError, jwt_error_handler)
+app.add_exception_handler(Exception, generic_error_handler)
+
 app.mount(
     "/static",
     StaticFiles(directory="../frontend/web"),
@@ -66,9 +72,3 @@ def add_page():
 @app.get("/transactions/import")
 def import_page():
     return FileResponse("../frontend/web/pages/transactions/import.html")
-
-# Error handlers
-app.add_exception_handler(AppError, app_error_handler)
-app.add_exception_handler(RequestValidationError, validation_error_handler)
-app.add_exception_handler(JWTError, jwt_error_handler)
-app.add_exception_handler(Exception, generic_error_handler)
