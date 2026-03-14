@@ -9,11 +9,33 @@
 
     <a href="/transactions/add">+ Add transaction</a>
 
+    <div id="filters">
+        <label>
+            Type
+            <select id="filter-type">
+                <option value="">All</option>
+                <option value="income">Income</option>
+                <option value="expense">Expense</option>
+            </select>
+        </label>
+
+        <label>
+            Category
+            <select id="filter-category">
+                <option value="">All</option>
+            </select>
+        </label>
+
+        <button id="btn-filter">Filter</button>
+        <button id="btn-clear">Clear</button>
+    </div>
+
     <table id="transactions-table">
         <thead>
             <tr>
                 <th>Date</th>
                 <th>Type</th>
+                <th>Category</th>
                 <th>Amount</th>
                 <th>Description</th>
             </tr>
