@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Login – Second Brain</title>
+</head>
+<body>
+    <h1>Login</h1>
+
+    <form id="login-form">
+        <label>
+            Email
+            <input name="email" type="email" required />
+        </label>
+
+        <label>
+            Password
+            <input name="password" type="password" required />
+        </label>
+
+        <button type="submit">Log in</button>
+    </form>
+
+    <p id="error-msg" style="color:red;"></p>
+
+    <p>Don't have an account? <a href="/register">Register</a></p>
+
+    <script type="module" src="/static/js/auth/login.js"></script>
+</body>
+</html>
