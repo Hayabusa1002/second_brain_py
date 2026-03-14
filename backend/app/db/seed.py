@@ -21,8 +21,18 @@ DEFAULT_CATEGORIES = [
 ]
 
 DEFAULT_ACCOUNTS = [
-    {"id": uuid.UUID("00000000-0000-0000-0000-000000000001"), "name": "Personal", "type": AccountType.individual},
-    {"id": uuid.UUID("00000000-0000-0000-0000-000000000002"), "name": "Shared",   "type": AccountType.shared},
+    {
+        "id": uuid.UUID("00000000-0000-0000-0000-000000000001"),
+        "name": "Personal",
+        "type": AccountType.individual,
+        "created_by": DEFAULT_USER_ID
+    },
+    {
+        "id": uuid.UUID("00000000-0000-0000-0000-000000000002"),
+        "name": "Shared",
+        "type": AccountType.shared,
+        "created_by": DEFAULT_USER_ID
+    },
 ]
 
 
