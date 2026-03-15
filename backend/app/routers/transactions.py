@@ -1,5 +1,6 @@
 from typing import List, Optional
 from uuid import UUID
+
 from fastapi import APIRouter, Query, UploadFile, File, HTTPException, Depends
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
@@ -12,7 +13,9 @@ from app.schemas.transaction import TransactionCreate, TransactionResponse
 from app.schemas.bulk_import import ImportResult
 from app.core.exceptions import NotFoundError
 
+
 router = APIRouter()
+
 
 TEMPLATE_CSV = """date,amount,type,category,account,description
 2026-01-15,50000,expense,Food,Personal,Lunch at restaurant
@@ -44,6 +47,18 @@ def list_transactions(
     )
 
 
+@router.get("/transactions/{transaction_id}", response_model=TransactionResponse)
+def get_transaction(
+    transaction_id: UUID,
+    controller: TransactionController = Depends(get_controller),
+    current_user=Depends(get_current_user)
+):
+    tx = controller.get_transaction(transaction_id, user_id=current_user.id)
+    if tx is None:
+        raise NotFoundError("Transaction")
+    return tx
+
+
 @router.post("/transactions", response_model=TransactionResponse)
 def create_transaction(
     data: TransactionCreate,
@@ -70,9 +85,8 @@ async def import_transactions(
 ):
     if not any(file.filename.lower().endswith(ext) for ext in (".csv", ".xlsx", ".xls")):
         raise HTTPException(status_code=400, detail="Unsupported format. Use .csv or .xlsx")
+
     try:
         return await controller.import_transactions(file, current_user)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-
-raise NotFoundError("Transaction")

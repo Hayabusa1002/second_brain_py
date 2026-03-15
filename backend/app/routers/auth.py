@@ -9,6 +9,7 @@ from app.repositories.user_repository import UserRepository
 from app.schemas.user import UserCreate, UserLogin, TokenResponse
 from app.core.exceptions import NotFoundError
 
+
 router = APIRouter()
 
 
@@ -20,12 +21,16 @@ def get_controller(db: Session = Depends(get_db)) -> AuthController:
 
 
 @router.post("/auth/register", response_model=TokenResponse, status_code=201)
-def register(data: UserCreate, controller: AuthController = Depends(get_controller)):
+def register(
+    data: UserCreate,
+    controller: AuthController = Depends(get_controller)
+):
     return controller.register(data)
 
 
 @router.post("/auth/login", response_model=TokenResponse)
-def login(data: UserLogin, controller: AuthController = Depends(get_controller)):
+def login(
+    data: UserLogin,
+    controller: AuthController = Depends(get_controller)
+):
     return controller.login(data)
-
-raise NotFoundError("Auth")

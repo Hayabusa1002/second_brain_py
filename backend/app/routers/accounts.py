@@ -10,6 +10,7 @@ from app.repositories.account_repository import AccountRepository
 from app.schemas.account import AccountResponse
 from app.core.exceptions import NotFoundError
 
+
 router = APIRouter()
 
 
@@ -33,6 +34,8 @@ def get_balance(
     controller: AccountController = Depends(get_controller),
     current_user=Depends(get_current_user)
 ):
-    return controller.get_balance(account_id)
+    balance = controller.get_balance(account_id)
+    if balance is None:
+        raise NotFoundError("Account")
 
-raise NotFoundError("Account")
+    return balance

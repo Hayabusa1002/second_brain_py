@@ -9,6 +9,7 @@ from app.repositories.category_repository import CategoryRepository
 from app.schemas.category import CategoryCreate, CategoryResponse
 from app.core.exceptions import NotFoundError
 
+
 router = APIRouter()
 
 
@@ -22,7 +23,10 @@ def get_controller(db: Session = Depends(get_db)) -> CategoryController:
 def list_categories(
     controller: CategoryController = Depends(get_controller)
 ):
-    return controller.list_categories()
+    tx = controller.list_categories()
+    if tx is None:
+        raise NotFoundError("Category")
+    return tx
 
 
 @router.post("/categories", response_model=CategoryResponse, status_code=201)
@@ -32,5 +36,3 @@ def create_category(
     current_user=Depends(get_current_user)
 ):
     return controller.create_category(data)
-
-raise NotFoundError("Category")
