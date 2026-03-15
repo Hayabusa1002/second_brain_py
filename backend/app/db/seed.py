@@ -4,9 +4,12 @@ from sqlalchemy.orm import Session
 from app.models.user import User, UserRole
 from app.models.category import Category, CategoryType
 from app.models.account import Account, AccountType
+from app.models.account_owner import account_owners
 from app.core.security import hash_password
 
+
 DEFAULT_USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000099")
+
 
 DEFAULT_CATEGORIES = [
     {"id": uuid.UUID("10000000-0000-0000-0000-000000000001"), "name": "Salary",        "type": CategoryType.income},
@@ -19,6 +22,7 @@ DEFAULT_CATEGORIES = [
     {"id": uuid.UUID("20000000-0000-0000-0000-000000000005"), "name": "Health",        "type": CategoryType.expense},
     {"id": uuid.UUID("20000000-0000-0000-0000-000000000006"), "name": "Other expense", "type": CategoryType.expense},
 ]
+
 
 DEFAULT_ACCOUNTS = [
     {
@@ -36,6 +40,12 @@ DEFAULT_ACCOUNTS = [
 ]
 
 
+DEFAULT_ACCOUNT_OWNERS = [
+    {"user_id": DEFAULT_USER_ID, "account_id": uuid.UUID("00000000-0000-0000-0000-000000000001")},
+    {"user_id": DEFAULT_USER_ID, "account_id": uuid.UUID("00000000-0000-0000-0000-000000000002")},
+]
+
+
 def seed(db: Session) -> None:
 
     if not db.query(User).filter(User.id == DEFAULT_USER_ID).first():
@@ -46,17 +56,24 @@ def seed(db: Session) -> None:
             password=hash_password("placeholder"),
             role=UserRole.owner
         ))
-        db.flush() # User persists before accounts
+        db.flush()
 
     if not db.query(Category).first():
         for data in DEFAULT_CATEGORIES:
             db.add(Category(**data))
+        db.flush()
 
     if not db.query(Account).first():
         for data in DEFAULT_ACCOUNTS:
             db.add(Account(**data))
+        db.flush()
+
+    result = db.execute(account_owners.select())
+    if not result.fetchall():
+        db.execute(account_owners.insert(), DEFAULT_ACCOUNT_OWNERS)
 
     db.commit()
+
 
 if __name__ == "__main__":
     from app.db.session import SessionLocal
@@ -65,7 +82,7 @@ if __name__ == "__main__":
         seed(db)
         print("Seed completado exitosamente")
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error en seed: {e}")
         db.rollback()
     finally:
         db.close()
