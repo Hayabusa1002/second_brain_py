@@ -31,6 +31,32 @@ def get_controller(db: Session = Depends(get_db)) -> TransactionController:
     return TransactionController(service, db)
 
 
+# Fixed paths
+@router.get("/transactions/import/template", response_class=PlainTextResponse)
+def download_template():
+    return PlainTextResponse(
+        content=TEMPLATE_CSV,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=import_template.csv"}
+    )
+
+
+@router.post("/transactions/import", response_model=ImportResult)
+async def import_transactions(
+    file: UploadFile = File(...),
+    controller: TransactionController = Depends(get_controller),
+    current_user=Depends(get_current_user)
+):
+    if not any(file.filename.lower().endswith(ext) for ext in (".csv", ".xlsx", ".xls")):
+        raise HTTPException(status_code=400, detail="Unsupported format. Use .csv or .xlsx")
+
+    try:
+        return await controller.import_transactions(file, current_user)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# Paths with parameters
 @router.get("/transactions", response_model=List[TransactionResponse])
 def list_transactions(
     type: Optional[str] = Query(default=None),
@@ -66,27 +92,3 @@ def create_transaction(
     current_user=Depends(get_current_user)
 ):
     return controller.create_transaction(data, current_user)
-
-
-@router.get("/transactions/import/template", response_class=PlainTextResponse)
-def download_template():
-    return PlainTextResponse(
-        content=TEMPLATE_CSV,
-        media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=import_template.csv"}
-    )
-
-
-@router.post("/transactions/import", response_model=ImportResult)
-async def import_transactions(
-    file: UploadFile = File(...),
-    controller: TransactionController = Depends(get_controller),
-    current_user=Depends(get_current_user)
-):
-    if not any(file.filename.lower().endswith(ext) for ext in (".csv", ".xlsx", ".xls")):
-        raise HTTPException(status_code=400, detail="Unsupported format. Use .csv or .xlsx")
-
-    try:
-        return await controller.import_transactions(file, current_user)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))

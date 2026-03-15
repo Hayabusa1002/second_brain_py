@@ -4,7 +4,7 @@ export async function importTransactions(file) {
     const formData = new FormData()
     formData.append("file", file)
 
-    const response = await fetchWithAuth("/transactions/import", {
+    const response = await fetchWithAuth("/api/transactions/import", {
         method: "POST",
         body: formData,
     })
