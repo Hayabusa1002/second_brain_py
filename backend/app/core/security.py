@@ -2,15 +2,10 @@ import uuid
 from datetime import datetime, timedelta, UTC
 import bcrypt
 from jose import jwt
-
+from fastapi import Request, HTTPException
 from app.core.config import settings
 
-# Sign algorithm that JWT use to generate and verify tokens
 ALGORITHM = "HS256"
-
-
-def _safe(password: str) -> str:
-    return password.encode("utf-8")[:72].decode("utf-8", errors="ignore")
 
 
 def hash_password(password: str) -> str:
@@ -32,3 +27,13 @@ def create_access_token(user_id: uuid.UUID) -> str:
 def decode_token(token: str) -> uuid.UUID:
     payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
     return uuid.UUID(payload["sub"])
+
+
+def get_current_user_from_cookie(request: Request):
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=307, headers={"Location": "/login"})
+    try:
+        return decode_token(token)
+    except Exception:
+        raise HTTPException(status_code=307, headers={"Location": "/login"})

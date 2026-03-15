@@ -1,11 +1,11 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 
 from app.routers import transactions, categories, accounts, auth
-
+from app.core.security import get_current_user_from_cookie
 
 app = FastAPI()
 
@@ -26,27 +26,12 @@ app.mount(
 )
 
 # Jinja2 templates
-templates = Jinja2Templates(directory="app/templates")
+templates = Jinja2Templates(directory=BASE_DIR / "app/templates")
 
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
-
-
-@app.get("/", response_class=HTMLResponse)
-def index(request: Request):
-    return templates.TemplateResponse("transactions/show.html", {"request": request})
-
-
-@app.get("/transactions/add", response_class=HTMLResponse)
-def add_page(request: Request):
-    return templates.TemplateResponse("transactions/add.html", {"request": request})
-
-
-@app.get("/transactions/import", response_class=HTMLResponse)
-def import_page(request: Request):
-    return templates.TemplateResponse("transactions/import.html", {"request": request})
 
 
 @app.get("/login", response_class=HTMLResponse)
@@ -57,3 +42,18 @@ def login_page(request: Request):
 @app.get("/register", response_class=HTMLResponse)
 def register_page(request: Request):
     return templates.TemplateResponse("auth/register.html", {"request": request})
+
+
+@app.get("/", response_class=HTMLResponse)
+def index(request: Request, user=Depends(get_current_user_from_cookie)):
+    return templates.TemplateResponse("transactions/show.html", {"request": request})
+
+
+@app.get("/transactions/add", response_class=HTMLResponse)
+def add_page(request: Request, user=Depends(get_current_user_from_cookie)):
+    return templates.TemplateResponse("transactions/add.html", {"request": request})
+
+
+@app.get("/transactions/import", response_class=HTMLResponse)
+def import_page(request: Request, user=Depends(get_current_user_from_cookie)):
+    return templates.TemplateResponse("transactions/import.html", {"request": request})
