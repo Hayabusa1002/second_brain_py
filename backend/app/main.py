@@ -2,11 +2,15 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from pathlib import Path
 
 from app.routers import transactions, categories, accounts, auth
 
 
 app = FastAPI()
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 # API routers
 app.include_router(auth.router,         prefix="/api")
@@ -17,7 +21,7 @@ app.include_router(accounts.router,     prefix="/api")
 # Static files
 app.mount(
     "/static",
-    StaticFiles(directory="../frontend/web"),
+    StaticFiles(directory=BASE_DIR / "frontend/web"),
     name="static"
 )
 
