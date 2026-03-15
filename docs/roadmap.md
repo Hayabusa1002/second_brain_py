@@ -175,7 +175,7 @@ Build an application to manage shared finances as a couple, allowing users to:
 ### Infrastructure
 
 * [x] functional `docker-compose.yml` (app + PostgreSQL)
-* [ ] Deploy on cloud server (Railway, Render, o VPS)
+* [x] Deploy on cloud server (Railway, Render, o VPS)
 
 ---
 
