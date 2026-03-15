@@ -46,6 +46,7 @@ def seed(db: Session) -> None:
             password=hash_password("placeholder"),
             role=UserRole.owner
         ))
+        db.flush() # User persists before accounts
 
     if not db.query(Category).first():
         for data in DEFAULT_CATEGORIES:
@@ -56,3 +57,15 @@ def seed(db: Session) -> None:
             db.add(Account(**data))
 
     db.commit()
+
+if __name__ == "__main__":
+    from app.db.session import SessionLocal
+    db = SessionLocal()
+    try:
+        seed(db)
+        print("Seed completado exitosamente")
+    except Exception as e:
+        print(f"Error: {e}")
+        db.rollback()
+    finally:
+        db.close()
