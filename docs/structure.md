@@ -23,6 +23,7 @@ second_brain/
 │  └─ features/
 │     ├─ bulk_import.md
 │     ├─ alembic.bash
+│     ├─ docker.bash
 │     ├─ generate_hash.py
 │     └─ secret_key.py
 │
@@ -38,7 +39,8 @@ second_brain/
 │  │  │
 │  │  ├─ core/
 │  │  │  ├─ config.py
-│  │  │  └─ security.py
+│  │  │  ├─ security.py
+│  │  │  └─ exceptions.py
 │  │  │
 │  │  ├─ db/
 │  │  │  ├─ base.py
@@ -82,12 +84,27 @@ second_brain/
 │  │  │  ├─ account_repository.py
 │  │  │  └─ user_repository.py
 │  │  │
-│  │  └─ schemas/
-│  │     ├─ transaction.py
-│  │     ├─ category.py
-│  │     ├─ account.py
-│  │     ├─ bulk_import.py
-│  │     └─ user.py
+│  │  ├─ schemas/
+│  │  │  ├─ transaction.py
+│  │  │  ├─ category.py
+│  │  │  ├─ account.py
+│  │  │  ├─ bulk_import.py
+│  │  │  └─ user.py
+│  │  │
+│  │  └─ templates/
+│  │     ├─ base.html
+│  │     │
+│  │     ├─ auth/
+│  │     │  ├─ login.html
+│  │     │  └─ register.html
+│  │     │
+│  │     ├─ transactions/
+│  │     │  ├─ show.html
+│  │     │  ├─ add.html
+│  │     │  └─ import.html
+│  │     │
+│  │     └─ features/
+│  │        └─ navbar.html
 │  │
 │  └─migrations/
 │     ├─ versions/
@@ -98,16 +115,6 @@ second_brain/
 ├─ frontend/
 │  ├─ README.md
 │  └─ web/
-│     ├─ pages/
-│     │  ├─ auth/
-│     │  │  ├─ login.html
-│     │  │  └─ register.html
-│     │  │
-│     │  └─ transactions/
-│     │     ├─ show.html
-│     │     ├─ add.html
-│     │     └─ import.html
-│     │
 │     ├─ css/
 │     │
 │     └─ js/
@@ -130,6 +137,11 @@ second_brain/
 │           └─ import.js
 │
 ├─ .gitignore
+│
+├─ .dockerignore
+├─ docker-compose.yml
+├─ Dockerfile
+│
 └─ README.md
 ```
 
