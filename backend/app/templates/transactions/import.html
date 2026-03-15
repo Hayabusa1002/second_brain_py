@@ -1,41 +1,62 @@
 {% extends "base.html" %}
 
-{% block title %}Add Transaction – Second Brain{% endblock %}
+{% block title %}Import Transactions – Second Brain{% endblock %}
 
 {% block nav %}
     {% include "features/navbar.html" %}
 {% endblock %}
 
 {% block content %}
-    <p>
-        Upload a <strong>.csv</strong> or <strong>.xlsx</strong> file with columns:
-    </p>
-    <code>date, amount, type, category, account, description (optional)</code>
+    <div class="page-header mb-3">
+        <div class="row align-items-center">
+            <div class="col">
+                <h2 class="page-title">Import Transactions</h2>
+            </div>
+            <div class="col-auto">
+                <a href="/" class="btn btn-outline-secondary btn-sm">← Back</a>
+            </div>
+        </div>
+    </div>
 
-    <p>
-        <a href="/transactions/import/template" download>Download template CSV</a>
-    </p>
+    <div class="card mb-3">
+        <div class="card-body">
+            <p class="text-secondary">
+                Upload a <strong>.csv</strong> or <strong>.xlsx</strong> file with columns:
+                <code>date, amount, type, category, account, description</code>
+            </p>
+            <a href="/api/transactions/import/template" download class="btn btn-outline-secondary btn-sm mb-3">
+                Download template CSV
+            </a>
 
-    <form id="import-form">
-        <input type="file" id="file-input" accept=".csv,.xlsx,.xls" required />
-        <button type="submit">Import</button>
-    </form>
+            <form id="import-form">
+                <div class="mb-3">
+                    <input type="file" id="file-input" accept=".csv,.xlsx,.xls"
+                           class="form-control" required />
+                </div>
+                <button type="submit" class="btn btn-primary">Import</button>
+            </form>
+        </div>
+    </div>
 
-    <div id="result" style="display:none;">
-        <h3>Result</h3>
-        <p id="result-summary"></p>
-        <div id="error-section" style="display:none;">
-            <h4>Errors</h4>
-            <table id="error-table">
-                <thead>
-                    <tr><th>Row</th><th>Error</th></tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+    <div id="result" class="card" style="display:none;">
+        <div class="card-body">
+            <h4>Result</h4>
+            <p id="result-summary"></p>
+            <div id="error-section" style="display:none;">
+                <h5>Errors</h5>
+                <div class="table-responsive">
+                    <table id="error-table" class="table table-sm">
+                        <thead>
+                            <tr><th>Row</th><th>Error</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 {% endblock %}
 
 {% block scripts %}
-    <script type="module" src="{{ url_for('static', path='/js/transactions/add.js') }}"></script>
+    <script type="module" src="{{ url_for('static', path='/js/transactions/import.js') }}"></script>
 {% endblock %}

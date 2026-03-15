@@ -3,28 +3,33 @@
 {% block title %}Login – Second Brain{% endblock %}
 
 {% block content %}
-    <h2>Login</h2>
-
-    <form id="login-form">
-        <label>
-            Email
-            <input name="email" type="email" required />
-        </label>
-
-        <label>
-            Password
-            <input name="password" type="password" required />
-        </label>
-
-        <button type="submit">Log in</button>
-    </form>
-
-    <p id="error-msg" style="color:red;"></p>
-
-    <p>
-        Don't have an account?
-        <a href="/register">Register</a>
-    </p>
+    <div class="page page-center">
+        <div class="container container-tight py-4">
+            <div class="text-center mb-4">
+                <h2 class="h1">Second Brain</h2>
+                <p class="text-secondary">Sign in to your account</p>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <form id="login-form">
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input name="email" type="email" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <input name="password" type="password" class="form-control" required />
+                        </div>
+                        <p id="error-msg" class="text-danger small"></p>
+                        <button type="submit" class="btn btn-primary w-100">Sign in</button>
+                    </form>
+                </div>
+            </div>
+            <p class="text-center mt-3 text-secondary">
+                No account? <a href="/register">Register</a>
+            </p>
+        </div>
+    </div>
 {% endblock %}
 
 {% block scripts %}

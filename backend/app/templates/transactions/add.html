@@ -7,42 +7,57 @@
 {% endblock %}
 
 {% block content %}
-    <form id="transaction-form">
-        <label>
-            Account
-            <select name="account_id" id="account-select"></select>
-        </label>
+    <div class="page-header mb-3">
+        <div class="row align-items-center">
+            <div class="col">
+                <h2 class="page-title">Add Transaction</h2>
+            </div>
+            <div class="col-auto">
+                <a href="/" class="btn btn-outline-secondary btn-sm">← Back</a>
+            </div>
+        </div>
+    </div>
 
-        <label>
-            Amount
-            <input name="amount" type="number" step="0.01" min="0.01" placeholder="0.00" required />
-        </label>
-
-        <label>
-            Type
-            <select name="type" id="type-select">
-                <option value="expense">Expense</option>
-                <option value="income">Income</option>
-            </select>
-        </label>
-
-        <label>
-            Category
-            <select name="category_id" id="category-select"></select>
-        </label>
-
-        <label>
-            Date
-            <input name="date" type="date" required />
-        </label>
-
-        <label>
-            Description
-            <input name="description" type="text" placeholder="Optional" />
-        </label>
-
-        <button type="submit">Save</button>
-    </form>
+    <div class="card">
+        <div class="card-body">
+            <form id="transaction-form">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Account</label>
+                        <select name="account_id" id="account-select" class="form-select"></select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Amount</label>
+                        <input name="amount" type="number" step="0.01" min="0.01"
+                               placeholder="0.00" class="form-control" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Type</label>
+                        <select name="type" id="type-select" class="form-select">
+                            <option value="expense">Expense</option>
+                            <option value="income">Income</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Category</label>
+                        <select name="category_id" id="category-select" class="form-select"></select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Date</label>
+                        <input name="date" type="date" class="form-control" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Description</label>
+                        <input name="description" type="text" placeholder="Optional"
+                               class="form-control" />
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Save transaction</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 {% endblock %}
 
 {% block scripts %}
