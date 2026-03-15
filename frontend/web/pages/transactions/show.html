@@ -1,58 +1,40 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <title>Transactions</title>
-</head>
-<body>
-    <h1>Transactions</h1>
+{% extends "base.html" %}
 
-    <a href="/transactions/add">+ Add transaction</a> |
-    <a href="/transactions/import">Import CSV / Excel</a> |
-    <button id="btn-logout">Logout</button>
+{% block title %}Transactions – Second Brain{% endblock %}
 
-    <div id="filters">
-        <label>
-            View
-            <select id="filter-account">
-                <option value="">All accounts</option>
-            </select>
-        </label>
-
-        <label>
-            Type
-            <select id="filter-type">
-                <option value="">All</option>
-                <option value="income">Income</option>
-                <option value="expense">Expense</option>
-            </select>
-        </label>
-
-        <label>
-            Category
-            <select id="filter-category">
-                <option value="">All</option>
-            </select>
-        </label>
-
-        <button id="btn-filter">Filter</button>
-        <button id="btn-clear">Clear</button>
+{% block content %}
+  <div class="page-header d-print-none">
+    <div class="row align-items-center">
+      <div class="col">
+        <h2 class="page-title">Transactions</h2>
+      </div>
+      <div class="col-auto ms-auto d-print-none">
+        <a href="/transactions/add" class="btn btn-primary">
+          Add transaction
+        </a>
+      </div>
     </div>
+  </div>
 
-    <table id="transactions-table">
+  <div class="card">
+    <div class="card-body table-responsive">
+      <table class="table table-vcenter">
         <thead>
-            <tr>
-                <th>Date</th>
-                <th>Account</th>
-                <th>Type</th>
-                <th>Category</th>
-                <th>Amount</th>
-                <th>Description</th>
-            </tr>
+          <tr>
+            <th>Date</th>
+            <th>Account</th>
+            <th>Category</th>
+            <th class="text-end">Amount</th>
+          </tr>
         </thead>
-        <tbody></tbody>
-    </table>
+        <tbody id="transactions-body">
+          <!-- filled by transactions.js -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}
 
-    <script type="module" src="/static/js/transactions/show.js"></script>
-</body>
-</html>
+{% block scripts %}
+  <script src="/static/js/transactions/show.js"></script>
+{% endblock %}
