@@ -1,45 +1,44 @@
-import { requireAuth } from "../auth/guard.js";
-import { importTransactions } from "../api/imports.js";
+import { requireAuth } from "../auth/guard.js"
+import { importTransactions } from "../api/imports.js"
 
-requireAuth();
+requireAuth()
 
 document
     .getElementById("import-form")
     .addEventListener("submit", async (event) => {
-        event.preventDefault();
+        event.preventDefault()
 
-        const file = document.getElementById("file-input").files[0];
-        if (!file) return;
+        const file = document.getElementById("file-input").files[0]
+        if (!file) return
 
         try {
-            const result = await importTransactions(file);
-            renderResult(result);
+            const result = await importTransactions(file)
+            renderResult(result)
         } catch (error) {
-            console.error(error);
-            alert(`Error: ${error.message}`);
+            console.error(error)
+            alert(`Error: ${error.message}`)
         }
-    });
+    })
 
 function renderResult(result) {
-    const section      = document.getElementById("result");
-    const summary      = document.getElementById("result-summary");
-    const errorSection = document.getElementById("error-section");
-    const errorTbody   = document.querySelector("#error-table tbody");
+    const section      = document.getElementById("result")
+    const summary      = document.getElementById("result-summary")
+    const errorSection = document.getElementById("error-section")
+    const errorTbody   = document.querySelector("#error-table tbody")
 
-    section.style.display = "block";
-    summary.textContent   =
-        `Total rows: ${result.total} | Imported: ${result.imported} | Errors: ${result.errors.length}`;
+    section.style.display = "block"
+    summary.textContent   = `Total rows: ${result.total} | Imported: ${result.imported} | Errors: ${result.errors.length}`
 
-    errorTbody.innerHTML = "";
+    errorTbody.innerHTML = ""
 
     if (result.errors.length > 0) {
-        errorSection.style.display = "block";
+        errorSection.style.display = "block"
         result.errors.forEach(e => {
-            const row = document.createElement("tr");
-            row.innerHTML = `<td>${e.row}</td><td>${e.error}</td>`;
-            errorTbody.appendChild(row);
-        });
+            const row = document.createElement("tr")
+            row.innerHTML = `<td>${e.row}</td><td>${e.error}</td>`
+            errorTbody.appendChild(row)
+        })
     } else {
-        errorSection.style.display = "none";
+        errorSection.style.display = "none"
     }
 }
