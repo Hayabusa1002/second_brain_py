@@ -1,74 +1,70 @@
-from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.templating import Jinja2Templates
 
-from fastapi.exceptions import RequestValidationError
-from jose import JWTError
-from app.core.exceptions import (
-    AppError, app_error_handler,
-    validation_error_handler,
-    jwt_error_handler,
-    generic_error_handler
-)
-
-from app.db.init_db import init_db
-from app.db.seed import seed
-from app.db.session import SessionLocal
 from app.routers import transactions, categories, accounts, auth
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    init_db()
-    db = SessionLocal()
-    try:
-        seed(db)
-    finally:
-        db.close()
-    yield
+app = FastAPI()
 
-
-app = FastAPI(lifespan=lifespan)
-
+# API routers
 app.include_router(auth.router)
 app.include_router(transactions.router)
 app.include_router(categories.router)
 app.include_router(accounts.router)
 
-# Error handlers
-app.add_exception_handler(AppError, app_error_handler)
-app.add_exception_handler(RequestValidationError, validation_error_handler)
-app.add_exception_handler(JWTError, jwt_error_handler)
-app.add_exception_handler(Exception, generic_error_handler)
-
+# Static files (JS, CSS, images)
 app.mount(
     "/static",
     StaticFiles(directory="../frontend/web"),
     name="static"
 )
 
+# Jinja2 templates
+templates = Jinja2Templates(directory="app/templates")
+
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
-@app.get("/login")
-def login_page():
-    return FileResponse("../frontend/web/pages/auth/login.html")
 
-@app.get("/register")
-def register_page():
-    return FileResponse("../frontend/web/pages/auth/register.html")
+@app.get("/", response_class=HTMLResponse)
+def index(request: Request):
+    return templates.TemplateResponse(
+        "transactions/show.html",
+        {"request": request}
+    )
 
-@app.get("/")
-def index():
-    return FileResponse("../frontend/web/pages/transactions/show.html")
 
-@app.get("/transactions/add")
-def add_page():
-    return FileResponse("../frontend/web/pages/transactions/add.html")
+@app.get("/transactions/add", response_class=HTMLResponse)
+def add_page(request: Request):
+    return templates.TemplateResponse(
+        "transactions/add.html",
+        {"request": request}
+    )
 
-@app.get("/transactions/import")
-def import_page():
-    return FileResponse("../frontend/web/pages/transactions/import.html")
+
+@app.get("/transactions/import", response_class=HTMLResponse)
+def import_page(request: Request):
+    return templates.TemplateResponse(
+        "transactions/import.html",
+        {"request": request}
+    )
+
+
+@app.get("/login", response_class=HTMLResponse)
+def login_page(request: Request):
+    return templates.TemplateResponse(
+        "auth/login.html",
+        {"request": request}
+    )
+
+
+@app.get("/register", response_class=HTMLResponse)
+def register_page(request: Request):
+    return templates.TemplateResponse(
+        "auth/register.html",
+        {"request": request}
+    )

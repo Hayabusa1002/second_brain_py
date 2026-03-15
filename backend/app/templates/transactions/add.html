@@ -1,14 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <title>Add Transaction</title>
-</head>
-<body>
-    <h1>Add Transaction</h1>
+{% extends "base.html" %}
 
-    <a href="/">← Back to list</a>
+{% block title %}Add Transaction – Second Brain{% endblock %}
 
+{% block nav %}
+    {% include "features/navbar.html" %}
+{% endblock %}
+
+{% block content %}
     <form id="transaction-form">
         <label>
             Account
@@ -45,7 +43,8 @@
 
         <button type="submit">Save</button>
     </form>
+{% endblock %}
 
-    <script type="module" src="/static/js/transactions/add.js"></script>
-</body>
-</html>
+{% block scripts %}
+    <script type="module" src="{{ url_for('static', path='/js/transactions/add.js') }}"></script>
+{% endblock %}

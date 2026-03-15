@@ -1,11 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <title>Login – Second Brain</title>
-</head>
-<body>
-    <h1>Login</h1>
+{% extends "base.html" %}
+
+{% block title %}Login – Second Brain{% endblock %}
+
+{% block content %}
+    <h2>Login</h2>
 
     <form id="login-form">
         <label>
@@ -23,8 +21,12 @@
 
     <p id="error-msg" style="color:red;"></p>
 
-    <p>Don't have an account? <a href="/register">Register</a></p>
+    <p>
+        Don't have an account?
+        <a href="/register">Register</a>
+    </p>
+{% endblock %}
 
-    <script type="module" src="/static/js/auth/login.js"></script>
-</body>
-</html>
+{% block scripts %}
+    <script type="module" src="{{ url_for('static', path='/js/auth/login.js') }}"></script>
+{% endblock %}

@@ -1,20 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <title>Import Transactions</title>
-</head>
-<body>
-    <h1>Import Transactions</h1>
+{% extends "base.html" %}
 
-    <a href="/">← Back to list</a>
+{% block title %}Add Transaction – Second Brain{% endblock %}
 
-    <p>Upload a <strong>.csv</strong> or <strong>.xlsx</strong> file with the following columns:</p>
+{% block nav %}
+    {% include "features/navbar.html" %}
+{% endblock %}
+
+{% block content %}
+    <p>
+        Upload a <strong>.csv</strong> or <strong>.xlsx</strong> file with columns:
+    </p>
     <code>date, amount, type, category, account, description (optional)</code>
-    <br /><br />
-    <a href="/transactions/import/template" download>Download template CSV</a>
 
-    <br /><br />
+    <p>
+        <a href="/transactions/import/template" download>Download template CSV</a>
+    </p>
 
     <form id="import-form">
         <input type="file" id="file-input" accept=".csv,.xlsx,.xls" required />
@@ -22,10 +22,10 @@
     </form>
 
     <div id="result" style="display:none;">
-        <h2>Result</h2>
+        <h3>Result</h3>
         <p id="result-summary"></p>
         <div id="error-section" style="display:none;">
-            <h3>Errors</h3>
+            <h4>Errors</h4>
             <table id="error-table">
                 <thead>
                     <tr><th>Row</th><th>Error</th></tr>
@@ -34,7 +34,8 @@
             </table>
         </div>
     </div>
+{% endblock %}
 
-    <script type="module" src="/static/js/transactions/import.js"></script>
-</body>
-</html>
+{% block scripts %}
+    <script type="module" src="{{ url_for('static', path='/js/transactions/add.js') }}"></script>
+{% endblock %}
