@@ -9,12 +9,12 @@ from app.routers import transactions, categories, accounts, auth
 app = FastAPI()
 
 # API routers
-app.include_router(auth.router)
-app.include_router(transactions.router)
-app.include_router(categories.router)
-app.include_router(accounts.router)
+app.include_router(auth.router,         prefix="/api")
+app.include_router(transactions.router, prefix="/api")
+app.include_router(categories.router,   prefix="/api")
+app.include_router(accounts.router,     prefix="/api")
 
-# Static files (JS, CSS, images)
+# Static files
 app.mount(
     "/static",
     StaticFiles(directory="../frontend/web"),
@@ -32,39 +32,24 @@ def health():
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
-    return templates.TemplateResponse(
-        "transactions/show.html",
-        {"request": request}
-    )
+    return templates.TemplateResponse("transactions/show.html", {"request": request})
 
 
 @app.get("/transactions/add", response_class=HTMLResponse)
 def add_page(request: Request):
-    return templates.TemplateResponse(
-        "transactions/add.html",
-        {"request": request}
-    )
+    return templates.TemplateResponse("transactions/add.html", {"request": request})
 
 
 @app.get("/transactions/import", response_class=HTMLResponse)
 def import_page(request: Request):
-    return templates.TemplateResponse(
-        "transactions/import.html",
-        {"request": request}
-    )
+    return templates.TemplateResponse("transactions/import.html", {"request": request})
 
 
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request):
-    return templates.TemplateResponse(
-        "auth/login.html",
-        {"request": request}
-    )
+    return templates.TemplateResponse("auth/login.html", {"request": request})
 
 
 @app.get("/register", response_class=HTMLResponse)
 def register_page(request: Request):
-    return templates.TemplateResponse(
-        "auth/register.html",
-        {"request": request}
-    )
+    return templates.TemplateResponse("auth/register.html", {"request": request})

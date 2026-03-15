@@ -7,7 +7,7 @@ export async function getTransactions(filters = {}) {
     if (filters.account_id)  params.append("account_id", filters.account_id)
 
     const query = params.toString()
-    const url   = query ? `/transactions?${query}` : "/transactions"
+    const url   = query ? `/api/transactions?${query}` : "/api/transactions"
 
     const response = await fetchWithAuth(url)
     if (!response) return []
@@ -16,7 +16,7 @@ export async function getTransactions(filters = {}) {
 }
 
 export async function createTransaction(data) {
-    const response = await fetchWithAuth("/transactions", {
+    const response = await fetchWithAuth("/api/transactions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
