@@ -168,9 +168,9 @@ Build an application to manage shared finances as a couple, allowing users to:
 
 ### Mobile-ready frontend
 
-* [ ] Layout responsive (CSS Grid/Flexbox base)
-* [ ] Correct viewport in all the templates
-* [ ] Usable forms in mobile
+* [x] Layout responsive (CSS Grid/Flexbox base)
+* [x] Correct viewport in all the templates
+* [x] Usable forms in mobile
 
 ### Infrastructure
 
