@@ -1,42 +1,18 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
+<head>
+    <meta charset="UTF-8" />
     <title>{% block title %}Second Brain{% endblock %}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+</head>
+<body>
+    <header>
+        <h1>Second Brain</h1>
+    </header>
 
-    <!-- Tabler CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/css/tabler.min.css" />
-
-    <!-- Tabler dark theme -->
-    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/css/tabler-dark.min.css" /> -->
-
-    <!-- Your custom overrides -->
-    <link rel="stylesheet" href="/static/css/custom.css" />
-  </head>
-  <body>
-    <div class="page">
-      <!-- Navbar -->
-      <header class="navbar navbar-expand-md navbar-light bg-white border-bottom">
-        <div class="container-xl">
-          <a class="navbar-brand" href="/transactions">
-            <span class="navbar-brand-text">Second Brain</span>
-          </a>
-          <!-- put nav items / user menu here -->
-        </div>
-      </header>
-
-      <!-- Page body -->
-      <div class="page-wrapper">
-        <div class="container-xl">
-          {% block content %}{% endblock %}
-        </div>
-      </div>
-    </div>
-
-    <!-- Tabler JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/js/tabler.min.js"></script>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
 
     {% block scripts %}{% endblock %}
-  </body>
+</body>
 </html>

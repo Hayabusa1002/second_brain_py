@@ -3,38 +3,27 @@
 {% block title %}Transactions – Second Brain{% endblock %}
 
 {% block content %}
-  <div class="page-header d-print-none">
-    <div class="row align-items-center">
-      <div class="col">
-        <h2 class="page-title">Transactions</h2>
-      </div>
-      <div class="col-auto ms-auto d-print-none">
-        <a href="/transactions/add" class="btn btn-primary">
-          Add transaction
-        </a>
-      </div>
-    </div>
-  </div>
+    <h2>Transactions</h2>
 
-  <div class="card">
-    <div class="card-body table-responsive">
-      <table class="table table-vcenter">
+    <p>
+        <a href="/transactions/add">Add transaction</a>
+    </p>
+
+    <table>
         <thead>
-          <tr>
-            <th>Date</th>
-            <th>Account</th>
-            <th>Category</th>
-            <th class="text-end">Amount</th>
-          </tr>
+            <tr>
+                <th>Date</th>
+                <th>Account</th>
+                <th>Category</th>
+                <th>Amount</th>
+            </tr>
         </thead>
         <tbody id="transactions-body">
-          <!-- filled by transactions.js -->
+            <!-- Autocompleted with JS -->
         </tbody>
-      </table>
-    </div>
-  </div>
+    </table>
 {% endblock %}
 
 {% block scripts %}
-  <script src="/static/js/transactions/show.js"></script>
+    <script type="module" src="{{ url_for('static', path='/js/transactions/show.js') }}"></script>
 {% endblock %}
