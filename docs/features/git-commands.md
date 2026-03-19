@@ -6,7 +6,7 @@ git config --global user.name "Your Name"       # set global username
 git config --global user.email "you@email.com"  # set global email
 git config --list                                # list all config values
 
-## Repository
+## Repositoryw
 
 git init                        # initialize new local repo
 git clone <url>                 # clone remote repo locally

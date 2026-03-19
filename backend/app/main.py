@@ -21,7 +21,7 @@ app.include_router(accounts.router,     prefix="/api")
 # Static files
 app.mount(
     "/static",
-    StaticFiles(directory=BASE_DIR / "frontend/web"),
+    StaticFiles(directory=BASE_DIR.parent / "frontend/web"),
     name="static"
 )
 
