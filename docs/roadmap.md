@@ -185,7 +185,7 @@ Build an application to manage shared finances as a couple, allowing users to:
 
 ### Accounts module
 
-- [ ] Create, edit, and delete accounts
+- [x] Create, edit, and delete accounts
 - [ ] Manage `account_owners` (assign / unassign)
 - [ ] Role-based permissions: only admin can create/delete; users see only their own
 

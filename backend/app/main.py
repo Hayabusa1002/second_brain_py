@@ -49,6 +49,13 @@ def register_page(request: Request):
     return templates.TemplateResponse("auth/register.html", {"request": request})
 
 
+@app.get("/access-requests", response_class=HTMLResponse)
+def admin_access_requests(request: Request, current_user=Depends(get_current_user)):
+    if current_user.role != UserRole.admin:
+        return RedirectResponse("/")
+    return templates.TemplateResponse("admin/access_requests.html", {"request": request})
+
+
 @app.get("/change-password", response_class=HTMLResponse)
 def change_password_page(request: Request, user=Depends(get_current_user_from_cookie)):
     return templates.TemplateResponse("auth/change_password.html", {"request": request})
@@ -69,8 +76,6 @@ def import_page(request: Request, user=Depends(get_current_user_from_cookie)):
     return templates.TemplateResponse("transactions/import.html", {"request": request})
 
 
-@app.get("/admin/access-requests", response_class=HTMLResponse)
-def admin_access_requests(request: Request, current_user=Depends(get_current_user)):
-    if current_user.role != UserRole.admin:
-        return RedirectResponse("/")
-    return templates.TemplateResponse("admin/access_requests.html", {"request": request})
+@app.get("/accounts", response_class=HTMLResponse)
+def accounts_page(request: Request, user=Depends(get_current_user_from_cookie)):
+    return templates.TemplateResponse("accounts/show.html", {"request": request})
