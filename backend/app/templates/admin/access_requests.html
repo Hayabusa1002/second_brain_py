@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Access Requests – Second Brain{% endblock %}
+
+{% block nav %}
+    {% include "features/navbar.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="page-header mb-3">
+    <div class="row align-items-center">
+        <div class="col">
+            <h2 class="page-title">Access requests</h2>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div id="empty-msg" style="display:none">
+            <p class="text-secondary">No pending requests.</p>
+        </div>
+        <div class="table-responsive" id="table-wrapper">
+            <table class="table table-vcenter card-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Registered</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="users-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Row template (hidden) -->
+<template id="row-template">
+    <tr>
+        <td class="col-name"></td>
+        <td class="col-email text-secondary"></td>
+        <td class="col-role"><span class="badge bg-blue-lt"></span></td>
+        <td class="col-date text-secondary"></td>
+        <td class="text-end">
+            <button class="btn btn-success btn-sm me-1 btn-approve">Approve</button>
+            <button class="btn btn-danger btn-sm btn-reject">Reject</button>
+        </td>
+    </tr>
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="/static/js/admin/access_requests.js"></script>
+{% endblock %}
