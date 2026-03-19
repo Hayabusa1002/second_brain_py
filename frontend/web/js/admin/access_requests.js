@@ -42,9 +42,7 @@ async function load() {
     if (!res) return
 
     const data = await res.json()
-    console.log("response:", data)          // agrega esto temporalmente
-
-    const users = data.users ?? data        // soporta ambas formas
+    const users = data.users ?? data
     if (!users || !users.length) {
         checkEmpty()
         return
