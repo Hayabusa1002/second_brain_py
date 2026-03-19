@@ -31,6 +31,17 @@ class UserResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password:     str
+
+    @field_validator("new_password")
+    @classmethod
+    def password_length(cls, v: str) -> str:
+        if len(v.encode("utf-8")) > 72:
+            raise ValueError("Password must be 72 characters or fewer")
+        return v
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type:   str = "bearer"

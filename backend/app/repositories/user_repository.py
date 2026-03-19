@@ -32,3 +32,12 @@ class UserRepository:
         self.db.commit()
         self.db.refresh(user)
         return user
+    
+    def update_password(self, user_id, hashed_password: str) -> User | None:
+        user = self.get_by_id(user_id)
+        if not user:
+            return None
+        user.password = hashed_password
+        self.db.commit()
+        self.db.refresh(user)
+        return user

@@ -49,6 +49,11 @@ def register_page(request: Request):
     return templates.TemplateResponse("auth/register.html", {"request": request})
 
 
+@app.get("/change-password", response_class=HTMLResponse)
+def change_password_page(request: Request, user=Depends(get_current_user_from_cookie)):
+    return templates.TemplateResponse("auth/change_password.html", {"request": request})
+
+
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request, user=Depends(get_current_user_from_cookie)):
     return templates.TemplateResponse("transactions/show.html", {"request": request})
