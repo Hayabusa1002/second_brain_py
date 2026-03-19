@@ -16,6 +16,7 @@ class UserStatus(str, enum.Enum):
     banned = "banned"
 
 class UserRole(str, enum.Enum):
+    admin   = "admin"
     owner   = "owner"
     partner = "partner"
 
