@@ -178,7 +178,7 @@ Build an application to manage shared finances as a couple, allowing users to:
 ### User management
 
 - [x] Registration sets user status to `pending` — no redirect to home
-- [ ] Post-registration screen: "Your account is pending approval"
+- [x] Post-registration screen: "Your account is pending approval"
 - [ ] `admin` role as approver of new users
 - [ ] Admin view with pending users list (Approve / Reject)
 - [ ] Password change (validate current password + new password)
