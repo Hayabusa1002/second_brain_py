@@ -1,7 +1,7 @@
 import { login } from "../api/auth.js"
-import { setToken, getToken } from "./guard.js"
+import { isAuthenticated } from "./guard.js"
 
-if (getToken()) {
+if (await isAuthenticated()) {
     window.location.href = "/"
 }
 
@@ -13,8 +13,7 @@ document
         const form = event.target
 
         try {
-            const data = await login(form.email.value, form.password.value)
-            setToken(data.access_token)
+            await login(form.email.value, form.password.value)
             window.location.href = "/"
         } catch (error) {
             document.getElementById("error-msg").textContent = error.message
