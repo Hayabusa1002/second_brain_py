@@ -16,6 +16,9 @@ document
             await login(form.email.value, form.password.value)
             window.location.href = "/"
         } catch (error) {
-            document.getElementById("error-msg").textContent = error.message
+            const msg = error.message === "Pending request"
+                ? "Your account is pending approval by an administrator."
+                : error.message
+            document.getElementById("error-msg").textContent = msg
         }
     })

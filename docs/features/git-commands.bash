@@ -4,7 +4,7 @@
 
 git config --global user.name "Your Name"       # set global username
 git config --global user.email "you@email.com"  # set global email
-git config --list                                # list all config values
+git config --list                               # list all config values
 
 ## Repositoryw
 
@@ -47,13 +47,13 @@ git push --force-with-lease             # safe force push
 
 ## Tags
 
-git tag                                         # list all tags
+git tag                                        # list all tags
 git tag -a v1.0 -m "message"                   # create annotated tag at HEAD
 git tag -a v1.0 <commit-hash> -m "message"     # create tag at specific commit
-git tag -d v1.0                                 # delete tag locally
-git push origin v1.0                            # push specific tag
-git push origin --delete v1.0                   # delete tag remotely
-git fetch --tags                                # fetch all remote tags
+git tag -d v1.0                                # delete tag locally
+git push origin v1.0                           # push specific tag
+git push origin --delete v1.0                  # delete tag remotely
+git fetch --tags                               # fetch all remote tags
 
 ## Undoing Changes
 

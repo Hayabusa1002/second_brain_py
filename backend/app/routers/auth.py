@@ -27,19 +27,10 @@ def me(current_user = Depends(get_current_user)):
 @router.post("/auth/register", status_code=201)
 def register(
     data: UserCreate,
-    response: Response,
     controller: AuthController = Depends(get_controller)
 ):
-    result = controller.register(data)
-    response.set_cookie(
-        key="access_token",
-        value=result.access_token,
-        httponly=True,
-        secure=settings.APP_ENV == "production",
-        samesite="lax",
-        max_age=settings.ACCESS_TOKEN_EXPIRE_DAYS * 86400,
-    )
-    return {"user": result.user}
+    user = controller.register(data)
+    return {"user": user}
 
 
 @router.post("/auth/login")

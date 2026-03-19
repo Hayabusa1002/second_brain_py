@@ -1,7 +1,7 @@
 import { register } from "../api/auth.js"
-import { setToken, getToken } from "./guard.js"
+import { isAuthenticated } from "./guard.js"
 
-if (getToken()) {
+if (await isAuthenticated()) {
     window.location.href = "/"
 }
 
@@ -13,9 +13,9 @@ document
         const form = event.target
 
         try {
-            const data = await register(form.name.value, form.email.value, form.password.value)
-            setToken(data.access_token)
-            window.location.href = "/"
+            await register(form.name.value, form.email.value, form.password.value)
+            form.style.display = "none"
+            document.getElementById("pending-msg").style.display = "block"
         } catch (error) {
             document.getElementById("error-msg").textContent = error.message
         }
