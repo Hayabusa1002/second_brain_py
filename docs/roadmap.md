@@ -181,8 +181,7 @@ Build an application to manage shared finances as a couple, allowing users to:
 - [x] Post-registration screen: "Your account is pending approval"
 - [x] `admin` role as approver of new users
 - [x] Admin view with pending users list (Approve / Reject)
-- [ ] Password change (validate current password + new password)
-- [ ] Forgot password flow via email
+- [x] Password change (validate current password + new password)
 
 ### Accounts module
 
