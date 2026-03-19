@@ -1,17 +1,11 @@
-import { getToken, removeToken, logout } from "../auth/guard.js"
-
 export async function fetchWithAuth(url, options = {}) {
-    const token   = getToken()
-    const headers = { ...options.headers }
-
-    if (token) {
-        headers["Authorization"] = `Bearer ${token}`
-    }
-
-    const response = await fetch(url, { ...options, headers })
+    const response = await fetch(url, {
+        ...options,
+        credentials: "include",  // sends httpOnly cookie automatically
+        headers: { ...options.headers }
+    })
 
     if (response.status === 401) {
-        removeToken()
         window.location.href = "/login"
         return null
     }
@@ -21,5 +15,11 @@ export async function fetchWithAuth(url, options = {}) {
 
 const logoutBtn = document.getElementById("btn-logout")
 if (logoutBtn) {
-    logoutBtn.addEventListener("click", logout)
+    logoutBtn.addEventListener("click", async () => {
+        await fetch("/api/auth/logout", {
+            method: "POST",
+            credentials: "include"
+        })
+        window.location.href = "/login"
+    })
 }

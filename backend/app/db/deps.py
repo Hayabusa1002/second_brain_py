@@ -1,14 +1,10 @@
 from typing import Generator
-from uuid import UUID
 from sqlalchemy.orm import Session
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, HTTPException, Cookie, status
 from jose import JWTError
 
 from app.db.session import SessionLocal
 from app.core.security import decode_token
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 def get_db() -> Generator:
@@ -20,24 +16,17 @@ def get_db() -> Generator:
 
 
 def get_current_user(
-    token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
+    access_token: str | None = Cookie(default=None)
 ):
     from app.repositories.user_repository import UserRepository
-
+    if not access_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
     try:
-        user_id = decode_token(token)
+        user_id = decode_token(access_token)
     except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-        )
-    
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
     user = UserRepository(db).get_by_id(user_id)
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-        )
-    
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     return user
