@@ -1,10 +1,14 @@
 export async function isAuthenticated() {
-    const res = await fetch("/api/auth/me", { credentials: "include" })
-    return res.ok
+    try {
+        const res = await fetch("/api/auth/me", { credentials: "include" })
+        return res.ok
+    } catch {
+        return false
+    }
 }
 
 export async function requireAuth() {
-    if (!await isAuthenticated()) {
+    if (!(await isAuthenticated())) {
         window.location.href = "/login"
     }
 }
