@@ -1,28 +1,7 @@
-{% extends "base.html" %}
-
-{% block title %}Accounts – Second Brain{% endblock %}
-
-{% block nav %}
-    {% include "features/navbar.html" %}
-{% endblock %}
-
-{% block content %}
-<div class="page-header mb-3">
-    <div class="row align-items-center">
-        <div class="col">
-            <h2 class="page-title">Accounts</h2>
-        </div>
-        <div class="col-auto">
-            <button id="btn-new" class="btn btn-primary">+ New account</button>
-        </div>
-    </div>
-</div>
-
-<div class="card mb-3">
+<!-- Table -->
+<div class="card">
     <div class="card-body">
-        <div id="empty-msg" style="display:none">
-            <p class="text-secondary">No accounts yet.</p>
-        </div>
+        <p id="empty-msg" class="text-secondary" style="display:none">No accounts yet.</p>
         <div class="table-responsive" id="table-wrapper">
             <table class="table table-vcenter card-table">
                 <thead>
@@ -39,35 +18,7 @@
     </div>
 </div>
 
-<!-- Form card (hidden by default) -->
-<div id="form-card" class="card" style="display:none">
-    <div class="card-header">
-        <h3 class="card-title" id="form-title">New account</h3>
-    </div>
-    <div class="card-body">
-        <form id="account-form">
-            <input type="hidden" id="account-id" />
-            <div class="mb-3">
-                <label class="form-label">Name</label>
-                <input id="field-name" type="text" class="form-control" required />
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Type</label>
-                <select id="field-type" class="form-select">
-                    <option value="individual">Individual</option>
-                    <option value="shared">Shared</option>
-                </select>
-            </div>
-            <p id="form-error" class="text-danger small"></p>
-            <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary">Save</button>
-                <button type="button" id="btn-cancel" class="btn btn-outline-secondary">Cancel</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Row template (hidden) -->
+<!-- Row template -->
 <template id="row-template">
     <tr>
         <td class="col-name fw-bold"></td>
@@ -79,8 +30,3 @@
         </td>
     </tr>
 </template>
-{% endblock %}
-
-{% block scripts %}
-<script type="module" src="/static/js/accounts/show.js"></script>
-{% endblock %}

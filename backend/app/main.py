@@ -68,4 +68,4 @@ def index(request: Request, user=Depends(get_current_user_from_cookie)):
 
 @app.get("/accounts", response_class=HTMLResponse)
 def accounts_page(request: Request, user=Depends(get_current_user_from_cookie)):
-    return templates.TemplateResponse("accounts/show.html", {"request": request})
+    return templates.TemplateResponse("accounts/main.html", {"request": request})

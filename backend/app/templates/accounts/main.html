@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Accounts – Second Brain{% endblock %}
+
+{% block nav %}
+    {% include "features/navbar.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="page-header mb-3">
+    <div class="row align-items-center">
+        <div class="col">
+            <h2 class="page-title">Accounts</h2>
+        </div>
+        <div class="col-auto">
+            <button id="btn-add" class="btn btn-primary btn-sm">+ New account</button>
+        </div>
+    </div>
+</div>
+
+{% include "accounts/edit.html" %}
+{% include "accounts/show.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="/static/js/accounts/main.js"></script>
+{% endblock %}

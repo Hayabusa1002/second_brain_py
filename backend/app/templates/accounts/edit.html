@@ -1,0 +1,27 @@
+<!-- Add / Edit form (hidden by default) -->
+<div id="edit-card" class="card mb-3" style="display:none">
+    <div class="card-header">
+        <h3 class="card-title" id="edit-card-title">New account</h3>
+    </div>
+    <div class="card-body">
+        <form id="account-form">
+            <input type="hidden" id="account-id" />
+            <div class="mb-3">
+                <label class="form-label">Name</label>
+                <input id="field-name" type="text" class="form-control" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Type</label>
+                <select id="field-type" class="form-select">
+                    <option value="individual">Individual</option>
+                    <option value="shared">Shared</option>
+                </select>
+            </div>
+            <p id="edit-error" class="text-danger small"></p>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Save</button>
+                <button type="button" id="btn-edit-cancel" class="btn btn-outline-secondary">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
