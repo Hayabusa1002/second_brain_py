@@ -7,7 +7,6 @@ from pathlib import Path
 
 from app.routers import transactions, categories, accounts, auth, admin
 from app.core.security import get_current_user_from_cookie
-from app.db.deps import get_current_user
 from app.models.user import UserRole
 
 app = FastAPI()
@@ -50,22 +49,34 @@ def register_page(request: Request):
 
 
 @app.get("/access-requests", response_class=HTMLResponse)
-def admin_access_requests(request: Request, current_user=Depends(get_current_user)):
-    if current_user.role != UserRole.admin:
+def admin_access_requests(request: Request, user=Depends(get_current_user_from_cookie)):
+    if user.role != UserRole.admin:
         return RedirectResponse("/")
-    return templates.TemplateResponse("auth/access_requests.html", {"request": request})
+    return templates.TemplateResponse("auth/access_requests.html", {
+        "request": request,
+        "user": user
+    })
 
 
 @app.get("/change-password", response_class=HTMLResponse)
 def change_password_page(request: Request, user=Depends(get_current_user_from_cookie)):
-    return templates.TemplateResponse("auth/change_password.html", {"request": request})
+    return templates.TemplateResponse("auth/change_password.html", {
+            "request": request,
+            "user": user
+        })
 
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request, user=Depends(get_current_user_from_cookie)):
-    return templates.TemplateResponse("transactions/main.html", {"request": request})
+    return templates.TemplateResponse("transactions/main.html", {
+        "request": request,
+        "user": user
+    })
 
 
 @app.get("/accounts", response_class=HTMLResponse)
 def accounts_page(request: Request, user=Depends(get_current_user_from_cookie)):
-    return templates.TemplateResponse("accounts/main.html", {"request": request})
+    return templates.TemplateResponse("accounts/main.html", {
+            "request": request,
+            "user": user
+        })

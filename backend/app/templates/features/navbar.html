@@ -18,7 +18,9 @@
         <!-- Collapsible nav links -->
         <div class="collapse navbar-collapse" id="navbar-menu">
             <div class="navbar-nav flex-row order-md-last ms-auto gap-2">
-                <a href="/access-requests" class="nav-link">Access requests</a>
+                {% if user and user.role.value == "admin" %}
+                <a href="/admin/access-requests" class="nav-link">Access requests</a>
+                {% endif %}
 
                 <a href="/change-password" class="nav-link">Change password</a>
 
