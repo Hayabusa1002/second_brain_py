@@ -1,0 +1,37 @@
+<!-- Add / Edit form (hidden by default) -->
+<div id="user-edit-card" class="card mb-3" style="display:none">
+    <div class="card-header">
+        <h3 class="card-title" id="user-edit-card-title">New user</h3>
+    </div>
+    <div class="card-body">
+        <form id="user-form">
+            <input type="hidden" id="user-id" />
+            <div class="mb-3">
+                abel class="form-label">Name</label>
+                <input id="user-field-name" type="text" class="form-control" required />
+            </div>
+            <div class="mb-3">
+                abel class="form-label">Email</label>
+                <input id="user-field-email" type="email" class="form-control" required />
+            </div>
+            <div class="mb-3">
+                abel class="form-label">Password</label>
+                <input id="user-field-password" type="password" class="form-control" />
+                <small class="text-secondary">Leave blank to keep current password (edit only)</small>
+            </div>
+            <div class="mb-3">
+                abel class="form-label">Role</label>
+                <select id="user-field-role" class="form-select">
+                    <option value="partner">Partner</option>
+                    <option value="owner">Owner</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <p id="user-edit-error" class="text-danger small"></p>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Save</button>
+                <button type="button" id="btn-user-edit-cancel" class="btn btn-outline-secondary">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>

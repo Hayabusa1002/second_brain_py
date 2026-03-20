@@ -20,6 +20,8 @@
             <div class="navbar-nav flex-row order-md-last ms-auto gap-2">
                 {% if user and user.role.value == "admin" %}
                 <a href="/access-requests" class="nav-link">Access requests</a>
+                
+                <a href="/users" class="nav-link">Users</a>
                 {% endif %}
 
                 <a href="/change-password" class="nav-link">Change password</a>

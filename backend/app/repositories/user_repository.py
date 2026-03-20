@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.models.user import User, UserStatus
 
+
 class UserRepository:
 
     def __init__(self, db: Session):
@@ -14,19 +15,21 @@ class UserRepository:
 
     def get_by_id(self, user_id: UUID) -> Optional[User]:
         return self.db.query(User).filter(User.id == user_id).first()
-    
+
+    def get_all(self) -> list[User]:
+        return self.db.query(User).order_by(User.created_at.desc()).all()
+
     def get_active(self):
-        from app.models.user import UserStatus
         return self.db.query(User).filter(User.status == UserStatus.active).all()
+
+    def get_pending(self) -> list[User]:
+        return self.db.query(User).filter(User.status == UserStatus.pending).all()
 
     def add(self, user: User) -> User:
         self.db.add(user)
         self.db.commit()
         self.db.refresh(user)
         return user
-    
-    def get_pending(self) -> list[User]:
-        return self.db.query(User).filter(User.status == UserStatus.pending).all()
 
     def update_status(self, user_id, status: UserStatus) -> User | None:
         user = self.get_by_id(user_id)
@@ -36,12 +39,24 @@ class UserRepository:
         self.db.commit()
         self.db.refresh(user)
         return user
-    
+
     def update_password(self, user_id, hashed_password: str) -> User | None:
         user = self.get_by_id(user_id)
         if not user:
             return None
         user.password = hashed_password
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+
+    def update(self, user_id: UUID, name: str | None, role) -> User | None:
+        user = self.get_by_id(user_id)
+        if not user:
+            return None
+        if name is not None:
+            user.name = name
+        if role is not None:
+            user.role = role
         self.db.commit()
         self.db.refresh(user)
         return user

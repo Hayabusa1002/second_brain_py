@@ -80,3 +80,12 @@ def accounts_page(request: Request, user=Depends(get_current_user_from_cookie)):
             "request": request,
             "user": user
         })
+
+@app.get("/users", response_class=HTMLResponse)
+def users_page(request: Request, user=Depends(get_current_user_from_cookie)):
+    if user.role != UserRole.admin:
+        return RedirectResponse("/")
+    return templates.TemplateResponse("users/main.html", {
+        "request": request,
+        "user": user,
+    })

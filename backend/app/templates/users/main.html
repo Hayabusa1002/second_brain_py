@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Users – Second Brain{% endblock %}
+
+{% block nav %}
+    {% include "features/navbar.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="page-header mb-3">
+    <div class="row align-items-center">
+        <div class="col">
+            <h2 class="page-title">Users</h2>
+        </div>
+        <div class="col-auto">
+            <button id="btn-add" class="btn btn-primary btn-sm">+ New user</button>
+        </div>
+    </div>
+</div>
+
+{% include "users/show.html" %}
+{% include "users/edit.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="/static/js/users/main.js"></script>
+{% endblock %}
