@@ -1,11 +1,20 @@
-import { requireAuth } from "../auth/guard.js"
 import { importTransactions } from "../api/imports.js"
 
-requireAuth()
+export function initImport({ onImported }) {
+    const importCard   = document.getElementById("import-card")
+    const importForm   = document.getElementById("import-form")
+    const importResult = document.getElementById("import-result")
+    const resultSummary = document.getElementById("result-summary")
+    const errorSection = document.getElementById("error-section")
+    const errorTable   = document.getElementById("error-table")
 
-document
-    .getElementById("import-form")
-    .addEventListener("submit", async (event) => {
+    document.getElementById("btn-import-cancel").addEventListener("click", () => {
+        importCard.style.display  = "none"
+        importResult.style.display = "none"
+        importForm.reset()
+    })
+
+    importForm.addEventListener("submit", async (event) => {
         event.preventDefault()
 
         const file = document.getElementById("file-input").files[0]
@@ -14,31 +23,27 @@ document
         try {
             const result = await importTransactions(file)
             renderResult(result)
+            await onImported()
         } catch (error) {
             console.error(error)
             alert(`Error: ${error.message}`)
         }
     })
 
-function renderResult(result) {
-    const section      = document.getElementById("result")
-    const summary      = document.getElementById("result-summary")
-    const errorSection = document.getElementById("error-section")
-    const errorTbody   = document.querySelector("#error-table tbody")
+    function renderResult(result) {
+        importResult.style.display = "block"
+        resultSummary.textContent  = `Total rows: ${result.total} | Imported: ${result.imported} | Errors: ${result.errors.length}`
+        errorTable.innerHTML       = ""
 
-    section.style.display = "block"
-    summary.textContent   = `Total rows: ${result.total} | Imported: ${result.imported} | Errors: ${result.errors.length}`
-
-    errorTbody.innerHTML = ""
-
-    if (result.errors.length > 0) {
-        errorSection.style.display = "block"
-        result.errors.forEach(e => {
-            const row = document.createElement("tr")
-            row.innerHTML = `<td>${e.row}</td><td>${e.error}</td>`
-            errorTbody.appendChild(row)
-        })
-    } else {
-        errorSection.style.display = "none"
+        if (result.errors.length > 0) {
+            errorSection.style.display = "block"
+            result.errors.forEach(e => {
+                const row = document.createElement("tr")
+                row.innerHTML = `<td>${e.row}</td><td>${e.error}</td>`
+                errorTable.appendChild(row)
+            })
+        } else {
+            errorSection.style.display = "none"
+        }
     }
 }

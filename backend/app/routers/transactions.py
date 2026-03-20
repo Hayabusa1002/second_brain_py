@@ -73,6 +73,15 @@ def list_transactions(
     )
 
 
+@router.post("/transactions", response_model=TransactionResponse)
+def create_transaction(
+    data: TransactionCreate,
+    controller: TransactionController = Depends(get_controller),
+    current_user=Depends(get_current_user)
+):
+    return controller.create_transaction(data, current_user)
+
+
 @router.get("/transactions/{transaction_id}", response_model=TransactionResponse)
 def get_transaction(
     transaction_id: UUID,
@@ -85,10 +94,25 @@ def get_transaction(
     return tx
 
 
-@router.post("/transactions", response_model=TransactionResponse)
-def create_transaction(
+@router.put("/transactions/{transaction_id}", response_model=TransactionResponse)
+def update_transaction(
+    transaction_id: UUID,
     data: TransactionCreate,
     controller: TransactionController = Depends(get_controller),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
-    return controller.create_transaction(data, current_user)
+    tx = controller.update_transaction(transaction_id, data, user_id=current_user.id)
+    if tx is None:
+        raise NotFoundError("Transaction")
+    return tx
+
+
+@router.delete("/transactions/{transaction_id}", status_code=204)
+def delete_transaction(
+    transaction_id: UUID,
+    controller: TransactionController = Depends(get_controller),
+    current_user=Depends(get_current_user),
+):
+    deleted = controller.delete_transaction(transaction_id, user_id=current_user.id)
+    if not deleted:
+        raise NotFoundError("Transaction")

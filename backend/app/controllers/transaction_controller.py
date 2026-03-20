@@ -13,9 +13,6 @@ class TransactionController:
         self.service = service
         self.db = db
 
-    def create_transaction(self, data, current_user):
-        return self.service.create_transaction(data, current_user.id)
-
     def list_transactions(
         self,
         user_id: UUID,
@@ -38,3 +35,18 @@ class TransactionController:
             account_repo=AccountRepository(self.db)
         )
         return import_service.import_file(content, file.filename.lower(), current_user.id)
+    
+    def create_transaction(self, data, current_user):
+        return self.service.create_transaction(data, current_user.id)
+    
+    def update_transaction(self, transaction_id: UUID, data, user_id: UUID):
+        tx = self.service.get_transaction(transaction_id, user_id)
+        if tx is None:
+            return None
+        return self.service.update_transaction(transaction_id, data)
+
+    def delete_transaction(self, transaction_id: UUID, user_id: UUID) -> bool:
+        tx = self.service.get_transaction(transaction_id, user_id)
+        if tx is None:
+            return False
+        return self.service.delete_transaction(transaction_id)

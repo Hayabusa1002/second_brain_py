@@ -63,17 +63,7 @@ def change_password_page(request: Request, user=Depends(get_current_user_from_co
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request, user=Depends(get_current_user_from_cookie)):
-    return templates.TemplateResponse("transactions/show.html", {"request": request})
-
-
-@app.get("/transactions/add", response_class=HTMLResponse)
-def add_page(request: Request, user=Depends(get_current_user_from_cookie)):
-    return templates.TemplateResponse("transactions/add.html", {"request": request})
-
-
-@app.get("/transactions/import", response_class=HTMLResponse)
-def import_page(request: Request, user=Depends(get_current_user_from_cookie)):
-    return templates.TemplateResponse("transactions/import.html", {"request": request})
+    return templates.TemplateResponse("transactions/main.html", {"request": request})
 
 
 @app.get("/accounts", response_class=HTMLResponse)

@@ -1,78 +1,51 @@
-import { requireAuth } from "../auth/guard.js"
-import { getTransactions } from "../api/transactions.js"
-import { getCategories } from "../api/categories.js"
-import { getAccounts } from "../api/accounts.js"
+import { getTransactions, deleteTransaction } from "../api/transactions.js"
 
-requireAuth()
+export function initShow({ categoryMap, accountMap, onEdit }) {
+    const tbody       = document.querySelector("#transactions-table tbody")
+    const rowTemplate = document.getElementById("row-template")
 
-let categoryMap = {}
-let accountMap  = {}
+    function addRow(t) {
+        const row = rowTemplate.content.cloneNode(true).querySelector("tr")
+        row.id = `row-${t.id}`
+        row.querySelector(".col-date").textContent        = t.date
+        row.querySelector(".col-account").textContent     = accountMap[t.account_id]   ?? "-"
+        row.querySelector(".col-type").textContent        = t.type
+        row.querySelector(".col-category").textContent    = categoryMap[t.category_id] ?? "-"
+        row.querySelector(".col-amount").textContent      = t.amount
+        row.querySelector(".col-description").textContent = t.description ?? ""
 
-async function loadFiltersData() {
-    const [categories, accounts] = await Promise.all([getCategories(), getAccounts()])
-
-    categoryMap = Object.fromEntries(categories.map(c => [c.id, c.name]))
-    accountMap  = Object.fromEntries(accounts.map(a => [a.id, a.name]))
-
-    const filterCategory = document.getElementById("filter-category")
-    categories.forEach(c => {
-        const opt = document.createElement("option")
-        opt.value = c.id
-        opt.textContent = c.name
-        filterCategory.appendChild(opt)
-    })
-
-    const filterAccount = document.getElementById("filter-account")
-    accounts.forEach(a => {
-        const opt = document.createElement("option")
-        opt.value = a.id
-        opt.textContent = `${a.name} (${a.type})`
-        filterAccount.appendChild(opt)
-    })
-}
-
-async function loadTransactions(filters = {}) {
-    const tbody = document.querySelector("#transactions-table tbody")
-    tbody.innerHTML = ""
-
-    const transactions = await getTransactions(filters)
-
-    transactions.forEach(t => {
-        const row = document.createElement("tr")
-        row.innerHTML = `
-            <td>${t.date}</td>
-            <td>${accountMap[t.account_id]  ?? "-"}</td>
-            <td>${t.type}</td>
-            <td>${categoryMap[t.category_id] ?? "-"}</td>
-            <td>${t.amount}</td>
-            <td>${t.description ?? ""}</td>
-        `
+        row.querySelector(".btn-edit").addEventListener("click",   () => onEdit(t))
+        row.querySelector(".btn-delete").addEventListener("click", () => remove(t.id))
         tbody.appendChild(row)
-    })
-}
-
-function getFilters() {
-    return {
-        account_id:  document.getElementById("filter-account").value  || undefined,
-        type:        document.getElementById("filter-type").value     || undefined,
-        category_id: document.getElementById("filter-category").value || undefined,
     }
-}
 
-document.getElementById("btn-filter")
-    .addEventListener("click", () => loadTransactions(getFilters()))
+    async function loadTransactions(filters = {}) {
+        tbody.innerHTML = ""
+        const transactions = await getTransactions(filters)
+        transactions.forEach(addRow)
+    }
 
-document.getElementById("btn-clear")
-    .addEventListener("click", () => {
+    async function remove(id) {
+        if (!confirm("Delete this transaction?")) return
+        await deleteTransaction(id)
+        document.getElementById(`row-${id}`).remove()
+    }
+
+    function getFilters() {
+        return {
+            account_id:  document.getElementById("filter-account").value  || undefined,
+            type:        document.getElementById("filter-type").value     || undefined,
+            category_id: document.getElementById("filter-category").value || undefined,
+        }
+    }
+
+    document.getElementById("btn-filter").addEventListener("click", () => loadTransactions(getFilters()))
+    document.getElementById("btn-clear").addEventListener("click", () => {
         document.getElementById("filter-account").value  = ""
-        document.getElementById("filter-type").value     = ""
+        document.getElementById("filter-type").value    = ""
         document.getElementById("filter-category").value = ""
         loadTransactions()
     })
 
-async function init() {
-    await loadFiltersData()
-    loadTransactions()
+    return { loadTransactions }
 }
-
-init()

@@ -1,54 +1,40 @@
-{% extends "base.html" %}
-
-{% block title %}Transactions – Second Brain{% endblock %}
-
-{% block nav %}
-    {% include "features/navbar.html" %}
-{% endblock %}
-
-{% block content %}
-    <div class="page-header mb-3">
-        <div class="row align-items-center">
-            <div class="col">
-                <h2 class="page-title">Transactions</h2>
+<!-- Filters -->
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row g-2">
+            <div class="col-md-3">
+                <label class="form-label">Account</label>
+                <select id="filter-account" class="form-select">
+                    <option value="">All accounts</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Type</label>
+                <select id="filter-type" class="form-select">
+                    <option value="">All</option>
+                    <option value="income">Income</option>
+                    <option value="expense">Expense</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Category</label>
+                <select id="filter-category" class="form-select">
+                    <option value="">All</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end gap-2">
+                <button id="btn-filter" type="button" class="btn btn-primary w-50">Filter</button>
+                <button id="btn-clear"  type="button" class="btn btn-outline-secondary w-50">Clear</button>
             </div>
         </div>
     </div>
+</div>
 
-    <div class="card mb-3">
-        <div class="card-body">
-            <div class="row g-2">
-                <div class="col-md-3">
-                    <label class="form-label">Account</label>
-                    <select id="filter-account" class="form-select">
-                        <option value="">All accounts</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Type</label>
-                    <select id="filter-type" class="form-select">
-                        <option value="">All</option>
-                        <option value="income">Income</option>
-                        <option value="expense">Expense</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Category</label>
-                    <select id="filter-category" class="form-select">
-                        <option value="">All</option>
-                    </select>
-                </div>
-                <div class="col-md-3 d-flex align-items-end gap-2">
-                    <button id="btn-filter" type="button" class="btn btn-primary w-50">Filter</button>
-                    <button id="btn-clear" type="button" class="btn btn-outline-secondary w-50">Clear</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card">
+<!-- Table -->
+<div class="card">
+    <div class="card-body">
         <div class="table-responsive">
-            <table id="transactions-table" class="table table-vcenter card-table">
+            <table class="table table-vcenter card-table" id="transactions-table">
                 <thead>
                     <tr>
                         <th>Date</th>
@@ -57,14 +43,27 @@
                         <th>Category</th>
                         <th>Amount</th>
                         <th>Description</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody></tbody>
             </table>
         </div>
     </div>
-{% endblock %}
+</div>
 
-{% block scripts %}
-    <script type="module" src="/static/js/transactions/show.js"></script>
-{% endblock %}
+<!-- Row template -->
+<template id="row-template">
+    <tr>
+        <td class="col-date"></td>
+        <td class="col-account text-secondary"></td>
+        <td class="col-type"></td>
+        <td class="col-category text-secondary"></td>
+        <td class="col-amount fw-bold"></td>
+        <td class="col-description text-secondary"></td>
+        <td class="text-end">
+            <button class="btn btn-sm btn-outline-secondary me-1 btn-edit">Edit</button>
+            <button class="btn btn-sm btn-danger btn-delete">Delete</button>
+        </td>
+    </tr>
+</template>
