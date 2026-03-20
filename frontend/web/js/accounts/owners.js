@@ -1,17 +1,17 @@
 import { fetchWithAuth } from "../api/base.js"
 
 export function initOwners({ onUpdated }) {
-    const card              = document.getElementById("owners-card")
-    const title             = document.getElementById("owners-card-title")
-    const accountId         = document.getElementById("owners-account-id")
-    const select            = document.getElementById("owners-user-select")
-    const list              = document.getElementById("owners-list")
-    const emptyMsg          = document.getElementById("owners-empty")
-    const btnAssign         = document.getElementById("btn-assign-owner")
-    const btnCancel         = document.getElementById("btn-owners-cancel")
-    const rowTemplate       = document.getElementById("owner-row-template")
-    const defaultOptTpl     = document.getElementById("owner-select-default-template")
-    const optionTpl         = document.getElementById("owner-select-option-template")
+    const card             = document.getElementById("owners-card")
+    const title            = document.getElementById("owners-card-title")
+    const accountId        = document.getElementById("owners-account-id")
+    const select           = document.getElementById("owners-user-select")
+    const list             = document.getElementById("owners-list")
+    const emptyMsg         = document.getElementById("owners-empty")
+    const btnAssign        = document.getElementById("btn-assign-owner")
+    const btnCancel        = document.getElementById("btn-owners-cancel")
+    const rowTemplate      = document.getElementById("owner-row-template")
+    const defaultOptTpl    = document.getElementById("owner-select-default-template")
+    const optionTpl        = document.getElementById("owner-select-option-template")
 
     let currentAccount = null
 
@@ -24,8 +24,16 @@ export function initOwners({ onUpdated }) {
         title.textContent = `Owners — ${account.name}`
         card.style.display = "block"
         card.scrollIntoView({ behavior: "smooth" })
-        await loadUsers()
-        renderOwners(account.owners)
+
+        const isIndividual = account.type === "individual"
+        btnAssign.style.display  = isIndividual ? "none" : ""
+        select.style.display     = isIndividual ? "none" : ""
+
+        if (!isIndividual) {
+            await loadUsers()
+        }
+
+        renderOwners(account.owners, isIndividual)
     }
 
     function hide() {
@@ -54,23 +62,30 @@ export function initOwners({ onUpdated }) {
         })
     }
 
-    function addOwnerRow(owner) {
+    function addOwnerRow(owner, isIndividual = false) {
         const fragment = rowTemplate.content.cloneNode(true)
         const row = fragment.querySelector("div")
         row.id = `owner-row-${owner.id}`
         row.querySelector(".owner-name").textContent = owner.name
-        row.querySelector(".btn-remove-owner").addEventListener("click", () => remove(owner.id))
+
+        const btnRemove = row.querySelector(".btn-remove-owner")
+        if (isIndividual) {
+            btnRemove.style.display = "none"
+        } else {
+            btnRemove.addEventListener("click", () => remove(owner.id))
+        }
+
         list.appendChild(fragment)
     }
 
-    function renderOwners(owners) {
+    function renderOwners(owners, isIndividual = false) {
         list.innerHTML = ""
         if (!owners || !owners.length) {
             emptyMsg.style.display = "block"
             return
         }
         emptyMsg.style.display = "none"
-        owners.forEach(addOwnerRow)
+        owners.forEach(o => addOwnerRow(o, isIndividual))
     }
 
     async function assign() {
@@ -83,16 +98,12 @@ export function initOwners({ onUpdated }) {
         )
         if (!res || !res.ok) return
 
-        const selectedOption = select.options[select.selectedIndex]
         const owner = { id: userId, name: select.options[select.selectedIndex].textContent }
-
         currentAccount.owners = currentAccount.owners || []
         currentAccount.owners.push(owner)
-
         addOwnerRow(owner)
         emptyMsg.style.display = "none"
         resetSelect()
-
         if (onUpdated) onUpdated(currentAccount)
     }
 
@@ -107,11 +118,9 @@ export function initOwners({ onUpdated }) {
 
         currentAccount.owners = currentAccount.owners.filter(o => o.id !== userId)
         document.getElementById(`owner-row-${userId}`)?.remove()
-
         if (!currentAccount.owners.length) {
             emptyMsg.style.display = "block"
         }
-
         if (onUpdated) onUpdated(currentAccount)
     }
 

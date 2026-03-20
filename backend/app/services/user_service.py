@@ -1,9 +1,14 @@
 import uuid
 from typing import Optional
+
 from app.models.user import User, UserStatus, UserRole
+from app.models.account import Account, AccountType
+from app.models.account_owner import account_owners
 from app.repositories.user_repository import UserRepository
 from app.core.security import hash_password
 
+
+PERSONAL_ACCOUNT_NAME = "Personal"
 
 class UserService:
 
@@ -23,6 +28,28 @@ class UserService:
             email=data.email,
             password=hash_password(data.password),
             status=UserStatus.pending,
-            role=UserRole.partner
+            role=UserRole.partner,
         )
-        return self.repository.add(user)
+        db = self.repository.db
+        db.add(user)
+        db.flush()
+
+        personal_account = Account(
+            id=uuid.uuid4(),
+            name=PERSONAL_ACCOUNT_NAME,
+            type=AccountType.individual,
+            created_by=user.id,
+        )
+        db.add(personal_account)
+        db.flush()
+
+        db.execute(
+            account_owners.insert().values(
+                account_id=personal_account.id,
+                user_id=user.id,
+            )
+        )
+
+        db.commit()
+        db.refresh(user)
+        return user

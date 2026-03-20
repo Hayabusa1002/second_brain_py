@@ -108,7 +108,10 @@ def assign_owner(
     repo = AccountRepository(db)
     if not repo.get_by_id(account_id):
         raise HTTPException(status_code=404, detail="Account not found")
-    repo.assign_owner(account_id, user_id)
+    try:
+        repo.assign_owner(account_id, user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return {"detail": "Owner assigned"}
 
 
@@ -124,5 +127,8 @@ def unassign_owner(
     repo = AccountRepository(db)
     if not repo.get_by_id(account_id):
         raise HTTPException(status_code=404, detail="Account not found")
-    repo.unassign_owner(account_id, user_id)
+    try:
+        repo.unassign_owner(account_id, user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return {"detail": "Owner removed"}

@@ -63,6 +63,12 @@ class AccountRepository:
         return True
 
     def assign_owner(self, account_id: UUID, user_id: UUID) -> None:
+        account = self.get_by_id(account_id)
+        if not account:
+            raise ValueError("Account not found")
+        if account.type == AccountType.individual:
+            raise ValueError("No se pueden añadir owners adicionales a una cuenta individual")
+
         exists = self.db.execute(
             account_owners.select().where(
                 account_owners.c.account_id == account_id,
@@ -75,7 +81,14 @@ class AccountRepository:
             )
             self.db.commit()
 
+
     def unassign_owner(self, account_id: UUID, user_id: UUID) -> None:
+        account = self.get_by_id(account_id)
+        if not account:
+            raise ValueError("Account not found")
+        if account.type == AccountType.individual:
+            raise ValueError("No se pueden modificar owners de una cuenta individual")
+
         self.db.execute(
             account_owners.delete().where(
                 account_owners.c.account_id == account_id,
