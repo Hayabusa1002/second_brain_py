@@ -49,7 +49,7 @@ export function initOwners({ onUpdated }) {
         data.users.forEach(u => {
             const opt = optionTpl.content.cloneNode(true).querySelector("option")
             opt.value = u.id
-            opt.textContent = u.username
+            opt.textContent = u.name
             select.appendChild(opt)
         })
     }
@@ -58,7 +58,7 @@ export function initOwners({ onUpdated }) {
         const fragment = rowTemplate.content.cloneNode(true)
         const row = fragment.querySelector("div")
         row.id = `owner-row-${owner.id}`
-        row.querySelector(".owner-username").textContent = owner.name
+        row.querySelector(".owner-name").textContent = owner.name
         row.querySelector(".btn-remove-owner").addEventListener("click", () => remove(owner.id))
         list.appendChild(fragment)
     }
