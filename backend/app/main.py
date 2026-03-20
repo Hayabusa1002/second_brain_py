@@ -5,7 +5,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
 from pathlib import Path
 
-from app.routers import transactions, categories, accounts, auth, admin
+from app.routers import transactions, categories, accounts, users, auth
 from app.db.deps import get_current_user_from_cookie
 from app.models.user import UserRole
 
@@ -19,7 +19,7 @@ app.include_router(auth.router,         prefix="/api")
 app.include_router(transactions.router, prefix="/api")
 app.include_router(categories.router,   prefix="/api")
 app.include_router(accounts.router,     prefix="/api")
-app.include_router(admin.router,        prefix="/api")
+app.include_router(users.router,        prefix="/api")
 
 # Static files
 app.mount(

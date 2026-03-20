@@ -53,7 +53,7 @@ export function initShow({ onEdit, onBan }) {
 
     async function loadUsers() {
         tbody.innerHTML = ""
-        const res = await fetchWithAuth("/api/admin/users")
+        const res = await fetchWithAuth("/api/users")
         if (!res || !res.ok) return
         const data = await res.json()
         data.users.forEach(addRow)

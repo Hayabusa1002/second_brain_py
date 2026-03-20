@@ -27,7 +27,7 @@ const { loadUsers, addRow, checkEmpty } = initShow({
 
 async function confirmBan(user) {
     if (!confirm(`Ban user "${user.name}"? They won't be able to log in.`)) return
-    const res = await fetch(`/api/admin/users/${user.id}/ban`, { method: "POST" })
+    const res = await fetch(`/api/users/${user.id}/ban`, { method: "POST" })
     if (!res.ok) return
     const row = document.getElementById(`user-row-${user.id}`)
     if (row) {

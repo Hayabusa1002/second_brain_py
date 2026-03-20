@@ -7,7 +7,7 @@ from app.models.user import UserStatus
 from app.repositories.user_repository import UserRepository
 from app.schemas.user import UserResponse, UserUpdate
 
-router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(require_admin)])
+router = APIRouter(prefix="/users", tags=["users"], dependencies=[Depends(require_admin)])
 
 
 @router.get("/users")

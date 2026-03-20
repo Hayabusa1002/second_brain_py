@@ -51,7 +51,7 @@ export function initEdit({ onSaved }) {
 
         const isEdit = userId.value !== ""
 
-        const url    = isEdit ? `/api/admin/users/${userId.value}` : "/api/admin/users"
+        const url    = isEdit ? `/api/users/${userId.value}` : "/api/users"
         const method = isEdit ? "PUT" : "POST"
         const body   = isEdit
             ? { name: fieldName.value, role: fieldRole.value }
