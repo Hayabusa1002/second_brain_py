@@ -1,0 +1,39 @@
+<!-- Owners panel -->
+<div id="owners-card" class="card mb-3" style="display:none">
+    <div class="card-header d-flex align-items-center">
+        <h3 class="card-title me-auto" id="owners-card-title">Owners</h3>
+        <button type="button" id="btn-owners-cancel" class="btn btn-outline-secondary btn-sm">Close</button>
+    </div>
+    <div class="card-body">
+        <input type="hidden" id="owners-account-id" />
+
+        <div class="mb-3">
+            <label class="form-label">Assign user</label>
+            <div class="d-flex gap-2">
+                <select id="owners-user-select" class="form-select"></select>
+                <button type="button" id="btn-assign-owner" class="btn btn-primary">Assign</button>
+            </div>
+        </div>
+
+        <p id="owners-empty" class="text-secondary small" style="display:none">No owners assigned.</p>
+        <div id="owners-list"></div>
+    </div>
+</div>
+
+<!-- Owner row template -->
+<template id="owner-row-template">
+    <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
+        <span class="owner-name"></span>
+        <button class="btn btn-sm btn-danger btn-remove-owner">Remove</button>
+    </div>
+</template>
+
+<!-- Select default option template -->
+<template id="owner-select-default-template">
+    <option value="">Select a user...</option>
+</template>
+
+<!-- Select option template -->
+<template id="owner-select-option-template">
+    <option></option>
+</template>

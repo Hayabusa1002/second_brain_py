@@ -19,6 +19,15 @@ def list_pending(
     return {"users": [UserResponse.model_validate(u) for u in users]}
 
 
+@router.get("/users/active")
+def list_active_users(
+    db: Session = Depends(get_db),
+    _=Depends(require_admin),
+):
+    users = UserRepository(db).get_active()
+    return {"users": [UserResponse.model_validate(u) for u in users]}
+
+
 @router.post("/users/{user_id}/approve")
 def approve_user(
     user_id: UUID,

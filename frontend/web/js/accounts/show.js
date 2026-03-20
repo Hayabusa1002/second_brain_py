@@ -1,10 +1,10 @@
 import { fetchWithAuth } from "../api/base.js"
 
-export function initShow({ onEdit }) {
-    const tbody       = document.getElementById("accounts-tbody")
+export function initShow({ onEdit, onManageOwners }) {
+    const tbody        = document.getElementById("accounts-tbody")
     const tableWrapper = document.getElementById("table-wrapper")
-    const emptyMsg    = document.getElementById("empty-msg")
-    const rowTemplate = document.getElementById("row-template")
+    const emptyMsg     = document.getElementById("empty-msg")
+    const rowTemplate  = document.getElementById("row-template")
 
     function checkEmpty() {
         const hasRows = tbody.querySelector("tr")
@@ -15,10 +15,13 @@ export function initShow({ onEdit }) {
     function addRow(account) {
         const row = rowTemplate.content.cloneNode(true).querySelector("tr")
         row.id = `row-${account.id}`
-        row.querySelector(".col-name").textContent      = account.name
-        row.querySelector(".col-type span").textContent = account.type
-        row.querySelector(".col-date").textContent      = new Date(account.created_at).toLocaleDateString()
 
+        row.querySelector(".col-name").textContent        = account.name
+        row.querySelector(".col-type span").textContent   = account.type
+        row.querySelector(".col-date").textContent        = new Date(account.created_at).toLocaleDateString()
+        row.querySelector(".col-owners").textContent      = account.owners?.map(o => o.name).join(", ") || "—"
+
+        row.querySelector(".btn-owners").addEventListener("click", () => onManageOwners(account))
         row.querySelector(".btn-edit").addEventListener("click",   () => onEdit(account))
         row.querySelector(".btn-delete").addEventListener("click", () => remove(account.id))
 

@@ -1,8 +1,10 @@
 import uuid
 from typing import List, Optional
 from uuid import UUID
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.models.account import Account, AccountType
+from app.models.account_owner import account_owners
+
 
 class AccountRepository:
 
@@ -10,10 +12,20 @@ class AccountRepository:
         self.db = db
 
     def list(self, user_id: UUID) -> List[Account]:
-        return self.db.query(Account).filter(Account.created_by == user_id).all()
+        return (
+            self.db.query(Account)
+            .options(joinedload(Account.owners))
+            .filter(Account.created_by == user_id)
+            .all()
+        )
 
     def get_by_id(self, account_id: UUID) -> Optional[Account]:
-        return self.db.query(Account).filter(Account.id == account_id).first()
+        return (
+            self.db.query(Account)
+            .options(joinedload(Account.owners))
+            .filter(Account.id == account_id)
+            .first()
+        )
 
     def get_by_name(self, name: str) -> Optional[Account]:
         return self.db.query(Account).filter(Account.name.ilike(name.strip())).first()
@@ -49,3 +61,25 @@ class AccountRepository:
         self.db.delete(account)
         self.db.commit()
         return True
+
+    def assign_owner(self, account_id: UUID, user_id: UUID) -> None:
+        exists = self.db.execute(
+            account_owners.select().where(
+                account_owners.c.account_id == account_id,
+                account_owners.c.user_id == user_id,
+            )
+        ).first()
+        if not exists:
+            self.db.execute(
+                account_owners.insert().values(account_id=account_id, user_id=user_id)
+            )
+            self.db.commit()
+
+    def unassign_owner(self, account_id: UUID, user_id: UUID) -> None:
+        self.db.execute(
+            account_owners.delete().where(
+                account_owners.c.account_id == account_id,
+                account_owners.c.user_id == user_id,
+            )
+        )
+        self.db.commit()

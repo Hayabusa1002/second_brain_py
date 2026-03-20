@@ -14,6 +14,10 @@ class UserRepository:
 
     def get_by_id(self, user_id: UUID) -> Optional[User]:
         return self.db.query(User).filter(User.id == user_id).first()
+    
+    def get_active(self):
+        from app.models.user import UserStatus
+        return self.db.query(User).filter(User.status == UserStatus.active).all()
 
     def add(self, user: User) -> User:
         self.db.add(user)
