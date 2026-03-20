@@ -187,7 +187,7 @@ Build an application to manage shared finances as a couple, allowing users to:
 
 - [x] Create, edit and delete accounts
 - [x] Manage `account_owners` (assign / unassign)
-- [ ] Create, edit and ban users view
+- [x] Create, edit and ban users view
 
 ### Authentication and security
 
