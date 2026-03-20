@@ -1,5 +1,5 @@
 import { fetchWithAuth } from "../api/base.js"
-import { requireAuth } from "./auth/guard.js"
+import { requireAuth } from "./guard.js"
 
 await requireAuth()
 
@@ -30,7 +30,7 @@ function addRow(user) {
 }
 
 async function action(id, type) {
-    const res = await fetchWithAuth(`/api/admin/users/${id}/${type}`, { method: "POST" })
+    const res = await fetchWithAuth(`/api/users/${id}/${type}`, { method: "POST" })
     if (res && res.ok) {
         document.getElementById(`row-${id}`).remove()
         checkEmpty()
@@ -38,7 +38,7 @@ async function action(id, type) {
 }
 
 async function load() {
-    const res = await fetchWithAuth("/api/admin/users/pending")
+    const res = await fetchWithAuth("/api/users/pending")
     if (!res) return
 
     const data = await res.json()
