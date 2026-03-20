@@ -53,7 +53,7 @@ def register_page(request: Request):
 def admin_access_requests(request: Request, current_user=Depends(get_current_user)):
     if current_user.role != UserRole.admin:
         return RedirectResponse("/")
-    return templates.TemplateResponse("admin/access_requests.html", {"request": request})
+    return templates.TemplateResponse("auth/access_requests.html", {"request": request})
 
 
 @app.get("/change-password", response_class=HTMLResponse)

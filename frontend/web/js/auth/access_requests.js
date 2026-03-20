@@ -1,5 +1,5 @@
 import { fetchWithAuth } from "../api/base.js"
-import { requireAuth } from "../auth/guard.js"
+import { requireAuth } from "./auth/guard.js"
 
 await requireAuth()
 
