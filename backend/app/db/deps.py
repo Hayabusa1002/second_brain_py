@@ -1,6 +1,7 @@
 from typing import Generator
 from sqlalchemy.orm import Session
-from fastapi import Depends, HTTPException, Cookie, status
+from fastapi import Depends, HTTPException, Cookie, status, Request
+from fastapi.responses import RedirectResponse
 from jose import JWTError
 
 from app.db.session import SessionLocal
@@ -18,7 +19,7 @@ def get_db() -> Generator:
 
 def get_current_user(
     db: Session = Depends(get_db),
-    access_token: str | None = Cookie(default=None)
+    access_token: str | None = Cookie(default=None),
 ):
     from app.repositories.user_repository import UserRepository
     if not access_token:
@@ -30,6 +31,24 @@ def get_current_user(
     user = UserRepository(db).get_by_id(user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    return user
+
+
+def get_current_user_from_cookie(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    from app.repositories.user_repository import UserRepository
+    token = request.cookies.get("access_token")
+    if not token:
+        return RedirectResponse("/login")
+    try:
+        user_id = decode_token(token)
+    except Exception:
+        return RedirectResponse("/login")
+    user = UserRepository(db).get_by_id(user_id)
+    if not user:
+        return RedirectResponse("/login")
     return user
 
 
