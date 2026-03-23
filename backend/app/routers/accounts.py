@@ -64,6 +64,7 @@ def create_account(
     repo = AccountRepository(db)
     account = repo.create(name=data.name, type=data.type, created_by=user.id)
     repo.assign_owner(account.id, user.id)
+    db.refresh(account)
     return account
 
 

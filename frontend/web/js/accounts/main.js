@@ -12,7 +12,6 @@ const { openEdit } = initEdit({
             row.querySelector(".col-name").textContent        = account.name
             row.querySelector(".col-type span").textContent   = account.type
         } else {
-            account.owners = []
             addRow(account)
             checkEmpty()
         }

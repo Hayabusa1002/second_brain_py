@@ -66,16 +66,19 @@ class AccountRepository:
         account = self.get_by_id(account_id)
         if not account:
             raise ValueError("Account not found")
-        if account.type == AccountType.individual:
-            raise ValueError("No se pueden añadir owners adicionales a una cuenta individual")
 
-        exists = self.db.execute(
+        existing_owners = self.db.execute(
             account_owners.select().where(
-                account_owners.c.account_id == account_id,
-                account_owners.c.user_id == user_id,
+                account_owners.c.account_id == account_id
             )
-        ).first()
-        if not exists:
+        ).fetchall()
+
+        # Individual accounts can only have one owner
+        if account.type == AccountType.individual and existing_owners:
+            raise ValueError("Individual accounts can only have one owner")
+
+        already_assigned = any(str(row.user_id) == str(user_id) for row in existing_owners)
+        if not already_assigned:
             self.db.execute(
                 account_owners.insert().values(account_id=account_id, user_id=user_id)
             )
