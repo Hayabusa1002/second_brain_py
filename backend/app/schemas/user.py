@@ -55,5 +55,6 @@ class PasswordChange(BaseModel):
 
 class TokenResponse(BaseModel):
     access_token: str
-    token_type:   str = "bearer"
-    user:         UserResponse
+    refresh_token: str
+    token_type: str = "bearer"
+    user: UserResponse

@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 
 from app.services.user_service import UserService
-from app.core.security import verify_password, create_access_token
+from app.core.security import verify_password, create_access_token, create_refresh_token
 from app.schemas.user import TokenResponse, UserResponse
 from app.models.user import UserStatus
 
@@ -24,5 +24,11 @@ class AuthService:
             raise HTTPException(status_code=403, detail="Pending request")
         if user.status != UserStatus.active:
             raise HTTPException(status_code=403, detail="Account disabled")
-        token = create_access_token(user.id)
-        return TokenResponse(access_token=token, user=UserResponse.model_validate(user))
+        
+        access_token = create_access_token(user.id)
+        refresh_token = create_refresh_token(user.id)
+        return TokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            user=UserResponse.model_validate(user)
+        )

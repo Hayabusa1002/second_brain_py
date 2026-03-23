@@ -6,9 +6,8 @@ class Settings(BaseSettings):
 
     # Security
     SECRET_KEY: str
-    ACCESS_TOKEN_EXPIRE_DAYS: int = 7
-
-    # App
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     APP_ENV: str = "development"
     DEBUG: bool = True
 

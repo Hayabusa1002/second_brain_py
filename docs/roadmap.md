@@ -191,7 +191,7 @@ Build an application to manage shared finances as a couple, allowing users to:
 
 ### Authentication and security
 
-- [ ] Automatic refresh tokens to avoid manual expirations
+- [x] Automatic refresh tokens to avoid manual expirations
 - [ ] OAuth with Google / GitHub as login option
 
 ### User experience
