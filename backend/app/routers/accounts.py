@@ -61,11 +61,10 @@ def create_account(
 ):
     if user.role not in (UserRole.admin, UserRole.owner):
         raise HTTPException(status_code=403, detail="Not allowed")
-    return AccountRepository(db).create(
-        name=data.name,
-        type=data.type,
-        created_by=user.id,
-    )
+    repo = AccountRepository(db)
+    account = repo.create(name=data.name, type=data.type, created_by=user.id)
+    repo.assign_owner(account.id, user.id)
+    return account
 
 
 @router.put("/accounts/{account_id}", response_model=AccountResponse)
