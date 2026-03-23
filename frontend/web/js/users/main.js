@@ -1,40 +1,55 @@
 import { requireAuth } from "../auth/guard.js"
-import { initShow }    from "./show.js"
-import { initEdit }    from "./edit.js"
+import { initShow } from "./show.js"
+import { initEdit } from "./edit.js"
 
 await requireAuth()
 
 const { openEdit } = initEdit({
-    onSaved: (user, isEdit) => {
-        if (isEdit) {
-            const row = document.getElementById(`user-row-${user.id}`)
-            if (row) {
-                row.querySelector(".col-name").textContent  = user.name
-                row.querySelector(".col-email").textContent = user.email
-                row.querySelector(".col-role span").textContent = user.role
-            }
-        } else {
-            addRow(user)
-            checkEmpty()
-        }
+  onSaved: (user, isEdit) => {
+    if (isEdit) {
+      const row = document.getElementById(`user-row-${user.id}`)
+      if (row) {
+        row.querySelector(".col-name").textContent = user.name
+        row.querySelector(".col-email").textContent = user.email
+        row.querySelector(".col-role span").textContent = user.role
+      }
+    } else {
+      addRow(user)
+      checkEmpty()
     }
+  }
 })
 
 const { loadUsers, addRow, checkEmpty } = initShow({
-    onEdit: (u) => openEdit(u),
-    onBan:  (u) => confirmBan(u),
+  onEdit: (u) => openEdit(u),
+  onToggleBan: (u, row) => toggleBan(u, row),
 })
 
-async function confirmBan(user) {
-    if (!confirm(`Ban user "${user.name}"? They won't be able to log in.`)) return
-    const res = await fetch(`/api/users/${user.id}/ban`, { method: "POST" })
-    if (!res.ok) return
-    const row = document.getElementById(`user-row-${user.id}`)
-    if (row) {
-        row.querySelector(".col-status span").textContent  = "banned"
-        row.querySelector(".col-status span").className   = "badge bg-red-lt"
-        row.querySelector(".btn-ban").disabled = true
-    }
+async function toggleBan(user, row) {
+  const btn = row.querySelector(".btn-toggle-ban")
+  const isBanned = btn.textContent.trim() === "Unban"
+  const action = isBanned ? "unban" : "ban"
+  const msg = isBanned
+    ? `Unban "${user.name}"? They will be able to log in again.`
+    : `Ban "${user.name}"? They won't be able to log in.`
+
+  if (!confirm(msg)) return
+
+  const res = await fetch(`/api/users/${user.id}/${action}`, { method: "POST" })
+  if (!res.ok) return
+
+  const statusBadge = row.querySelector(".col-status span")
+  if (isBanned) {
+    statusBadge.textContent = "active"
+    statusBadge.className = "badge bg-green-lt"
+    btn.textContent = "Ban"
+    btn.classList.replace("btn-warning", "btn-danger")
+  } else {
+    statusBadge.textContent = "banned"
+    statusBadge.className = "badge bg-red-lt"
+    btn.textContent = "Unban"
+    btn.classList.replace("btn-danger", "btn-warning")
+  }
 }
 
 document.getElementById("btn-add").addEventListener("click", () => openEdit(null))

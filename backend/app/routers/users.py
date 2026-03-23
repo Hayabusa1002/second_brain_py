@@ -66,3 +66,11 @@ def ban_user(user_id: UUID, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return {"user": UserResponse.model_validate(user)}
+
+
+@router.post("/users/{user_id}/unban")
+def unban_user(user_id: UUID, db: Session = Depends(get_db)):
+    user = UserRepository(db).update_status(user_id, UserStatus.active)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"user": UserResponse.model_validate(user)}
