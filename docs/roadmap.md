@@ -196,7 +196,7 @@ Build an application to manage shared finances as a couple, allowing users to:
 
 ### User experience
 
-- [ ] Offline mode with Service Workers
+- [x] Offline mode with Service Workers
 - [ ] Global search with filters (type, tag, date)
 - [x] Dark / Light mode
 

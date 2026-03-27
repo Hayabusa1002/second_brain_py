@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, Depends
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.exceptions import RequestValidationError
@@ -42,12 +42,25 @@ app.include_router(categories.router, prefix="/api")
 app.include_router(accounts.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
 
+
+# Service-Worker-Allowed: before load the StaticFiles from mount()
+@app.get("/static/sw.js")
+async def service_worker():
+    sw_path = BASE_DIR.parent / "frontend/web/sw.js"
+    return FileResponse(
+        sw_path,
+        media_type="application/javascript",
+        headers={"Service-Worker-Allowed": "/"},
+    )
+
+
 # Static files
 app.mount(
     "/static",
     StaticFiles(directory=BASE_DIR.parent / "frontend/web"),
     name="static"
 )
+
 
 # Jinja2 templates
 templates = Jinja2Templates(directory=BASE_DIR / "app/templates")
