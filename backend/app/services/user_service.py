@@ -28,6 +28,9 @@ class UserService:
             status=UserStatus.pending,
         )
         return self.user_repo.add(user)
+    
+    def delete_user(self, user_id: UUID) -> bool:
+        return self.repository.delete(user_id)
 
     def create_oauth_user(self, email: str, name: str, provider: str, oauth_id: str) -> User:
         return self.user_repo.create_oauth(

@@ -1,6 +1,6 @@
 import { fetchWithAuth } from "../api/base.js"
 
-export function initShow({ onEdit, onToggleBan }) {
+export function initShow({ onEdit, onToggleBan, onDelete }) {
   const tbody = document.getElementById("users-tbody")
   const tableWrapper = document.getElementById("users-table-wrapper")
   const emptyMsg = document.getElementById("users-empty-msg")
@@ -52,6 +52,8 @@ export function initShow({ onEdit, onToggleBan }) {
 
     btnToggleBan.addEventListener("click", () => onToggleBan(user, row))
     row.querySelector(".btn-edit").addEventListener("click", () => onEdit(user))
+    row.querySelector(".btn-delete").addEventListener("click", () => onDelete(user, row))
+
     tbody.appendChild(row)
   }
 

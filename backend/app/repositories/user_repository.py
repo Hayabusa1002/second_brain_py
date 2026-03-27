@@ -1,8 +1,10 @@
 from typing import Optional
 from uuid import UUID
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.user import User, UserStatus, UserRole
+from app.models.account import Account
 
 
 class UserRepository:
@@ -62,6 +64,30 @@ class UserRepository:
         self.db.commit()
         self.db.refresh(user)
         return user
+
+    def delete(self, user_id: UUID) -> bool:
+        user = self.get_by_id(user_id)
+        if not user:
+            return False
+
+        # Individual accounts
+        sole_owned = (
+            self.db.query(Account)
+            .join(Account.owners)
+            .filter(User.id == user_id)
+            .having(func.count(User.id) == 1)
+            .group_by(Account.id)
+            .all()
+        )
+        for account in sole_owned:
+            self.db.delete(account)
+
+        # Shared accounts
+        user.accounts.clear()
+
+        self.db.delete(user)
+        self.db.commit()
+        return True
 
     def create_oauth(self, email: str, name: str, provider: str, oauth_id: str) -> User:
         user = User(

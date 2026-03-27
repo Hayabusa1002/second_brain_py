@@ -23,6 +23,7 @@ const { openEdit } = initEdit({
 const { loadUsers, addRow, checkEmpty } = initShow({
   onEdit: (u) => openEdit(u),
   onToggleBan: (u, row) => toggleBan(u, row),
+  onDelete: (u, row) => deleteUser(u, row), 
 })
 
 async function toggleBan(user, row) {
@@ -49,6 +50,20 @@ async function toggleBan(user, row) {
     statusBadge.className = "badge bg-red-lt"
     btn.textContent = "Unban"
     btn.classList.replace("btn-danger", "btn-warning")
+  }
+}
+
+async function deleteUser(user, row) {                                          // ← nuevo
+  if (!confirm(`¿Eliminar a "${user.name}" y todas sus cuentas y transacciones?\nEsta acción no se puede deshacer.`)) return
+
+  const res = await fetch(`/api/users/${user.id}`, { method: "DELETE" })
+
+  if (res.status === 204) {
+    row.remove()
+    checkEmpty()
+  } else {
+    const err = await res.json().catch(() => ({}))
+    alert(err.detail || "Error al eliminar usuario")
   }
 }
 

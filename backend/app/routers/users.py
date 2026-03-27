@@ -2,8 +2,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.db.deps import get_db, require_admin
-from app.models.user import UserStatus
+from app.db.deps import get_db, require_admin, get_current_user
+from app.models.user import User, UserStatus
 from app.repositories.user_repository import UserRepository
 from app.schemas.user import UserResponse, UserUpdate
 
@@ -74,3 +74,16 @@ def unban_user(user_id: UUID, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return {"user": UserResponse.model_validate(user)}
+
+
+@router.delete("/users/{user_id}", status_code=204)
+def delete_user(
+    user_id: UUID,
+    current_user: User = Depends(get_current_user), 
+    db: Session = Depends(get_db),
+):
+    if current_user.id == user_id:
+        raise HTTPException(status_code=400, detail="Cannot delete your own account")
+    deleted = UserRepository(db).delete(user_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="User not found")

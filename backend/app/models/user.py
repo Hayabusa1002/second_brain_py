@@ -36,4 +36,9 @@ class User(Base):
 
     # back_populates must match exactly the property name on the other model
     accounts = relationship("Account", secondary="account_owners", back_populates="owners")
-    transactions = relationship("Transaction", back_populates="creator", foreign_keys="Transaction.created_by")
+    transactions = relationship(
+        "Transaction",
+        back_populates="creator",
+        foreign_keys="Transaction.created_by",
+        cascade="all, delete-orphan"
+    )
