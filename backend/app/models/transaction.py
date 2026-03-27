@@ -24,6 +24,7 @@ class Transaction(Base):
     date        = Column(Date, nullable=False)
     created_at  = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
+    # back_populates must match exactly the property name on the other model
     account  = relationship("Account", back_populates="transactions")
     category = relationship("Category", back_populates="transactions")
-    creator  = relationship("User")
+    creator = relationship("User", back_populates="transactions", foreign_keys=[created_by])

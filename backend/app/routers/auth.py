@@ -141,8 +141,7 @@ async def google_login(request: Request):
 @router.get("/auth/google/callback")
 async def google_callback(
     request: Request,
-    response: Response,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), 
 ):
     token = await oauth.google.authorize_access_token(request)
     user_info = token.get("userinfo")
@@ -155,8 +154,10 @@ async def google_callback(
     )
     if result is None:
         return RedirectResponse("/login?status=pending", status_code=302)
-    _set_auth_cookies(response, result)
-    return RedirectResponse("/", status_code=302)
+
+    redirect = RedirectResponse("/", status_code=302)
+    _set_auth_cookies(redirect, result)
+    return redirect
 
 
 # ── GitHub ───────────────────────────────────────────────────────────────────
@@ -171,8 +172,7 @@ async def github_login(request: Request):
 @router.get("/auth/github/callback")
 async def github_callback(
     request: Request,
-    response: Response,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), 
 ):
     token = await oauth.github.authorize_access_token(request)
     resp = await oauth.github.get("user", token=token)
@@ -197,5 +197,7 @@ async def github_callback(
     )
     if result is None:
         return RedirectResponse("/login?status=pending", status_code=302)
-    _set_auth_cookies(response, result)
-    return RedirectResponse("/", status_code=302)
+
+    redirect = RedirectResponse("/", status_code=302)
+    _set_auth_cookies(redirect, result)
+    return redirect

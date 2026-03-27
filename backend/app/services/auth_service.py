@@ -13,7 +13,11 @@ class AuthService:
     def register(self, data) -> UserResponse:
         if self.user_service.get_by_email(data.email):
             raise HTTPException(status_code=400, detail="Email already registered")
-        user = self.user_service.create_user(data)
+        user = self.user_service.create_user(
+            name=data.name,
+            email=data.email,
+            password=data.password,
+        )
         return UserResponse.model_validate(user)
 
     def login(self, data) -> TokenResponse:

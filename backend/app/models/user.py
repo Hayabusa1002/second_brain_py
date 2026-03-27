@@ -1,9 +1,9 @@
-import uuid
-import enum
-from datetime import datetime, UTC
 from sqlalchemy import Column, String, Enum as SAEnum, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
+import uuid
+import enum
+from datetime import datetime, UTC
 
 from app.db.base import Base
 
@@ -34,5 +34,6 @@ class User(Base):
     oauth_id = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
-    transactions = relationship("Transaction", back_populates="user")
-    accounts = relationship("Account", back_populates="created_by_user", foreign_keys="Account.created_by")
+    # back_populates must match exactly the property name on the other model
+    accounts = relationship("Account", secondary="account_owners", back_populates="owners")
+    transactions = relationship("Transaction", back_populates="creator", foreign_keys="Transaction.created_by")
