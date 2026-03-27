@@ -1,5 +1,6 @@
 from typing import List, Optional
 from uuid import UUID
+from datetime import date
 
 from fastapi import APIRouter, Query, UploadFile, File, HTTPException, Depends
 from fastapi.responses import PlainTextResponse
@@ -62,6 +63,9 @@ def list_transactions(
     type: Optional[str] = Query(default=None),
     category_id: Optional[UUID] = Query(default=None),
     account_id: Optional[UUID] = Query(default=None),
+    date_from: Optional[date] = Query(default=None), 
+    date_to: Optional[date] = Query(default=None), 
+    q: Optional[str] = Query(default=None), 
     controller: TransactionController = Depends(get_controller),
     current_user=Depends(get_current_user),
 ):
@@ -69,7 +73,10 @@ def list_transactions(
         type=type,
         category_id=category_id,
         account_id=account_id,
-        user_id=current_user.id
+        date_from=date_from,
+        date_to=date_to,
+        q=q,
+        user_id=current_user.id,
     )
 
 
