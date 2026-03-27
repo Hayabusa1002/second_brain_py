@@ -3,12 +3,14 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.exceptions import RequestValidationError
+from starlette.middleware.sessions import SessionMiddleware
 from pathlib import Path
 from jose import JWTError
 
 from app.routers import transactions, categories, accounts, users, auth
 from app.db.deps import get_current_user_from_cookie
 from app.models.user import UserRole
+from app.core.config import settings
 from app.core.exceptions import (
     AppError,
     UnauthenticatedRedirect,
@@ -21,21 +23,24 @@ from app.core.exceptions import (
 
 app = FastAPI()
 
+# Required by Authlib to store OAuth state between redirect and callback
+app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Exception handlers
-app.add_exception_handler(UnauthenticatedRedirect,unauthenticated_redirect_handler)
+app.add_exception_handler(UnauthenticatedRedirect, unauthenticated_redirect_handler)
 app.add_exception_handler(AppError, app_error_handler)
 app.add_exception_handler(RequestValidationError, validation_error_handler)
 app.add_exception_handler(JWTError, jwt_error_handler)
 app.add_exception_handler(Exception, generic_error_handler)
 
 # API routers
-app.include_router(auth.router,         prefix="/api")
+app.include_router(auth.router, prefix="/api")
 app.include_router(transactions.router, prefix="/api")
-app.include_router(categories.router,   prefix="/api")
-app.include_router(accounts.router,     prefix="/api")
-app.include_router(users.router,        prefix="/api")
+app.include_router(categories.router, prefix="/api")
+app.include_router(accounts.router, prefix="/api")
+app.include_router(users.router, prefix="/api")
 
 # Static files
 app.mount(

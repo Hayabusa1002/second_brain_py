@@ -2,7 +2,7 @@ from typing import Optional
 from uuid import UUID
 from sqlalchemy.orm import Session
 
-from app.models.user import User, UserStatus
+from app.models.user import User, UserStatus, UserRole
 
 
 class UserRepository:
@@ -57,6 +57,31 @@ class UserRepository:
             user.name = name
         if role is not None:
             user.role = role
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+
+    def create_oauth(self, email: str, name: str, provider: str, oauth_id: str) -> User:
+        user = User(
+            name=name,
+            email=email,
+            password=None,
+            status=UserStatus.pending,
+            role=UserRole.partner,
+            oauth_provider=provider,
+            oauth_id=oauth_id,
+        )
+        self.db.add(user)
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+
+    def update_oauth(self, user_id: UUID, provider: str, oauth_id: str) -> User | None:
+        user = self.get_by_id(user_id)
+        if not user:
+            return None
+        user.oauth_provider = provider
+        user.oauth_id = oauth_id
         self.db.commit()
         self.db.refresh(user)
         return user

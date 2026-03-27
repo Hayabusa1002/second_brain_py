@@ -1,55 +1,41 @@
-import uuid
-from typing import Optional
-
-from app.models.user import User, UserStatus, UserRole
-from app.models.account import Account, AccountType
-from app.models.account_owner import account_owners
+from uuid import UUID
 from app.repositories.user_repository import UserRepository
+from app.models.user import User, UserStatus, UserRole
 from app.core.security import hash_password
-
+from app.core.exceptions import NotFoundError
 
 PERSONAL_ACCOUNT_NAME = "Personal"
 
+
 class UserService:
+    
+    def __init__(self, user_repo: UserRepository):
+        self.user_repo = user_repo
 
-    def __init__(self, repository: UserRepository):
-        self.repository = repository
+    def get_by_email(self, email: str) -> User | None:
+        return self.user_repo.get_by_email(email)
 
-    def get_by_email(self, email: str) -> Optional[User]:
-        return self.repository.get_by_email(email)
+    def get_by_id(self, user_id: UUID) -> User | None:
+        return self.user_repo.get_by_id(user_id)
 
-    def get_by_id(self, user_id: uuid.UUID) -> Optional[User]:
-        return self.repository.get_by_id(user_id)
-
-    def create_user(self, data) -> User:
+    def create_user(self, name: str, email: str, password: str, role: UserRole = UserRole.partner) -> User:
+        hashed = hash_password(password)
         user = User(
-            id=uuid.uuid4(),
-            name=data.name,
-            email=data.email,
-            password=hash_password(data.password),
+            name=name,
+            email=email,
+            password=hashed,
+            role=role,
             status=UserStatus.pending,
-            role=UserRole.partner,
         )
-        db = self.repository.db
-        db.add(user)
-        db.flush()
+        return self.user_repo.add(user)
 
-        personal_account = Account(
-            id=uuid.uuid4(),
-            name=PERSONAL_ACCOUNT_NAME,
-            type=AccountType.individual,
-            created_by=user.id,
-        )
-        db.add(personal_account)
-        db.flush()
-
-        db.execute(
-            account_owners.insert().values(
-                account_id=personal_account.id,
-                user_id=user.id,
-            )
+    def create_oauth_user(self, email: str, name: str, provider: str, oauth_id: str) -> User:
+        return self.user_repo.create_oauth(
+            email=email,
+            name=name,
+            provider=provider,
+            oauth_id=oauth_id,
         )
 
-        db.commit()
-        db.refresh(user)
-        return user
+    def update_oauth(self, user_id: UUID, provider: str, oauth_id: str) -> User | None:
+        return self.user_repo.update_oauth(user_id, provider, oauth_id)
