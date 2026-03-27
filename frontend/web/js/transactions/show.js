@@ -33,17 +33,24 @@ export function initShow({ categoryMap, accountMap, onEdit }) {
 
     function getFilters() {
         return {
-            account_id:  document.getElementById("filter-account").value  || undefined,
-            type:        document.getElementById("filter-type").value     || undefined,
-            category_id: document.getElementById("filter-category").value || undefined,
+            account_id:  document.getElementById("filter-account").value    || undefined,
+            type:        document.getElementById("filter-type").value       || undefined,
+            category_id: document.getElementById("filter-category").value   || undefined,
+            q:           document.getElementById("filter-q").value          || undefined, 
+            date_from:   document.getElementById("filter-date-from").value  || undefined, 
+            date_to:     document.getElementById("filter-date-to").value    || undefined, 
         }
     }
 
     document.getElementById("btn-filter").addEventListener("click", () => loadTransactions(getFilters()))
+
     document.getElementById("btn-clear").addEventListener("click", () => {
-        document.getElementById("filter-account").value  = ""
-        document.getElementById("filter-type").value    = ""
-        document.getElementById("filter-category").value = ""
+        document.getElementById("filter-account").value   = ""
+        document.getElementById("filter-type").value      = ""
+        document.getElementById("filter-category").value  = ""
+        document.getElementById("filter-q").value         = ""
+        document.getElementById("filter-date-from").value = ""
+        document.getElementById("filter-date-to").value   = ""
         loadTransactions()
     })
 
