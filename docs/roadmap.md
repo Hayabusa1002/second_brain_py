@@ -192,13 +192,13 @@ Build an application to manage shared finances as a couple, allowing users to:
 ### Authentication and security
 
 - [x] Automatic refresh tokens to avoid manual expirations
-- [ ] OAuth with Google / GitHub as login option
+- [x] OAuth with Google / GitHub as login option
 
 ### User experience
 
 - [ ] Offline mode with Service Workers
 - [ ] Global search with filters (type, tag, date)
-- [ ] Dark / Light mode
+- [x] Dark / Light mode
 
 ### Core features
 
