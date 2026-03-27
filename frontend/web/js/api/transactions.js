@@ -5,6 +5,9 @@ export async function getTransactions(filters = {}) {
     if (filters.type)        params.append("type",        filters.type)
     if (filters.category_id) params.append("category_id", filters.category_id)
     if (filters.account_id)  params.append("account_id",  filters.account_id)
+    if (filters.q)           params.append("q",           filters.q)
+    if (filters.date_from)   params.append("date_from",   filters.date_from)
+    if (filters.date_to)     params.append("date_to",     filters.date_to)
 
     const query    = params.toString()
     const url      = query ? `/api/transactions?${query}` : "/api/transactions"
