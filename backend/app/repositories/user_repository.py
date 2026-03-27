@@ -11,7 +11,7 @@ class UserRepository:
         self.db = db
 
     def get_by_email(self, email: str) -> Optional[User]:
-        return self.db.query(User).filter(User.email == email).first()
+        return self.db.query(User).filter(User.email == email.lower().strip()).first()
 
     def get_by_id(self, user_id: UUID) -> Optional[User]:
         return self.db.query(User).filter(User.id == user_id).first()
@@ -26,6 +26,8 @@ class UserRepository:
         return self.db.query(User).filter(User.status == UserStatus.pending).all()
 
     def add(self, user: User) -> User:
+        user.email = user.email.lower().strip()
+
         self.db.add(user)
         self.db.commit()
         self.db.refresh(user)
@@ -64,7 +66,7 @@ class UserRepository:
     def create_oauth(self, email: str, name: str, provider: str, oauth_id: str) -> User:
         user = User(
             name=name,
-            email=email,
+            email=email.lower().strip(),
             password=None,
             status=UserStatus.pending,
             role=UserRole.partner,
