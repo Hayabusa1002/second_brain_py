@@ -202,7 +202,7 @@ Build an application to manage shared finances as a couple, allowing users to:
 
 ### Core features
 
-- [ ] Export content to pdf / xlsx / json
+- [x] Export content to pdf / xlsx / json
 
 ### Infrastructure v2.0
 
