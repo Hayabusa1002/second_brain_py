@@ -206,7 +206,7 @@ Build an application to manage shared finances as a couple, allowing users to:
 
 ### Infrastructure v2.0
 
-- [ ] Automated tests for critical endpoints
+- [x] Automated tests for critical endpoints
 - [ ] CI/CD with GitHub Actions
 - [ ] Automated release pipeline with `.zip`
 
