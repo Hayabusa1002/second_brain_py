@@ -54,5 +54,5 @@ export function initShow({ categoryMap, accountMap, onEdit }) {
         loadTransactions()
     })
 
-    return { loadTransactions }
+    return { loadTransactions, getFilters }
 }

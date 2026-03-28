@@ -1,9 +1,10 @@
-import { requireAuth }  from "../auth/guard.js"
+import { requireAuth } from "../auth/guard.js"
 import { getCategories } from "../api/categories.js"
-import { getAccounts }   from "../api/accounts.js"
-import { initShow }      from "./show.js"
-import { initEdit }      from "./edit.js"
-import { initImport }    from "./import.js"
+import { getAccounts } from "../api/accounts.js"
+import { initShow } from "./show.js"
+import { initEdit } from "./edit.js"
+import { initImport } from "./import.js"
+import { exportCsv, exportJson, exportXlsx, exportPdf } from "../api/export.js"
 
 await requireAuth()
 
@@ -34,7 +35,7 @@ accounts.forEach(a => {
 const { openEdit, hideEdit } = initEdit({ categories, accounts, onSaved: () => loadTransactions() })
 
 // Then init show passing openEdit already resolved
-const { loadTransactions } = initShow({ categoryMap, accountMap, onEdit: (t) => openEdit(t) })
+const { loadTransactions, getFilters: getActiveFilters } = initShow({ categoryMap, accountMap, onEdit: (t) => openEdit(t) })
 
 initImport({ onImported: () => loadTransactions() })
 
@@ -47,6 +48,27 @@ document.getElementById("btn-import").addEventListener("click", () => {
     hideEdit()
     document.getElementById("import-card").style.display = "block"
     document.getElementById("import-card").scrollIntoView({ behavior: "smooth" })
+})
+
+// Export buttons
+document.getElementById("export-csv").addEventListener("click", (e) => {
+    e.preventDefault()
+    exportCsv(getActiveFilters())
+})
+
+document.getElementById("export-json").addEventListener("click", (e) => {
+    e.preventDefault()
+    exportJson(getActiveFilters())
+})
+
+document.getElementById("export-xlsx").addEventListener("click", (e) => {
+    e.preventDefault()
+    exportXlsx(getActiveFilters())
+})
+
+document.getElementById("export-pdf").addEventListener("click", (e) => {
+    e.preventDefault()
+    exportPdf(getActiveFilters())
 })
 
 await loadTransactions()

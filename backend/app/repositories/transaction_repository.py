@@ -1,7 +1,7 @@
 from typing import List, Optional
 from uuid import UUID
 from datetime import date
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.transaction import Transaction
 
@@ -21,7 +21,11 @@ class TransactionRepository:
         date_to: Optional[date] = None,
         q: Optional[str] = None,
     ) -> List[Transaction]:
-        query = self.db.query(Transaction).filter(Transaction.created_by == user_id)
+        query = (
+            self.db.query(Transaction)
+            .options(joinedload(Transaction.account), joinedload(Transaction.category))
+            .filter(Transaction.created_by == user_id)
+        )
 
         if type:
             query = query.filter(Transaction.type == type)

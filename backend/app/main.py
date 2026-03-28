@@ -7,7 +7,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from pathlib import Path
 from jose import JWTError
 
-from app.routers import transactions, categories, accounts, users, auth
+from app.routers import transactions, categories, accounts, users, auth, export
 from app.db.deps import get_current_user_from_cookie
 from app.models.user import UserRole
 from app.core.config import settings
@@ -41,6 +41,7 @@ app.include_router(transactions.router, prefix="/api")
 app.include_router(categories.router, prefix="/api")
 app.include_router(accounts.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
+app.include_router(export.router, prefix="/api")
 
 
 # Service-Worker-Allowed: before load the StaticFiles from mount()
