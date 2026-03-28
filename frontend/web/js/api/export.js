@@ -7,18 +7,27 @@ function buildQuery(filters = {}) {
     return qs ? `?${qs}` : ""
 }
 
+function triggerDownload(url) {
+    const a = document.createElement("a")
+    a.href = url
+    a.download = ""
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+}
+
 export function exportCsv(filters = {}) {
-    window.location.href = `/api/export/csv${buildQuery(filters)}`
+    triggerDownload(`/api/export/csv${buildQuery(filters)}`)
 }
 
 export function exportJson(filters = {}) {
-    window.location.href = `/api/export/json${buildQuery(filters)}`
+    triggerDownload(`/api/export/json${buildQuery(filters)}`)
 }
 
 export function exportXlsx(filters = {}) {
-    window.location.href = `/api/export/xlsx${buildQuery(filters)}`
+    triggerDownload(`/api/export/xlsx${buildQuery(filters)}`)
 }
 
 export function exportPdf(filters = {}) {
-    window.location.href = `/api/export/pdf${buildQuery(filters)}`
+    triggerDownload(`/api/export/pdf${buildQuery(filters)}`)
 }
