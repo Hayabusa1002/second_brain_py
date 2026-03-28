@@ -197,12 +197,11 @@ Build an application to manage shared finances as a couple, allowing users to:
 ### User experience
 
 - [x] Offline mode with Service Workers
-- [ ] Global search with filters (type, tag, date)
+- [x] Global search with filters (type, tag, date)
 - [x] Dark / Light mode
 
 ### Core features
 
-- [ ] Markdown or WYSIWYG editor
 - [ ] Tags and categories for notes
 - [ ] Note linking (backlinks)
 - [ ] Export content to PDF / Markdown
