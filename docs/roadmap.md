@@ -202,8 +202,7 @@ Build an application to manage shared finances as a couple, allowing users to:
 
 ### Core features
 
-- [ ] Note linking (backlinks)
-- [ ] Export content to PDF / Markdown
+- [ ] Export content to pdf / xlsx / json
 
 ### Infrastructure v2.0
 
