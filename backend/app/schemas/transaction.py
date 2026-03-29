@@ -3,13 +3,17 @@ from datetime import date
 from decimal import Decimal
 from typing import Optional
 from pydantic import BaseModel
+
+from app.models.transaction import TransactionType
+
 class TransactionCreate(BaseModel):
     account_id:  UUID
     category_id: UUID
     amount:      Decimal
-    type:        str
+    type:        TransactionType
     date:        date
     description: Optional[str] = None
+
 class TransactionResponse(BaseModel):
     id:          UUID
     account_id:  UUID
