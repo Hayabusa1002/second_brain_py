@@ -10,9 +10,12 @@
 second_brain/
 │
 ├─ docs/
-│  ├─ roadmap.md
 │  ├─ structure.md
 │  ├─ decisions.md
+│  │
+│  ├─ roadmap/
+│  │  ├─ roadmap.md
+│  │  └─ vx.x.x.md
 │  │
 │  ├─ domain/
 │  │  ├─ entities.md
@@ -21,16 +24,12 @@ second_brain/
 │  │  └─ models.md
 │  │
 │  └─ features/
-│     ├─ bulk_import.md
-│     ├─ alembic.bash
-│     ├─ docker.bash
-│     ├─ generate_hash.py
-│     └─ secret_key.py
 │
 ├─ backend/
 │  ├─ README.md
 │  ├─ requirements.txt
 │  ├─ alembic.ini
+│  ├─ pytest.ini
 │  ├─ .venv/
 │  ├─ .env
 │  │
@@ -50,91 +49,47 @@ second_brain/
 │  │  │  └─ seed.py
 │  │  │
 │  │  ├─ models/
-│  │  │  ├─ __init__.py
-│  │  │  ├─ user.py
-│  │  │  ├─ account.py
-│  │  │  ├─ category.py
-│  │  │  ├─ transaction.py
-│  │  │  └─ account_owner.py
 │  │  │
 │  │  ├─ controllers/
-│  │  │  ├─ transaction_controller.py
-│  │  │  ├─ category_controller.py
-│  │  │  ├─ account_controller.py
-│  │  │  └─ auth_controller.py
 │  │  │
 │  │  ├─ routers/
-│  │  │  ├─ transactions.py
-│  │  │  ├─ categories.py
-│  │  │  ├─ accounts.py
-│  │  │  └─ auth.py
 │  │  │
 │  │  ├─ services/
-│  │  │  ├─ transaction_service.py
-│  │  │  ├─ balance_service.py
-│  │  │  ├─ category_service.py
-│  │  │  ├─ account_service.py
-│  │  │  ├─ import_service.py
-│  │  │  ├─ auth_service.py
-│  │  │  └─ user_service.py
 │  │  │
 │  │  ├─ repositories/
-│  │  │  ├─ transaction_repository.py
-│  │  │  ├─ category_repository.py
-│  │  │  ├─ account_repository.py
-│  │  │  └─ user_repository.py
 │  │  │
 │  │  ├─ schemas/
-│  │  │  ├─ transaction.py
-│  │  │  ├─ category.py
-│  │  │  ├─ account.py
-│  │  │  ├─ bulk_import.py
-│  │  │  └─ user.py
 │  │  │
 │  │  └─ templates/
 │  │     ├─ base.html
-│  │     │
 │  │     ├─ auth/
-│  │     │  ├─ login.html
-│  │     │  └─ register.html
-│  │     │
 │  │     ├─ transactions/
-│  │     │  ├─ show.html
-│  │     │  ├─ add.html
-│  │     │  └─ import.html
-│  │     │
 │  │     └─ features/
-│  │        └─ navbar.html
 │  │
-│  └─migrations/
-│     ├─ versions/
-│     ├─ env.py
-│     ├─ README.md
-│     └─ script.py.mako
+│  ├─ migrations/
+│  │  ├─ versions/
+│  │  ├─ env.py
+│  │  ├─ README.md
+│  │  └─ script.py.mako
+│  │
+│  └─ tests/
+│     ├─ conftest.py
+│     └─ test_xxx.py
 │
 ├─ frontend/
 │  ├─ README.md
 │  └─ web/
+│     ├─ sw.js
+│     │
 │     ├─ css/
 │     │
 │     └─ js/
 │        ├─ api/
-│        │  ├─ transactions.js
-│        │  ├─ categories.js
-│        │  ├─ accounts.js
-│        │  ├─ imports.js
-│        │  ├─ auth.js
-│        │  └─ base.js
-│        │
+│        ├─ accounts/
+│        ├─ users/
+│        ├─ transactions/
 │        ├─ auth/
-│        │  ├─ guard.js
-│        │  ├─ login.js
-│        │  └─ register.js
-│        │
-│        └─ transactions/
-│           ├─ show.js
-│           ├─ add.js
-│           └─ import.js
+│        └─ features/
 │
 ├─ .gitignore
 │
@@ -220,16 +175,6 @@ second_brain/
 
 - React / Vue
 - Reuses backend without changes
-
----
-
-## Expected evolution
-
-- v0.1 → base structure
-- v0.2 → data models
-- v0.3 → basic authentication
-- v0.4 → shared expenses
-- v1.0 → bulk import + mobile
 
 ---
 

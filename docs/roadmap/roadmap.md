@@ -12,12 +12,6 @@ Build an application to manage shared finances as a couple, allowing users to:
 - Maintain simple, clear, and private control
 - Scale gradually (web → mobile, manual → bulk)
 
-
-
-
----
-
-
 ---
 
 **Roadmap rule:** do not move to the next version until the current one is stable.
