@@ -208,7 +208,7 @@ Build an application to manage shared finances as a couple, allowing users to:
 
 - [x] Automated tests for critical endpoints
 - [x] CI/CD with GitHub Actions
-- [ ] Automated release pipeline with `.zip`
+- [x] Automated release pipeline with `.zip`
 
 ---
 
