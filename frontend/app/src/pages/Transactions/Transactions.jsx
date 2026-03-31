@@ -3,11 +3,11 @@ import { IconPlus, IconUpload } from '@tabler/icons-react'
 import client from '../../api/client'
 import Alert from '../../components/ui/Alert'
 import Table       from './Table'
-import Form        from './Form'
-import Import      from './Import'
+import Filters     from './Filters'
+import FormModal   from './FormModal'
+import ImportModal from './ImportModal'
 import ViewModal   from './ViewModal'
 import DeleteModal from './DeleteModal'
-import Filters     from './Filters'
 
 const PAGE_SIZE    = 10
 const EMPTY_FORM    = { account_id: '', category_id: '', amount: '', type: 'expense', date: '', description: '' }
@@ -174,7 +174,7 @@ export default function Transactions() {
           <button className="btn btn-primary d-flex align-items-center gap-1" onClick={openAdd}>
             <IconPlus size={16} stroke={1.5} /> Add
           </button>
-          <button className="btn btn-outline-secondary d-flex align-items-center gap-1"
+          <button className="btn btn-outline-primary d-flex align-items-center gap-1"
             onClick={() => setMode('import')}>
             <IconUpload size={16} stroke={1.5} /> Import CSV / Excel
           </button>
@@ -184,7 +184,7 @@ export default function Transactions() {
       <Alert message={error} />
 
       {(mode === 'add' || mode === 'edit') && (
-        <Form
+        <FormModal
           form={form}
           accounts={accounts}
           categories={categories}
@@ -198,7 +198,7 @@ export default function Transactions() {
       )}
 
       {mode === 'import' && (
-        <Import
+        <ImportModal
           onClose={() => setMode('table')}
           onSuccess={fetchTransactions}
         />
