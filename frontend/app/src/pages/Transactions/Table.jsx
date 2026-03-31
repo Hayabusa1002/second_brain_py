@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import {
   IconEdit, IconTrash, IconEye,
   IconArrowUpRight, IconArrowDownRight,
-  IconSearch, IconChevronLeft, IconChevronRight
+  IconChevronLeft, IconChevronRight,
+  IconDownload, IconChevronDown
 } from '@tabler/icons-react'
 
 const PAGE_SIZE = 10
@@ -24,39 +26,89 @@ export default function Table({
   selected, loading, page, totalPages, total,
   onToggleAll, onToggleOne,
   onView, onEdit, onDelete, onPageChange,
-  onSearch, searchInput, onSearchInput,
   onAdd,
 }) {
+  const [exportOpen, setExportOpen] = useState(false)
   const allIds = transactions.map(t => t.id)
   const allSelected = allIds.length > 0 && allIds.every(id => selected.includes(id))
 
+  function exportData(format) {
+    setExportOpen(false)
+    if (format === 'csv')  return exportCSV()
+    if (format === 'json') return exportJSON()
+    if (format === 'xlsx') return exportXLSX()
+  }
+
+  function exportCSV() {
+    const headers = ['date', 'account_id', 'type', 'category_id', 'amount', 'description']
+    const rows = transactions.map(t => headers.map(h => `"${t[h] ?? ''}"`).join(','))
+    download(new Blob([[headers.join(','), ...rows].join('\n')], { type: 'text/csv' }), 'transactions.csv')
+  }
+
+  function exportJSON() {
+    download(
+      new Blob([JSON.stringify(transactions, null, 2)], { type: 'application/json' }),
+      'transactions.json'
+    )
+  }
+
+  function exportXLSX() {
+    import('xlsx').then(XLSX => {
+      const ws = XLSX.utils.json_to_sheet(transactions)
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Transactions')
+      XLSX.writeFile(wb, 'transactions.xlsx')
+    })
+  }
+
+  function download(blob, filename) {
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = filename
+    a.click()
+  }
+
   return (
     <div className="card">
-      <div className="card-header d-flex align-items-center justify-content-between gap-2 flex-wrap">
-        <form className="d-flex gap-2" onSubmit={onSearch}>
-          <div className="input-group">
-            <input
-              type="text" className="form-control form-control-sm"
-              placeholder="Search transactions..."
-              value={searchInput} onChange={e => onSearchInput(e.target.value)}
-              style={{ minWidth: 220 }}
-            />
-            <button type="submit" className="btn btn-sm btn-outline-secondary">
-              <IconSearch size={14} stroke={1.5} />
-            </button>
-          </div>
-        </form>
-        {selected.length > 0 && (
-          <span className="text-secondary small">
-            {selected.length} selected
-            <button className="btn btn-sm btn-danger ms-2"
+
+      {/* Header */}
+      <div className="card-header d-flex align-items-center justify-content-between">
+        <span className="text-secondary small">
+          {selected.length > 0 ? `${selected.length} selected` : `${total} records`}
+        </span>
+        <div className="d-flex align-items-center gap-2">
+          {selected.length > 0 && (
+            <button className="btn btn-sm btn-danger d-flex align-items-center gap-1"
               onClick={() => selected.forEach(onDelete)}>
               <IconTrash size={14} stroke={1.5} /> Delete selected
             </button>
-          </span>
-        )}
+          )}
+          <div style={{ position: 'relative' }}>
+            <button
+              className="btn btn-primary d-flex align-items-center gap-1"
+              onClick={() => setExportOpen(o => !o)}>
+              <IconDownload size={16} stroke={1.5} />
+              Export <IconChevronDown size={14} stroke={1.5} />
+            </button>
+            {exportOpen && (
+              <>
+                <div style={{ position: 'fixed', inset: 0, zIndex: 999 }}
+                  onClick={() => setExportOpen(false)} />
+                <div className="dropdown-menu show"
+                  style={{ position: 'absolute', right: 0, top: '100%', zIndex: 1000, minWidth: 160 }}>
+                  {[['CSV', 'csv'], ['JSON', 'json'], ['Excel (XLSX)', 'xlsx']].map(([label, fmt]) => (
+                    <button key={fmt} className="dropdown-item" onClick={() => exportData(fmt)}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
+      {/* Table */}
       <div className="table-responsive">
         <table className="table table-vcenter table-hover card-table">
           <thead>
@@ -135,6 +187,7 @@ export default function Table({
         </table>
       </div>
 
+      {/* Pagination */}
       {totalPages > 1 && (
         <div className="card-footer d-flex align-items-center justify-content-between">
           <p className="m-0 text-secondary small">
@@ -172,6 +225,7 @@ export default function Table({
           </ul>
         </div>
       )}
+
     </div>
   )
 }

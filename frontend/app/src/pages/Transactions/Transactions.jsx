@@ -7,16 +7,16 @@ import Form        from './Form'
 import Import      from './Import'
 import ViewModal   from './ViewModal'
 import DeleteModal from './DeleteModal'
+import Filters     from './Filters'
 
-const PAGE_SIZE  = 10
-const EMPTY_FORM = { account_id: '', category_id: '', amount: '', type: 'expense', date: '', description: '' }
+const PAGE_SIZE    = 10
+const EMPTY_FORM    = { account_id: '', category_id: '', amount: '', type: 'expense', date: '', description: '' }
+const EMPTY_FILTERS = { account_id: '', type: '', category_id: '', date_from: '', date_to: '' }
 
 export default function Transactions() {
   const [transactions, setTransactions] = useState([])
   const [total, setTotal]               = useState(0)
   const [page, setPage]                 = useState(1)
-  const [search, setSearch]             = useState('')
-  const [searchInput, setSearchInput]   = useState('')
   const [loading, setLoading]           = useState(true)
   const [error, setError]               = useState('')
   const [selected, setSelected]         = useState([])
@@ -24,6 +24,9 @@ export default function Transactions() {
   const [categories, setCategories]     = useState([])
   const [accountMap, setAccountMap]     = useState({})
   const [categoryMap, setCategoryMap]   = useState({})
+
+  const [filters, setFilters]             = useState(EMPTY_FILTERS)
+  const [activeFilters, setActiveFilters] = useState(EMPTY_FILTERS)
 
   const [mode, setMode]           = useState('table')
   const [form, setForm]           = useState(EMPTY_FORM)
@@ -40,7 +43,15 @@ export default function Transactions() {
     setError('')
     try {
       const { data } = await client.get('/transactions', {
-        params: { page, limit: PAGE_SIZE, search: search || undefined }
+        params: {
+          page,
+          limit: PAGE_SIZE,
+          account_id:  activeFilters.account_id  || undefined,
+          type:        activeFilters.type        || undefined,
+          category_id: activeFilters.category_id || undefined,
+          date_from:   activeFilters.date_from   || undefined,
+          date_to:     activeFilters.date_to     || undefined,
+        }
       })
       setTransactions(data.items ?? data)
       setTotal(data.total ?? (data.items ?? data).length)
@@ -49,7 +60,7 @@ export default function Transactions() {
     } finally {
       setLoading(false)
     }
-  }, [page, search])
+  }, [page, activeFilters])
 
   useEffect(() => { fetchTransactions() }, [fetchTransactions])
 
@@ -73,10 +84,19 @@ export default function Transactions() {
     fetchMeta()
   }, [])
 
-  function handleSearch(e) {
-    e.preventDefault()
+  function handleFilterChange(key, value) {
+    setFilters(f => ({ ...f, [key]: value }))
+  }
+
+  function applyFilters() {
     setPage(1)
-    setSearch(searchInput)
+    setActiveFilters(filters)
+  }
+
+  function clearFilters() {
+    setFilters(EMPTY_FILTERS)
+    setActiveFilters(EMPTY_FILTERS)
+    setPage(1)
   }
 
   function toggleAll() {
@@ -184,6 +204,16 @@ export default function Transactions() {
         />
       )}
 
+      <Filters
+        accounts={accounts}
+        categories={categories}
+        filters={filters}
+        onChange={handleFilterChange}
+        onFilter={applyFilters}
+        onClear={clearFilters}
+        transactions={transactions} 
+      />
+
       <Table
         transactions={transactions}
         accountMap={accountMap}
@@ -199,9 +229,6 @@ export default function Transactions() {
         onEdit={openEdit}
         onDelete={setDeleteId}
         onPageChange={setPage}
-        onSearch={handleSearch}
-        searchInput={searchInput}
-        onSearchInput={setSearchInput}
         onAdd={openAdd}
       />
 
