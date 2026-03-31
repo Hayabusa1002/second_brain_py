@@ -1,34 +1,38 @@
 import { createContext, useContext, useState } from 'react'
+import client from '../api/client'
 
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(localStorage.getItem('access_token'))
-  const [user, setUser] = useState(
-    JSON.parse(localStorage.getItem('user') || 'null')
-  )
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('user')
+    return saved ? JSON.parse(saved) : null
+  })
 
-  function login(data) {
-    localStorage.setItem('access_token', data.access_token)
-    localStorage.setItem('refresh_token', data.refresh_token)
-    localStorage.setItem('user', JSON.stringify(data.user))
-    setToken(data.access_token)
-    setUser(data.user)
+  function login(userData) {
+    localStorage.setItem('user', JSON.stringify(userData))
+    setUser(userData)
   }
 
-  function logout() {
-    localStorage.clear()
-    setToken(null)
-    setUser(null)
+  async function logout() {
+    try {
+      await client.post('/auth/logout')
+    } finally {
+      localStorage.removeItem('user')
+      setUser(null)
+      window.location.href = '/login'
+    }
   }
 
   return (
-    <AuthContext.Provider value={{ token, user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout }}>
       {children}
     </AuthContext.Provider>
   )
 }
 
 export function useAuth() {
-  return useContext(AuthContext)
+  const ctx = useContext(AuthContext)
+  if (!ctx) throw new Error('useAuth must be used inside <AuthProvider>')
+  return ctx
 }
