@@ -46,7 +46,7 @@ export default function Home() {
         <div className="row align-items-center">
           <div className="col">
             <h2 className="page-title">
-              Hello, {user?.full_name ?? user?.username}
+              Hello, {user?.name}
             </h2>
             <div className="text-secondary mt-1">Transactions summary</div>
           </div>
