@@ -1,28 +1,45 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer
+} from 'recharts'
 import { useAuth } from '../../context/AuthContext'
+import {
+  IconReceipt, IconUser,
+  IconArrowUpRight, IconArrowDownRight, IconWallet
+} from '@tabler/icons-react'
 import client from '../../api/client'
+
+const COLORS = ['#206bc4', '#4299e1', '#74c0fc', '#a5d8ff', '#1c7ed6', '#339af0']
 
 export default function Home() {
   const { user } = useAuth()
-  const navigate = useNavigate()
-  const [summary, setSummary] = useState({ income: 0, expenses: 0, balance: 0 })
-  const [transactions, setTransactions] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [summary, setSummary]     = useState({ balance: 0, income: 0, expenses: 0 })
+  const [chartData, setChartData] = useState([])
+  const [loading, setLoading]     = useState(true)
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const { data } = await client.get('/transactions?limit=5&order=desc')
-        const txList = data.items ?? data
+        const { data } = await client.get('/transactions', { params: { limit: 500 } })
+        const txs = data.items ?? data
 
-        const income   = txList.filter(t => t.type === 'income') .reduce((a, t) => a + t.amount, 0)
-        const expenses = txList.filter(t => t.type === 'expense').reduce((a, t) => a + t.amount, 0)
+        const income   = txs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
+        const expenses = txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
+        setSummary({ balance: income - expenses, income, expenses })
 
-        setTransactions(txList)
-        setSummary({ income, expenses, balance: income - expenses })
-      } catch (err) {
-        console.error('Error cargando home:', err)
+        const byCategory = {}
+        txs.filter(t => t.type === 'expense').forEach(t => {
+          const cat = t.category ?? 'Other'
+          byCategory[cat] = (byCategory[cat] ?? 0) + t.amount
+        })
+        setChartData(
+          Object.entries(byCategory)
+            .map(([name, value]) => ({ name, value }))
+            .sort((a, b) => b.value - a.value)
+        )
+      } catch (e) {
+        console.error(e)
       } finally {
         setLoading(false)
       }
@@ -30,144 +47,127 @@ export default function Home() {
     fetchData()
   }, [])
 
-  if (loading) {
-    return (
-      <div className="container-xl d-flex justify-content-center py-5">
-        <div className="spinner-border text-primary" role="status" />
-      </div>
-    )
-  }
+  const fmt = (n) => new Intl.NumberFormat('es-CO', {
+    style: 'currency', currency: 'COP', maximumFractionDigits: 0
+  }).format(n)
 
   return (
-    <div className="container-xl">
+    <div className="container-xl py-4">
 
-      {/* Page header */}
-      <div className="page-header mb-4">
-        <div className="row align-items-center">
-          <div className="col">
-            <h2 className="page-title">
-              Hello, {user?.name}
-            </h2>
-            <div className="text-secondary mt-1">Transactions summary</div>
-          </div>
-          <div className="col-auto ms-auto">
-            <button
-              className="btn btn-primary"
-              onClick={() => navigate('/transactions/new')}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                fill="currentColor" className="me-2" viewBox="0 0 16 16">
-                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/>
-              </svg>
-              New transaction
-            </button>
-          </div>
-        </div>
+      {/* Header */}
+      <div className="mb-4">
+        <h2 className="mb-0">Welcome back, {user?.name?.split(' ')[0]}</h2>
+        <p className="text-secondary mb-0">Here's your financial overview</p>
       </div>
 
       {/* Summary cards */}
-      <div className="row row-deck row-cards mb-4">
-        <SummaryCard label="Balance"  amount={summary.balance}  color="blue"  />
-        <SummaryCard label="Ingresos" amount={summary.income}   color="green" />
-        <SummaryCard label="Gastos"   amount={summary.expenses} color="red"   />
+      <div className="row g-3 mb-4">
+        {[
+          {
+            label: 'Balance',
+            value: summary.balance,
+            icon: <IconWallet size={20} stroke={1.5} />,
+            color: 'blue',
+            sub: 'Net total'
+          },
+          {
+            label: 'Income',
+            value: summary.income,
+            icon: <IconArrowUpRight size={20} stroke={1.5} />,
+            color: 'green',
+            sub: 'Total received'
+          },
+          {
+            label: 'Expenses',
+            value: summary.expenses,
+            icon: <IconArrowDownRight size={20} stroke={1.5} />,
+            color: 'red',
+            sub: 'Total spent'
+          },
+        ].map(({ label, value, icon, color, sub }) => (
+          <div key={label} className="col-12 col-sm-4">
+            <div className="card">
+              <div className="card-body">
+                <div className="d-flex align-items-center mb-2">
+                  <span className={`avatar avatar-sm bg-${color}-lt text-${color} me-2`}>
+                    {icon}
+                  </span>
+                  <span className="text-secondary">{label}</span>
+                </div>
+                <div className="h2 mb-0">
+                  {loading ? <span className="placeholder col-6" /> : fmt(value)}
+                </div>
+                <div className="small text-secondary mt-1">{sub}</div>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Recent transactions */}
-      <div className="card">
+      {/* Quick Actions */}
+      <div className="card mb-4">
         <div className="card-header">
-          <h3 className="card-title">Recent transactions</h3>
-          <div className="card-options">
-            <button
-              className="btn btn-link text-secondary"
-              onClick={() => navigate('/transactions')}
-            >
-              Ver todas →
-            </button>
+          <h3 className="card-title">Quick Actions</h3>
+        </div>
+        <div className="card-body">
+          <div className="d-flex gap-2 flex-wrap">
+            <Link to="/transactions" className="btn btn-outline-secondary d-flex align-items-center gap-1">
+              <IconReceipt size={16} stroke={1.5} /> View Transactions
+            </Link>
+            <Link to="/profile" className="btn btn-outline-secondary d-flex align-items-center gap-1">
+              <IconUser size={16} stroke={1.5} /> Profile
+            </Link>
           </div>
         </div>
+      </div>
 
-        <div className="card-body p-0">
-          {transactions.length === 0 ? (
-            <p className="text-center text-secondary py-4 mb-0">
-              No transactions yet.
-            </p>
+      {/* Bar chart */}
+      <div className="card">
+        <div className="card-header">
+          <h3 className="card-title">Expenses by Category</h3>
+        </div>
+        <div className="card-body">
+          {loading ? (
+            <div className="text-center py-5 text-secondary">Loading chart...</div>
+          ) : chartData.length === 0 ? (
+            <div className="text-center py-5 text-secondary">No expense data yet</div>
           ) : (
-            <div className="table-responsive">
-              <table className="table table-vcenter card-table">
-                <thead>
-                  <tr>
-                    <th>Description</th>
-                    <th>Category</th>
-                    <th>Date</th>
-                    <th className="text-end">Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {transactions.map(tx => (
-                    <TransactionRow key={tx.id} tx={tx} />
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 60 }}>
+                <XAxis
+                  dataKey="name"
+                  angle={-35}
+                  textAnchor="end"
+                  tick={{ fontSize: 12 }}
+                />
+                <YAxis
+                  tickFormatter={(v) => new Intl.NumberFormat('es-CO', {
+                    notation: 'compact', maximumFractionDigits: 1
+                  }).format(v)}
+                  tick={{ fontSize: 12 }}
+                />
+                <Tooltip formatter={(v) => [fmt(v), 'Expenses']} />
+                <Bar
+                  dataKey="value"
+                  radius={[4, 4, 0, 0]}
+                  shape={(props) => {
+                    const { x, y, width, height, index } = props
+                    return (
+                      <rect
+                        x={x} y={y}
+                        width={width} height={height}
+                        fill={COLORS[index % COLORS.length]}
+                        rx={4} ry={4}
+                      />
+                    )
+                  }}
+                />
+              </BarChart>
+            </ResponsiveContainer>
           )}
         </div>
       </div>
 
-      {/* Quick actions */}
-      <div className="row mt-4">
-        <div className="col-auto">
-          <button className="btn" onClick={() => navigate('/categories')}>
-            Categories
-          </button>
-        </div>
-        <div className="col-auto">
-          <button className="btn" onClick={() => navigate('/reports')}>
-            Reports
-          </button>
-        </div>
-      </div>
-
     </div>
-  )
-}
-
-// ─── Sub-componentes ─────────────────────────────────────────────────────────
-
-const colorClass = {
-  blue:  'bg-blue-lt  text-blue',
-  green: 'bg-green-lt text-green',
-  red:   'bg-red-lt   text-red',
-}
-
-function SummaryCard({ label, amount, color }) {
-  return (
-    <div className="col-sm-6 col-lg-4">
-      <div className="card">
-        <div className="card-body">
-          <div className="d-flex align-items-center mb-3">
-            <span className={`badge ${colorClass[color]} me-2`}>{label}</span>
-          </div>
-          <div className="h1 mb-0">
-            ${amount.toLocaleString('es-CO', { minimumFractionDigits: 0 })}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function TransactionRow({ tx }) {
-  const isIncome = tx.type === 'income'
-  return (
-    <tr>
-      <td>{tx.description ?? '—'}</td>
-      <td className="text-secondary">{tx.category?.name ?? '—'}</td>
-      <td className="text-secondary">
-        {new Date(tx.date).toLocaleDateString('es-CO')}
-      </td>
-      <td className={`text-end fw-semibold ${isIncome ? 'text-green' : 'text-red'}`}>
-        {isIncome ? '+' : '-'}${tx.amount.toLocaleString('es-CO')}
-      </td>
-    </tr>
   )
 }
