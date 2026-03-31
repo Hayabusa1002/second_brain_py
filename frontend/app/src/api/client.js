@@ -13,19 +13,22 @@ client.interceptors.response.use(
   (response) => response,
   async (error) => {
     const original = error.config
-    if (error.response?.status === 401 && !original._retry) {
+
+    const isAuthEndpoint =
+      original.url?.includes('/auth/login') ||
+      original.url?.includes('/auth/refresh') ||
+      original.url?.includes('/auth/register')
+
+    if (error.response?.status === 401 && !original._retry && !isAuthEndpoint) {
       original._retry = true
       try {
-        await axios.post(
-          `${BASE_URL}/auth/refresh`,
-          {},
-          { withCredentials: true }
-        )
+        await axios.post(`${BASE_URL}/api/auth/refresh`, {}, { withCredentials: true })
         return client(original)
       } catch {
         window.location.href = '/login'
       }
     }
+
     return Promise.reject(error)
   }
 )
