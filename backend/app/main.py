@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from pathlib import Path
 from jose import JWTError
@@ -24,6 +25,13 @@ from app.core.exceptions import (
 app = FastAPI()
 
 # Required by Authlib to store OAuth state between redirect and callback
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.ALLOWED_ORIGINS, 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
 
 BASE_DIR = Path(__file__).resolve().parent.parent

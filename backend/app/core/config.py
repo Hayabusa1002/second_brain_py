@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 class Settings(BaseSettings):
     # Database
     DATABASE_URL: str
@@ -17,6 +18,9 @@ class Settings(BaseSettings):
     GITHUB_CLIENT_ID: str = ""
     GITHUB_CLIENT_SECRET: str = ""
     APP_BASE_URL: str
+
+    # CORS
+    ALLOWED_ORIGINS: list[str] = ["http://localhost:5173"]
 
     model_config = SettingsConfigDict(
         env_file=".env",
