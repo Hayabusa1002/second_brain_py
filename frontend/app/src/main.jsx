@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import '@tabler/core/dist/css/tabler.min.css'
+import './index.css'
 import { AuthProvider } from './context/AuthContext'
 import App from './App.jsx'
 
