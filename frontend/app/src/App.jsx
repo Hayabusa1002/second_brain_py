@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
+import AppLayout from './components/layout/AppLayout'
 import Login from './pages/Auth/Login'
 import Register from './pages/Auth/Register'
 import Home from './pages/Home/Home'
@@ -8,7 +9,8 @@ import Transactions from './pages/Transactions/Transactions'
 
 function ProtectedRoute({ children }) {
   const { token } = useAuth()
-  return token ? children : <Navigate to="/login" replace />
+  if (!token) return <Navigate to="/login" replace />
+  return <AppLayout>{children}</AppLayout>
 }
 
 export default function App() {
