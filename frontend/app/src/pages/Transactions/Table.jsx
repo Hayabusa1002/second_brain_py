@@ -117,12 +117,12 @@ export default function Table({
                 <input type="checkbox" className="form-check-input m-0"
                   checked={allSelected} onChange={onToggleAll} />
               </th>
-              <th>Date</th>
-              <th>Account</th>
-              <th>Type</th>
-              <th>Category</th>
-              <th className="text-end">Amount</th>
-              <th style={{ width: 100 }} />
+              <th style={{ width: '20%' }}>Date</th>
+              <th style={{ width: '15%' }}>Account</th>
+              <th style={{ width: '15%' }}>Type</th>
+              <th style={{ width: '15%' }}>Category</th>
+              <th style={{ width: '15%' }}>Amount</th>
+              <th style={{ width: '10%' }} />
             </tr>
           </thead>
           <tbody>
@@ -159,7 +159,7 @@ export default function Table({
                       {categoryMap[tx.category_id] ?? '—'}
                     </span>
                   </td>
-                  <td className="text-end fw-medium">
+                  <td className="fw-medium">
                     <span className={tx.type === 'income' ? 'text-green' : 'text-red'}>
                       {tx.type === 'expense' ? '−' : '+'}{fmt(tx.amount)}
                     </span>
