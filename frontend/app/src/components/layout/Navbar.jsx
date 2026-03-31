@@ -13,7 +13,6 @@ export default function Navbar() {
 
   function handleLogout() {
     logout()
-    navigate('/login')
   }
 
   return (
@@ -57,8 +56,8 @@ export default function Navbar() {
           <div className="d-flex flex-column flex-md-row flex-fill align-items-stretch align-items-md-center">
             <ul className="navbar-nav">
               {NAV_ITEMS.map(({ path, label }) => (
-                <li>
-                  <Link className="nav-link" to={path}>
+                <li key={path}>
+                  <Link className={`nav-link ${location.pathname === path ? 'active' : ''}`} to={path}>
                     <span className="nav-link-title">{label}</span>
                   </Link>
                 </li>
