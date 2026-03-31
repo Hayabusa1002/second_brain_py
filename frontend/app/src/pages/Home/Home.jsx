@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import client from '../../api/client'
-import Summary                  from './Summary'
-import QuickActions             from './QuickActions'
-import ExpensesByCategoryChart  from './Charts/ExpensesByCategory'
+import Summary                from './Summary'
+import QuickActions           from './QuickActions'
+import WaterfallCategory      from './Charts/WaterfallCategory'
 
 export default function Home() {
   const { user } = useAuth()
-  const [summary, setSummary]         = useState({ balance: 0, income: 0, expenses: 0 })
-  const [chartData, setChartData]     = useState([])
-  const [loading, setLoading]         = useState(true)
-  const [categoryMap, setCategoryMap] = useState({})
+  const [summary, setSummary] = useState({ balance: 0, income: 0, expenses: 0 })
+  const [txs, setTxs]         = useState([])
+  const [catMap, setCatMap]   = useState({})
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function fetchData() {
@@ -19,28 +19,21 @@ export default function Home() {
           client.get('/transactions', { params: { limit: 500 } }),
           client.get('/categories'),
         ])
-        const txs  = txRes.data.items ?? txRes.data
-        const cats = catRes.data.items ?? catRes.data
 
-        // Construir mapa id → name
-        const catMap = {}
-        cats.forEach(c => { catMap[c.id] = c.name })
-        setCategoryMap(catMap)
+        const transactions = txRes.data.items ?? txRes.data
+        const cats         = catRes.data.items ?? catRes.data
 
-        const income   = txs.filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount), 0)
-        const expenses = txs.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount), 0)
+        // Category map
+        const map = {}
+        cats.forEach(c => { map[c.id] = c.name })
+        setCatMap(map)
+
+        // Summary
+        const income   = transactions.filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount), 0)
+        const expenses = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount), 0)
         setSummary({ balance: income - expenses, income, expenses })
 
-        const byCategory = {}
-        txs.filter(t => t.type === 'expense').forEach(t => {
-          const cat = catMap[t.category_id] ?? 'Other'  // ← fix
-          byCategory[cat] = (byCategory[cat] ?? 0) + parseFloat(t.amount)
-        })
-        setChartData(
-          Object.entries(byCategory)
-            .map(([name, value]) => ({ name, value }))
-            .sort((a, b) => b.value - a.value)
-        )
+        setTxs(transactions)
       } catch (e) {
         console.error(e)
       } finally {
@@ -60,7 +53,7 @@ export default function Home() {
 
       <Summary summary={summary} loading={loading} />
       <QuickActions />
-      <ExpensesByCategoryChart data={chartData} loading={loading} />
+      <WaterfallCategory txs={txs} catMap={catMap} loading={loading} />
 
     </div>
   )
