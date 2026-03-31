@@ -1,18 +1,20 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useTheme } from '../../hooks/useTheme'
 import client from '../../api/client'
 import PageCenter from '../../components/ui/PageCenter'
 import Alert from '../../components/ui/Alert'
 
 // Icons
-import { IconBrain, IconEye, IconEyeOff } from '@tabler/icons-react'
+import { IconBrain, IconEye, IconEyeOff, IconSun, IconMoon } from '@tabler/icons-react'
 import { FcGoogle } from 'react-icons/fc'
 import { FaGithub } from 'react-icons/fa'
 
 export default function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
+  const { theme, toggleTheme } = useTheme()
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
@@ -37,6 +39,20 @@ export default function Login() {
 
   return (
     <PageCenter>
+
+      {/* Theme toggle */}
+      <div style={{ position: 'fixed', top: '1rem', right: '1rem' }}>
+        <button
+          onClick={toggleTheme}
+          className="btn btn-outline-secondary btn-icon"
+          title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+        >
+          {theme === 'light'
+            ? <IconMoon size={18} stroke={1.5} />
+            : <IconSun size={18} stroke={1.5} />
+          }
+        </button>
+      </div>
 
       {/* Header */}
       <div className="text-center mb-4">
@@ -91,11 +107,10 @@ export default function Login() {
                     onClick={() => setShowPassword(!showPassword)}
                     title={showPassword ? 'Hide password' : 'Show password'}
                   >
-                    {showPassword ? (
-                      <IconEyeOff size={20} stroke={1.5} />
-                    ) : (
-                      <IconEye size={20} stroke={1.5} />
-                    )}
+                    {showPassword
+                      ? <IconEyeOff size={20} stroke={1.5} />
+                      : <IconEye size={20} stroke={1.5} />
+                    }
                   </button>
                 </span>
               </div>

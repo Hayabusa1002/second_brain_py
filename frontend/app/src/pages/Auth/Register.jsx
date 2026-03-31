@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { useTheme } from '../../hooks/useTheme'
 import client from '../../api/client'
 import PageCenter from '../../components/ui/PageCenter'
 import Alert from '../../components/ui/Alert'
 
 // Icons
-import { IconBrain, IconEye, IconEyeOff } from '@tabler/icons-react'
+import { IconBrain, IconEye, IconEyeOff, IconSun, IconMoon } from '@tabler/icons-react'
 
 export default function Register() {
   const navigate = useNavigate()
+  const { theme, toggleTheme } = useTheme()
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
@@ -32,6 +34,20 @@ export default function Register() {
 
   return (
     <PageCenter>
+
+      {/* Theme toggle */}
+      <div style={{ position: 'fixed', top: '1rem', right: '1rem' }}>
+        <button
+          onClick={toggleTheme}
+          className="btn btn-outline-secondary btn-icon"
+          title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+        >
+          {theme === 'light'
+            ? <IconMoon size={18} stroke={1.5} />
+            : <IconSun size={18} stroke={1.5} />
+          }
+        </button>
+      </div>
 
       {/* Header */}
       <div className="text-center mb-4">
