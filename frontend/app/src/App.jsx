@@ -8,8 +8,8 @@ import Profile from './pages/Profile/Profile'
 import Transactions from './pages/Transactions/Transactions'
 
 function ProtectedRoute({ children }) {
-  const { token } = useAuth()
-  if (!token) return <Navigate to="/login" replace />
+  const { user } = useAuth()
+  if (!user) return <Navigate to="/login" replace />
   return <AppLayout>{children}</AppLayout>
 }
 
