@@ -68,8 +68,8 @@ export default function Users() {
 
   const setField =
     (field) =>
-    (e) =>
-      setForm((prev) => ({ ...prev, [field]: e.target.value }))
+      (e) =>
+        setForm((prev) => ({ ...prev, [field]: e.target.value }))
 
   async function handleSave(e) {
     e.preventDefault()
@@ -101,28 +101,69 @@ export default function Users() {
     }
   }
 
-  async function handleBan() {
+  // ---- Status transitions ----
+
+  async function handleApprove(user) {
     try {
-      const isBanned = banUser.status === 'banned'
-      const endpoint = isBanned
-        ? `/users/${banUser.id}/unban`
-        : `/users/${banUser.id}/ban`
+      await client.post(`/users/${user.id}/approve`)
+      fetchUsers()
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to approve user.')
+    }
+  }
+
+  async function handleReject(user) {
+    try {
+      await client.post(`/users/${user.id}/reject`)
+      fetchUsers()
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to reject user.')
+    }
+  }
+
+  function openBanModal(user) {
+    setBanUser(user)
+  }
+
+  async function handleBan() {
+    if (!banUser) return
+    try {
+      const endpoint =
+        banUser.status === 'banned'
+          ? `/users/${banUser.id}/unban`
+          : `/users/${banUser.id}/ban`
       await client.post(endpoint)
       setBanUser(null)
       fetchUsers()
-    } catch {
-      setError('Failed to update user status.')
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to update user status.')
       setBanUser(null)
     }
   }
 
+  async function handleReopen(user) {
+    try {
+      await client.post(`/users/${user.id}/reopen`)
+      fetchUsers()
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to reopen user request.')
+    }
+  }
+
+  // ---- Delete ----
+
+  function openDeleteModal(user) {
+    setDeleteUser(user)
+  }
+
   async function handleDelete() {
+    if (!deleteUser) return
     try {
       await client.delete(`/users/${deleteUser.id}`)
       setDeleteUser(null)
       fetchUsers()
-    } catch {
-      setError('Failed to delete user.')
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to delete user.')
       setDeleteUser(null)
     }
   }
@@ -134,7 +175,7 @@ export default function Users() {
       <div className="d-flex align-items-center justify-content-between mb-4">
         <h2 className="mb-0">Users</h2>
 
-        {/* Si no tiene permiso, no mostramos el botón */}
+        {/* If no permission, do not show add button */}
         {!isForbidden && (
           <button
             className="btn btn-primary d-flex align-items-center gap-1"
@@ -147,7 +188,7 @@ export default function Users() {
 
       <Alert message={error} />
 
-      {/* Si es 403, no mostramos nada más */}
+      {/* If 403, do not show anything else */}
       {isForbidden ? null : (
         <>
           <Table
@@ -155,8 +196,12 @@ export default function Users() {
             currentUserId={currentUser?.id}
             loading={loading}
             onEdit={openEdit}
-            onBan={setBanUser}
-            onDelete={setDeleteUser}
+            onApprove={handleApprove}
+            onReject={handleReject}
+            onBan={openBanModal}
+            onUnban={(u) => openBanModal(u)} // reuses same modal
+            onReopen={handleReopen}
+            onDelete={openDeleteModal}
             onAdd={openAdd}
           />
 
