@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session
 from app.db.deps import get_db, require_admin, get_current_user
 from app.models.user import User, UserStatus
 from app.repositories.user_repository import UserRepository
-from app.schemas.user import UserResponse, UserUpdate
+from app.repositories.account_repository import AccountRepository
+from app.services.user_service import UserService
+from app.schemas.user import UserCreate, UserResponse, UserUpdate
 
 router = APIRouter(tags=["users"], dependencies=[Depends(require_admin)])
 
@@ -38,6 +40,25 @@ def list_active_users(db: Session = Depends(get_db)):
 @router.get("/users/{user_id}")
 def get_user(user_id: UUID, db: Session = Depends(get_db)):
     user = _get_user_or_404(user_id, db)
+    return {"user": UserResponse.model_validate(user)}
+
+
+@router.post("/users", status_code=201)
+def create_user(data: UserCreate, db: Session = Depends(get_db)):
+    user_repo = UserRepository(db)
+    account_repo = AccountRepository(db)
+    user_service = UserService(user_repo, account_repo)
+
+    if user_service.get_by_email(data.email):
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    user = user_service.create_user(
+        name=data.name,
+        email=data.email,
+        password=data.password,
+        role=data.role,
+        status=UserStatus.active,
+    )
     return {"user": UserResponse.model_validate(user)}
 
 

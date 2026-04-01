@@ -25,7 +25,8 @@ class UserService:
         name: str,
         email: str,
         password: str,
-        role: UserRole = UserRole.partner
+        role: UserRole = UserRole.partner,
+        status: UserStatus = UserStatus.pending,
     ) -> User:
         hashed = hash_password(password)
         user = User(
@@ -33,7 +34,7 @@ class UserService:
             email=email,
             password=hashed,
             role=role,
-            status=UserStatus.pending,
+            status=status,
         )
         user = self.user_repo.add(user)
         self._create_personal_account_for_user(user.id)

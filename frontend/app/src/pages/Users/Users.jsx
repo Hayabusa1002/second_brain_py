@@ -83,7 +83,7 @@ export default function Users() {
           role: form.role,
         })
       } else {
-        await client.post('/auth/register', {
+        await client.post('/users', {
           name: form.name,
           email: form.email,
           password: form.password,
