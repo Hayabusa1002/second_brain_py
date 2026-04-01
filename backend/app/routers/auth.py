@@ -11,6 +11,7 @@ from app.controllers.auth_controller import AuthController
 from app.services.auth_service import AuthService
 from app.services.user_service import UserService
 from app.repositories.user_repository import UserRepository
+from app.repositories.account_repository import AccountRepository
 from app.schemas.user import UserCreate, UserLogin, PasswordChange, TokenResponse
 from app.core.config import settings
 from app.core.security import verify_password, hash_password, create_access_token
@@ -42,7 +43,8 @@ oauth.register(
 
 def get_controller(db: Session = Depends(get_db)) -> AuthController:
     user_repo = UserRepository(db)
-    user_service = UserService(user_repo)
+    account_repo = AccountRepository(db)
+    user_service = UserService(user_repo, account_repo)
     auth_service = AuthService(user_service)
     return AuthController(auth_service)
 
@@ -146,7 +148,7 @@ async def google_callback(
 ):
     token = await oauth.google.authorize_access_token(request)
     user_info = token.get("userinfo")
-    auth_service = AuthService(UserService(UserRepository(db)))
+    auth_service = AuthService(UserService(UserRepository(db), AccountRepository(db)))
     result = auth_service.login_or_create_oauth_user(
         email=user_info["email"],
         name=user_info.get("name", user_info["email"]),
@@ -190,7 +192,7 @@ async def github_callback(
     if not email:
         return RedirectResponse(f"{settings.ALLOWED_ORIGINS[0]}/login?status=no_email", status_code=302)
 
-    auth_service = AuthService(UserService(UserRepository(db)))
+    auth_service = AuthService(UserService(UserRepository(db), AccountRepository(db)))
     result = auth_service.login_or_create_oauth_user(
         email=email,
         name=github_user.get("name") or github_user.get("login"),
