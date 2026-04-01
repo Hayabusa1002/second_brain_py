@@ -90,11 +90,20 @@ export default function Accounts() {
 
   async function handleDelete() {
     try {
+      setError('')
+
       await client.delete(`/accounts/${deleteAccount.id}`)
+
       setDeleteAccount(null)
       fetchAccounts()
-    } catch {
-      setError('Failed to delete account.')
+    } catch (err) {
+      const message =
+        err.response?.data?.detail ||
+        (err.response?.status === 403
+          ? 'You do not have permission to delete this account.'
+          : 'Failed to delete account.')
+
+      setError(message)
       setDeleteAccount(null)
     }
   }
