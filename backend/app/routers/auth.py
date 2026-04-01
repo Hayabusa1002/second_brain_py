@@ -13,7 +13,7 @@ from app.services.user_service import UserService
 from app.repositories.user_repository import UserRepository
 from app.schemas.user import UserCreate, UserLogin, PasswordChange, TokenResponse
 from app.core.config import settings
-from app.core.security import verify_password, hash_password, create_access_token, decode_token
+from app.core.security import verify_password, hash_password, create_access_token
 
 router = APIRouter()
 
@@ -138,10 +138,11 @@ async def google_login(request: Request):
     redirect_uri = f"{settings.APP_BASE_URL}/api/auth/google/callback"
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
+
 @router.get("/auth/google/callback")
 async def google_callback(
     request: Request,
-    db: Session = Depends(get_db), 
+    db: Session = Depends(get_db),
 ):
     token = await oauth.google.authorize_access_token(request)
     user_info = token.get("userinfo")
@@ -153,9 +154,9 @@ async def google_callback(
         oauth_id=user_info["sub"],
     )
     if result is None:
-        return RedirectResponse("/login?status=pending", status_code=302)
+        return RedirectResponse(f"{settings.ALLOWED_ORIGINS[0]}/login?status=pending", status_code=302)
 
-    redirect = RedirectResponse("/", status_code=302)
+    redirect = RedirectResponse(f"{settings.ALLOWED_ORIGINS[0]}/", status_code=302)
     _set_auth_cookies(redirect, result)
     return redirect
 
@@ -169,10 +170,11 @@ async def github_login(request: Request):
     redirect_uri = f"{settings.APP_BASE_URL}/api/auth/github/callback"
     return await oauth.github.authorize_redirect(request, redirect_uri)
 
+
 @router.get("/auth/github/callback")
 async def github_callback(
     request: Request,
-    db: Session = Depends(get_db), 
+    db: Session = Depends(get_db),
 ):
     token = await oauth.github.authorize_access_token(request)
     resp = await oauth.github.get("user", token=token)
@@ -186,7 +188,7 @@ async def github_callback(
         email = primary["email"] if primary else None
 
     if not email:
-        return RedirectResponse("/login?status=no_email", status_code=302)
+        return RedirectResponse(f"{settings.ALLOWED_ORIGINS[0]}/login?status=no_email", status_code=302)
 
     auth_service = AuthService(UserService(UserRepository(db)))
     result = auth_service.login_or_create_oauth_user(
@@ -196,8 +198,8 @@ async def github_callback(
         oauth_id=str(github_user["id"]),
     )
     if result is None:
-        return RedirectResponse("/login?status=pending", status_code=302)
+        return RedirectResponse(f"{settings.ALLOWED_ORIGINS[0]}/login?status=pending", status_code=302)
 
-    redirect = RedirectResponse("/", status_code=302)
+    redirect = RedirectResponse(f"{settings.ALLOWED_ORIGINS[0]}/", status_code=302)
     _set_auth_cookies(redirect, result)
     return redirect

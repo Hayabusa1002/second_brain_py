@@ -1,13 +1,12 @@
 import uuid
 from typing import Generator
 from sqlalchemy.orm import Session
-from fastapi import Depends, HTTPException, Cookie, status, Request, Response
-from jose import JWTError, ExpiredSignatureError
+from fastapi import Depends, HTTPException, Cookie, status, Response
+from jose import JWTError
 
 from app.db.session import SessionLocal
 from app.core.security import decode_token, create_access_token
 from app.core.config import settings
-from app.core.exceptions import UnauthenticatedRedirect
 from app.models.user import UserRole
 
 
@@ -47,51 +46,28 @@ def get_current_user(
 ):
     """API routes only. Raises 401 — JS interceptor handles the refresh cycle."""
     from app.repositories.user_repository import UserRepository
+
     if not access_token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated"
+        )
+
     try:
         user_id = decode_token(access_token)
     except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
-    user = UserRepository(db).get_by_id(user_id)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
-    return user
-
-
-def get_current_user_from_cookie(
-    request: Request,
-    response: Response,
-    db: Session = Depends(get_db),
-):
-    """HTML routes only. Silently refreshes the access token if expired, or redirects to login."""
-    from app.repositories.user_repository import UserRepository
-
-    token = request.cookies.get("access_token")
-    refresh = request.cookies.get("refresh_token")
-
-    if token:
-        try:
-            decode_token(token)
-        except ExpiredSignatureError:
-            token = _try_silent_refresh(refresh, response) if refresh else None
-            if not token:
-                raise UnauthenticatedRedirect()
-        except JWTError:
-            raise UnauthenticatedRedirect()
-    else:
-        token = _try_silent_refresh(refresh, response) if refresh else None
-        if not token:
-            raise UnauthenticatedRedirect()
-
-    try:
-        user_id = decode_token(token)
-    except Exception:
-        raise UnauthenticatedRedirect()
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token"
+        )
 
     user = UserRepository(db).get_by_id(user_id)
     if not user:
-        raise UnauthenticatedRedirect()
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found"
+        )
+
     return user
 
 
