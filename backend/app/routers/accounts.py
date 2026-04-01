@@ -35,20 +35,9 @@ def _is_owner(account, user_id: UUID) -> bool:
     return any(owner.id == user_id for owner in account.owners)
 
 
-def _can_manage_account(user, account) -> bool:
-    # Admin can manage any account
-    if user.role == UserRole.admin:
-        return True
-
-    # Owner role can manage accounts
-    if user.role == UserRole.owner:
-        return True
-
-    # Partner can only manage their own individual accounts
-    if user.role == UserRole.partner:
-        return account.type == AccountType.individual and _is_owner(account, user.id)
-
-    return False
+def _owned_individual_accounts_count(user_id: UUID, db: Session) -> int:
+    accounts = AccountRepository(db).list(user_id)
+    return sum(1 for account in accounts if account.type == AccountType.individual)
 
 
 def _can_manage_shared_account_owners(user) -> bool:
@@ -69,6 +58,11 @@ def get_balance(
     controller: AccountController = Depends(get_controller),
     user=Depends(get_current_user)
 ):
+    account = _get_account_or_404(account_id, controller.db)
+
+    if not _is_owner(account, user.id) and user.role != UserRole.admin:
+        raise HTTPException(status_code=403, detail="You do not have permission to view this account balance")
+
     balance = controller.get_balance(account_id)
     if balance is None:
         raise NotFoundError("Account")
@@ -81,7 +75,7 @@ def list_active_users(
     user=Depends(get_current_user),
 ):
     if user.role not in (UserRole.admin, UserRole.owner):
-        raise HTTPException(status_code=403, detail="Not allowed")
+        raise HTTPException(status_code=403, detail="Only owners or admins can list active users")
 
     users = UserRepository(db).get_active()
     return {"users": [UserResponse.model_validate(u) for u in users]}
@@ -93,7 +87,6 @@ def create_account(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    # Shared accounts are restricted to owner/admin roles
     if data.type == AccountType.shared and user.role not in (UserRole.admin, UserRole.owner):
         raise HTTPException(
             status_code=403,
@@ -116,15 +109,34 @@ def update_account(
 ):
     account = _get_account_or_404(account_id, db)
 
-    if not _can_manage_account(user, account):
-        raise HTTPException(status_code=403, detail="Not allowed")
+    if user.role == UserRole.partner:
+        if account.type != AccountType.individual:
+            raise HTTPException(
+                status_code=403,
+                detail="Partners can only update their own individual accounts",
+            )
+        if not _is_owner(account, user.id):
+            raise HTTPException(
+                status_code=403,
+                detail="You can only update your own individual accounts",
+            )
+        if data.type == AccountType.shared:
+            raise HTTPException(
+                status_code=403,
+                detail="Partners cannot convert accounts to shared",
+            )
 
-    # Partners are allowed to manage only individual accounts
-    # They must never convert an individual account into a shared one
-    if user.role == UserRole.partner and data.type == AccountType.shared:
+    elif user.role == UserRole.owner:
+        if not _is_owner(account, user.id):
+            raise HTTPException(
+                status_code=403,
+                detail="Owners can only update accounts they own",
+            )
+
+    elif user.role != UserRole.admin:
         raise HTTPException(
             status_code=403,
-            detail="Partners cannot convert accounts to shared",
+            detail="You do not have permission to update this account",
         )
 
     updated = AccountRepository(db).update(account_id, data.name, data.type)
@@ -166,6 +178,14 @@ def delete_account(
             detail="You do not have permission to delete this account",
         )
 
+    if account.type == AccountType.individual and _is_owner(account, user.id):
+        individual_count = _owned_individual_accounts_count(user.id, db)
+        if individual_count <= 1:
+            raise HTTPException(
+                status_code=400,
+                detail="You must keep at least one individual account",
+            )
+
     deleted = AccountRepository(db).delete(account_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Account not found")
@@ -179,14 +199,19 @@ def assign_owner(
     user=Depends(get_current_user),
 ):
     if not _can_manage_shared_account_owners(user):
-        raise HTTPException(status_code=403, detail="Not allowed")
+        raise HTTPException(status_code=403, detail="Only owners or admins can assign account owners")
 
     repo = AccountRepository(db)
     account = repo.get_by_id(account_id)
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
 
-    # Owners can only be assigned to shared accounts
+    if user.role == UserRole.owner and not _is_owner(account, user.id):
+        raise HTTPException(
+            status_code=403,
+            detail="Owners can only manage owners for accounts they own",
+        )
+
     if account.type != AccountType.shared:
         raise HTTPException(
             status_code=400,
@@ -209,12 +234,18 @@ def unassign_owner(
     user=Depends(get_current_user),
 ):
     if not _can_manage_shared_account_owners(user):
-        raise HTTPException(status_code=403, detail="Not allowed")
+        raise HTTPException(status_code=403, detail="Only owners or admins can remove account owners")
 
     repo = AccountRepository(db)
     account = repo.get_by_id(account_id)
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
+
+    if user.role == UserRole.owner and not _is_owner(account, user.id):
+        raise HTTPException(
+            status_code=403,
+            detail="Owners can only manage owners for accounts they own",
+        )
 
     if account.type != AccountType.shared:
         raise HTTPException(
