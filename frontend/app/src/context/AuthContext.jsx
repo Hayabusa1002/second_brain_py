@@ -1,16 +1,21 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react'
 import client from '../api/client'
 
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('user')
-    return saved ? JSON.parse(saved) : null
-  })
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  // Get active session via cookie with HttpOnly
+  useEffect(() => {
+    client.get('/auth/me')
+      .then(({ data }) => setUser(data.user))
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false))
+  }, [])
 
   function login(userData) {
-    localStorage.setItem('user', JSON.stringify(userData))
     setUser(userData)
   }
 
@@ -18,14 +23,13 @@ export function AuthProvider({ children }) {
     try {
       await client.post('/auth/logout')
     } finally {
-      localStorage.removeItem('user')
       setUser(null)
       window.location.href = '/login'
     }
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   )
