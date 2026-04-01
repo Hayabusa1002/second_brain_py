@@ -12,6 +12,7 @@ from app.schemas.account import AccountResponse, AccountCreate, AccountUpdate
 from app.schemas.user import UserResponse
 from app.core.exceptions import NotFoundError
 from app.models.user import UserRole
+from app.models.account import AccountType
 
 router = APIRouter()
 
@@ -59,8 +60,9 @@ def create_account(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    if user.role not in (UserRole.admin, UserRole.owner):
-        raise HTTPException(status_code=403, detail="Not allowed")
+    if data.type == AccountType.shared and user.role not in (UserRole.admin, UserRole.owner):
+        raise HTTPException(status_code=403, detail="Only owners or admins can create shared accounts")
+
     repo = AccountRepository(db)
     account = repo.create(name=data.name, type=data.type, created_by=user.id)
     repo.assign_owner(account.id, user.id)
