@@ -14,7 +14,15 @@ from app.core.exceptions import (
     generic_error_handler,
 )
 
-app = FastAPI()
+if settings.APP_ENV == "production":
+    app = FastAPI(
+        docs_url=None,
+        redoc_url=None,
+        openapi_url=None,
+    )
+else:
+    app = FastAPI()
+
 
 # Required by Authlib to store OAuth state between redirect and callback
 app.add_middleware(
@@ -24,13 +32,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
+
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.SECRET_KEY,
+)
+
 
 # Exception handlers
 app.add_exception_handler(AppError, app_error_handler)
 app.add_exception_handler(RequestValidationError, validation_error_handler)
 app.add_exception_handler(JWTError, jwt_error_handler)
 app.add_exception_handler(Exception, generic_error_handler)
+
 
 # API routers
 app.include_router(auth.router, prefix="/api")
