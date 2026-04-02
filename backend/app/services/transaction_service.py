@@ -8,16 +8,20 @@ from app.repositories.transaction_repository import TransactionRepository
 
 
 class TransactionService:
-
     def __init__(self, repository: TransactionRepository):
         self.repository = repository
 
     def list_transactions(
         self,
         user_id: UUID,
-        type=None,
-        category_id=None,
-        account_id=None,
+        type: Optional[str] = None,
+        category_id: Optional[UUID] = None,
+        subcategory_id: Optional[UUID] = None,
+        account_id: Optional[UUID] = None,
+        store_id: Optional[UUID] = None,
+        city_id: Optional[UUID] = None,
+        paid_by: Optional[UUID] = None,
+        paid_to: Optional[UUID] = None,
         date_from: Optional[date] = None,
         date_to: Optional[date] = None,
         q: Optional[str] = None,
@@ -26,40 +30,68 @@ class TransactionService:
             user_id=user_id,
             type=type,
             category_id=category_id,
+            subcategory_id=subcategory_id,
             account_id=account_id,
+            store_id=store_id,
+            city_id=city_id,
+            paid_by=paid_by,
+            paid_to=paid_to,
             date_from=date_from,
             date_to=date_to,
             q=q,
         )
 
     def create_transaction(self, data, created_by_id: UUID) -> Transaction:
+        paid_by = getattr(data, "paid_by", None)
+        paid_to = getattr(data, "paid_to", None) or paid_by
+
         transaction = Transaction(
             id=uuid.uuid4(),
             account_id=data.account_id,
+            store_id=getattr(data, "store_id", None),
             category_id=data.category_id,
+            subcategory_id=getattr(data, "subcategory_id", None),
+            city_id=getattr(data, "city_id", None),
             amount=data.amount,
             type=data.type,
+            description=getattr(data, "description", None),
             date=data.date,
-            created_by=created_by_id
+            created_by=created_by_id,
+            paid_by=paid_by,
+            paid_to=paid_to,
         )
         return self.repository.add(transaction)
 
-    def update(self, transaction_id: UUID, data) -> Optional[Transaction]:
-        tx = self.get_by_id(transaction_id)
+    def update(self, transaction_id: UUID, data, user_id: UUID) -> Optional[Transaction]:
+        tx = self.get_by_id(transaction_id, user_id)
         if not tx:
             return None
-        tx.account_id   = data.account_id
-        tx.category_id  = data.category_id
-        tx.amount       = data.amount
-        tx.type         = data.type
-        tx.date         = data.date
-        tx.description  = data.description
+
+        update_data = data.model_dump(exclude_unset=True)
+
+        if "paid_by" in update_data and "paid_to" not in update_data:
+            update_data["paid_to"] = update_data["paid_by"]
+
+        for field, value in update_data.items():
+            setattr(tx, field, value)
+
         self.repository.db.commit()
         self.repository.db.refresh(tx)
         return tx
 
-    def get_by_id(self, transaction_id: UUID) -> Optional[Transaction]:
-        return self.repository.get_by_id(transaction_id)
+    def get_by_id(self, transaction_id: UUID, user_id: UUID | None = None) -> Optional[Transaction]:
+        tx = self.repository.get_by_id(transaction_id)
+        if not tx:
+            return None
 
-    def delete(self, transaction_id: UUID) -> bool:
+        if user_id and tx.created_by != user_id:
+            return None
+
+        return tx
+
+    def delete(self, transaction_id: UUID, user_id: UUID) -> bool:
+        tx = self.get_by_id(transaction_id, user_id)
+        if not tx:
+            return False
+
         return self.repository.delete(transaction_id)

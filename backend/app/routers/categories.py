@@ -1,13 +1,18 @@
 from typing import List
-from fastapi import APIRouter, Depends
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.deps import get_db, get_current_user
 from app.controllers.category_controller import CategoryController
 from app.services.category_service import CategoryService
 from app.repositories.category_repository import CategoryRepository
-from app.schemas.category import CategoryCreate, CategoryResponse
-from app.core.exceptions import NotFoundError
+from app.schemas.category import (
+    CategoryCreate,
+    CategoryResponse,
+    CategoryUpdate,
+)
 
 
 router = APIRouter()
@@ -15,24 +20,45 @@ router = APIRouter()
 
 def get_controller(db: Session = Depends(get_db)) -> CategoryController:
     repository = CategoryRepository(db)
-    service    = CategoryService(repository)
+    service = CategoryService(repository)
     return CategoryController(service)
 
 
 @router.get("/categories", response_model=List[CategoryResponse])
 def list_categories(
-    controller: CategoryController = Depends(get_controller)
+    controller: CategoryController = Depends(get_controller),
 ):
-    tx = controller.list_categories()
-    if tx is None:
-        raise NotFoundError("Category")
-    return tx
+    return controller.list_categories()
+
+
+@router.get("/categories/{category_id}", response_model=CategoryResponse)
+def get_category(
+    category_id: UUID,
+    controller: CategoryController = Depends(get_controller),
+):
+    category = controller.get_category(category_id)
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+    return category
 
 
 @router.post("/categories", response_model=CategoryResponse, status_code=201)
 def create_category(
     data: CategoryCreate,
     controller: CategoryController = Depends(get_controller),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
     return controller.create_category(data)
+
+
+@router.patch("/categories/{category_id}", response_model=CategoryResponse)
+def update_category(
+    category_id: UUID,
+    data: CategoryUpdate,
+    controller: CategoryController = Depends(get_controller),
+    current_user=Depends(get_current_user),
+):
+    category = controller.update_category(category_id, data)
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+    return category

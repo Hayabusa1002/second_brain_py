@@ -1,5 +1,6 @@
 from uuid import UUID
 from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -13,13 +14,19 @@ from app.schemas.user import UserResponse
 from app.core.exceptions import NotFoundError
 from app.models.user import UserRole
 
+
 router = APIRouter()
 
 
 def get_controller(db: Session = Depends(get_db)) -> AccountController:
     repository = AccountRepository(db)
-    service    = AccountService(repository)
+    service = AccountService(repository)
     return AccountController(service, db)
+
+
+def get_service(db: Session = Depends(get_db)) -> AccountService:
+    repository = AccountRepository(db)
+    return AccountService(repository)
 
 
 @router.get("/accounts", response_model=List[AccountResponse])
@@ -49,6 +56,7 @@ def list_active_users(
 ):
     if user.role not in (UserRole.admin, UserRole.owner):
         raise HTTPException(status_code=403, detail="Not allowed")
+
     users = UserRepository(db).get_active()
     return {"users": [UserResponse.model_validate(u) for u in users]}
 
@@ -56,28 +64,36 @@ def list_active_users(
 @router.post("/accounts", response_model=AccountResponse, status_code=201)
 def create_account(
     data: AccountCreate,
-    db: Session = Depends(get_db),
+    service: AccountService = Depends(get_service),
     user=Depends(get_current_user),
 ):
     if user.role not in (UserRole.admin, UserRole.owner):
         raise HTTPException(status_code=403, detail="Not allowed")
-    repo = AccountRepository(db)
-    account = repo.create(name=data.name, type=data.type, created_by=user.id)
-    repo.assign_owner(account.id, user.id)
-    db.refresh(account)
-    return account
+
+    account = service.create_account(
+        name=data.name,
+        type=data.type,
+        created_by=user.id,
+    )
+    service.assign_owner(account.id, user.id)
+    return service.get_account(account.id)
 
 
 @router.put("/accounts/{account_id}", response_model=AccountResponse)
 def update_account(
     account_id: UUID,
     data: AccountUpdate,
-    db: Session = Depends(get_db),
+    service: AccountService = Depends(get_service),
     user=Depends(get_current_user),
 ):
     if user.role not in (UserRole.admin, UserRole.owner):
         raise HTTPException(status_code=403, detail="Not allowed")
-    account = AccountRepository(db).update(account_id, data.name, data.type)
+
+    account = service.update_account(
+        account_id=account_id,
+        name=data.name,
+        type=data.type,
+    )
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
     return account
@@ -86,32 +102,37 @@ def update_account(
 @router.delete("/accounts/{account_id}", status_code=204)
 def delete_account(
     account_id: UUID,
-    db: Session = Depends(get_db),
+    service: AccountService = Depends(get_service),
     user=Depends(get_current_user),
 ):
     if user.role not in (UserRole.admin, UserRole.owner):
         raise HTTPException(status_code=403, detail="Not allowed")
-    deleted = AccountRepository(db).delete(account_id)
+
+    deleted = service.delete_account(account_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Account not found")
+
+    return None
 
 
 @router.post("/accounts/{account_id}/owners/{user_id}", status_code=200)
 def assign_owner(
     account_id: UUID,
     user_id: UUID,
-    db: Session = Depends(get_db),
+    service: AccountService = Depends(get_service),
     user=Depends(get_current_user),
 ):
     if user.role not in (UserRole.admin, UserRole.owner):
         raise HTTPException(status_code=403, detail="Not allowed")
-    repo = AccountRepository(db)
-    if not repo.get_by_id(account_id):
+
+    if not service.get_account(account_id):
         raise HTTPException(status_code=404, detail="Account not found")
+
     try:
-        repo.assign_owner(account_id, user_id)
+        service.assign_owner(account_id, user_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
     return {"detail": "Owner assigned"}
 
 
@@ -119,16 +140,18 @@ def assign_owner(
 def unassign_owner(
     account_id: UUID,
     user_id: UUID,
-    db: Session = Depends(get_db),
+    service: AccountService = Depends(get_service),
     user=Depends(get_current_user),
 ):
     if user.role not in (UserRole.admin, UserRole.owner):
         raise HTTPException(status_code=403, detail="Not allowed")
-    repo = AccountRepository(db)
-    if not repo.get_by_id(account_id):
+
+    if not service.get_account(account_id):
         raise HTTPException(status_code=404, detail="Account not found")
+
     try:
-        repo.unassign_owner(account_id, user_id)
+        service.unassign_owner(account_id, user_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
     return {"detail": "Owner removed"}

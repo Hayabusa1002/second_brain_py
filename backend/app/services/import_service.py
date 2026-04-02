@@ -1,21 +1,23 @@
 import uuid
 import io
-import pandas as pd
 from datetime import datetime, UTC
 from decimal import Decimal, InvalidOperation
 from typing import List
 from uuid import UUID
 
-from app.models.transaction import Transaction
+import pandas as pd
+
+from app.models.transaction import Transaction, TransactionType
 from app.repositories.transaction_repository import TransactionRepository
 from app.repositories.category_repository import CategoryRepository
 from app.repositories.account_repository import AccountRepository
 from app.schemas.bulk_import import ImportError, ImportResult
 
+
 REQUIRED_COLUMNS = {"date", "amount", "type", "category", "account"}
 
-class ImportService:
 
+class ImportService:
     def __init__(
         self,
         transaction_repo: TransactionRepository,
@@ -23,8 +25,8 @@ class ImportService:
         account_repo: AccountRepository,
     ):
         self.transaction_repo = transaction_repo
-        self.category_repo    = category_repo
-        self.account_repo     = account_repo
+        self.category_repo = category_repo
+        self.account_repo = account_repo
 
     def import_file(self, content: bytes, filename: str, created_by_id: UUID) -> ImportResult:
         if filename.endswith(".csv"):
@@ -56,47 +58,67 @@ class ImportService:
         try:
             date = pd.to_datetime(row["date"]).date()
         except Exception:
-            return ImportError(row=row_num, error=f"Invalid date: '{row['date']}'. Expected YYYY-MM-DD")
+            return ImportError(
+                row=row_num,
+                error=f"Invalid date: '{row['date']}'. Expected YYYY-MM-DD",
+            )
 
-        # Validate amount
         try:
             amount = Decimal(str(row["amount"]))
             if amount <= 0:
                 raise ValueError()
         except (InvalidOperation, ValueError):
-            return ImportError(row=row_num, error=f"Amount must be a positive number: '{row['amount']}'")
+            return ImportError(
+                row=row_num,
+                error=f"Amount must be a positive number: '{row['amount']}'",
+            )
 
-        # Validate type
-        t_type = str(row["type"]).lower().strip()
-        if t_type not in ("income", "expense"):
-            return ImportError(row=row_num, error=f"Type must be 'income' or 'expense': '{row['type']}'")
+        raw_type = str(row["type"]).lower().strip()
+        if raw_type not in ("income", "expense"):
+            return ImportError(
+                row=row_num,
+                error=f"Type must be 'income' or 'expense': '{row['type']}'",
+            )
+        t_type = TransactionType(raw_type)
 
-        # Validate category
         category = self.category_repo.get_by_name(str(row["category"]))
         if not category:
-            return ImportError(row=row_num, error=f"Category not found: '{row['category']}'")
-        if category.type != t_type:
-            return ImportError(row=row_num, error=f"Category '{row['category']}' is {category.type}, not {t_type}")
+            return ImportError(
+                row=row_num,
+                error=f"Category not found: '{row['category']}'",
+            )
+        if category.type.value != raw_type:
+            return ImportError(
+                row=row_num,
+                error=f"Category '{row['category']}' is {category.type.value}, not {raw_type}",
+            )
 
-        # Validate account
         account = self.account_repo.get_by_name(str(row["account"]))
         if not account:
-            return ImportError(row=row_num, error=f"Account not found: '{row['account']}'")
+            return ImportError(
+                row=row_num,
+                error=f"Account not found: '{row['account']}'",
+            )
 
-        # Optional description
         raw_desc = row.get("description", "")
-        description = str(raw_desc) if pd.notna(raw_desc) and str(raw_desc).strip() else None
+        description = (
+            str(raw_desc)
+            if pd.notna(raw_desc) and str(raw_desc).strip()
+            else None
+        )
 
-        self.transaction_repo.add(Transaction(
-            id=uuid.uuid4(),
-            account_id=account.id,
-            category_id=category.id,
-            created_by=created_by_id,
-            amount=amount,
-            type=t_type,
-            date=date,
-            created_at=datetime.now(UTC),
-        ))
+        self.transaction_repo.add(
+            Transaction(
+                id=uuid.uuid4(),
+                account_id=account.id,
+                category_id=category.id,
+                created_by=created_by_id,
+                amount=amount,
+                type=t_type,
+                date=date,
+                description=description,
+                created_at=datetime.now(UTC),
+            )
+        )
 
-        # no error
         return None
