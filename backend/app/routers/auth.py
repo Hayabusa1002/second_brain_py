@@ -49,30 +49,30 @@ def get_controller(db: Session = Depends(get_db)) -> AuthController:
     return AuthController(auth_service)
 
 
-def _set_auth_cookies(response: Response, result: TokenResponse):
+def _cookie_params():
     if settings.APP_ENV == "production":
-        samesite = "none"
-        secure = True
-    else:
-        samesite = "lax"
-        secure = False
+        return {"samesite": "none", "secure": True}
+    return {"samesite": "lax", "secure": False}
+
+
+def _set_auth_cookies(response: Response, result: TokenResponse):
+    params = _cookie_params()
 
     response.set_cookie(
         key="access_token",
         value=result.access_token,
         httponly=True,
-        secure=secure,
-        samesite=samesite,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        path="/",
+        **params,
     )
     response.set_cookie(
         key="refresh_token",
         value=result.refresh_token,
         httponly=True,
-        secure=secure,
-        samesite=samesite,
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400,
-        path="/auth/refresh",
+        path="/api/auth/refresh",
+        **params,
     )
 
 
@@ -88,7 +88,11 @@ def register(data: UserCreate, controller: AuthController = Depends(get_controll
 
 
 @router.post("/auth/login")
-def login(data: UserLogin, response: Response, controller: AuthController = Depends(get_controller)):
+def login(
+    data: UserLogin,
+    response: Response,
+    controller: AuthController = Depends(get_controller),
+):
     result = controller.login(data)
     _set_auth_cookies(response, result)
     return {"user": result.user}
@@ -116,23 +120,17 @@ def refresh_token(
         raise HTTPException(status_code=401, detail="User not found or inactive")
 
     new_access_token = create_access_token(user.id)
-    
-    if settings.APP_ENV == "production":
-        samesite = "none"
-        secure = True
-    else:
-        samesite = "lax"
-        secure = False
+    params = _cookie_params()
 
     response.set_cookie(
         key="access_token",
         value=new_access_token,
         httponly=True,
-        secure=secure,
-        samesite=samesite,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        path="/",
+        **params,
     )
-    
+
     return {"message": "Token refreshed"}
 
 
@@ -151,8 +149,30 @@ def change_password(
 
 @router.post("/auth/logout")
 def logout(response: Response):
-    response.delete_cookie("access_token")
-    response.delete_cookie("refresh_token", path="/auth/refresh")
+    params = _cookie_params()
+
+    # Expirar access_token
+    response.set_cookie(
+        key="access_token",
+        value="",
+        httponly=True,
+        max_age=0,
+        expires=0,
+        path="/",
+        **params,
+    )
+
+    # Expirar refresh_token
+    response.set_cookie(
+        key="refresh_token",
+        value="",
+        httponly=True,
+        max_age=0,
+        expires=0,
+        path="/api/auth/refresh",
+        **params,
+    )
+
     return {"message": "Logged out"}
 
 
@@ -181,7 +201,10 @@ async def google_callback(
         oauth_id=user_info["sub"],
     )
     if result is None:
-        return RedirectResponse(f"{settings.ALLOWED_ORIGINS[0]}/login?status=pending", status_code=302)
+        return RedirectResponse(
+            f"{settings.ALLOWED_ORIGINS[0]}/login?status=pending",
+            status_code=302,
+        )
 
     redirect = RedirectResponse(f"{settings.ALLOWED_ORIGINS[0]}/", status_code=302)
     _set_auth_cookies(redirect, result)
@@ -211,11 +234,17 @@ async def github_callback(
     if not email:
         email_resp = await oauth.github.get("user/emails", token=token)
         emails = email_resp.json()
-        primary = next((e for e in emails if e.get("primary") and e.get("verified")), None)
+        primary = next(
+            (e for e in emails if e.get("primary") and e.get("verified")),
+            None,
+        )
         email = primary["email"] if primary else None
 
     if not email:
-        return RedirectResponse(f"{settings.ALLOWED_ORIGINS[0]}/login?status=no_email", status_code=302)
+        return RedirectResponse(
+            f"{settings.ALLOWED_ORIGINS[0]}/login?status=no_email",
+            status_code=302,
+        )
 
     auth_service = AuthService(UserService(UserRepository(db), AccountRepository(db)))
     result = auth_service.login_or_create_oauth_user(
@@ -225,7 +254,10 @@ async def github_callback(
         oauth_id=str(github_user["id"]),
     )
     if result is None:
-        return RedirectResponse(f"{settings.ALLOWED_ORIGINS[0]}/login?status=pending", status_code=302)
+        return RedirectResponse(
+            f"{settings.ALLOWED_ORIGINS[0]}/login?status=pending",
+            status_code=302,
+        )
 
     redirect = RedirectResponse(f"{settings.ALLOWED_ORIGINS[0]}/", status_code=302)
     _set_auth_cookies(redirect, result)
