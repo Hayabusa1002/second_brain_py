@@ -1,5 +1,4 @@
 import uuid
-
 from fastapi import APIRouter, Depends, Response, HTTPException, Cookie, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
@@ -7,12 +6,12 @@ from jose import JWTError
 from authlib.integrations.starlette_client import OAuth
 from starlette.config import Config
 
+
 from app.db.deps import get_db, get_current_user
 from app.controllers.auth_controller import AuthController
 from app.services.auth_service import AuthService
 from app.services.user_service import UserService
 from app.repositories.user_repository import UserRepository
-from app.repositories.account_repository import AccountRepository
 from app.schemas.user import UserCreate, UserLogin, PasswordChange, TokenResponse
 from app.core.config import settings
 from app.core.security import verify_password, hash_password, create_access_token
@@ -21,10 +20,12 @@ from app.core.security import verify_password, hash_password, create_access_toke
 router = APIRouter()
 
 
+# OAuth client setup
 _config = Config(environ={
     "GOOGLE_CLIENT_ID": settings.GOOGLE_CLIENT_ID,
     "GOOGLE_CLIENT_SECRET": settings.GOOGLE_CLIENT_SECRET,
 })
+
 
 oauth = OAuth(_config)
 oauth.register(
@@ -43,41 +44,28 @@ oauth.register(
 )
 
 
-def get_auth_service(db: Session = Depends(get_db)) -> AuthService:
-    user_repo = UserRepository(db)
-    user_service = UserService(user_repo)
-    return AuthService(user_service)
-
 
 def get_controller(db: Session = Depends(get_db)) -> AuthController:
-    return AuthController(get_auth_service(db))
+    user_repo = UserRepository(db)
+    user_service = UserService(user_repo)
+    auth_service = AuthService(user_service)
+    return AuthController(auth_service)
 
-
-def _cookie_params():
-    if settings.APP_ENV == "production":
-        return {"samesite": "none", "secure": True}
-    return {"samesite": "lax", "secure": False}
 
 
 def _set_auth_cookies(response: Response, result: TokenResponse):
-    params = _cookie_params()
+    response.set_cookie(
+        key="access_token", value=result.access_token,
+        httponly=True, secure=settings.APP_ENV == "production",
+        samesite="lax", max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+    response.set_cookie(
+        key="refresh_token", value=result.refresh_token,
+        httponly=True, secure=settings.APP_ENV == "production",
+        samesite="lax", max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400,
+        path="/auth/refresh",
+    )
 
-    response.set_cookie(
-        key="access_token",
-        value=result.access_token,
-        httponly=True,
-        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        path="/",
-        **params,
-    )
-    response.set_cookie(
-        key="refresh_token",
-        value=result.refresh_token,
-        httponly=True,
-        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400,
-        path="/api/auth/refresh",
-        **params,
-    )
 
 
 @router.get("/auth/me")
@@ -85,24 +73,20 @@ def me(current_user=Depends(get_current_user)):
     return {"user": current_user}
 
 
+
 @router.post("/auth/register", status_code=201)
-def register(
-    data: UserCreate,
-    controller: AuthController = Depends(get_controller),
-):
+def register(data: UserCreate, controller: AuthController = Depends(get_controller)):
     user = controller.register(data)
     return {"user": user}
 
 
+
 @router.post("/auth/login")
-def login(
-    data: UserLogin,
-    response: Response,
-    controller: AuthController = Depends(get_controller),
-):
+def login(data: UserLogin, response: Response, controller: AuthController = Depends(get_controller)):
     result = controller.login(data)
     _set_auth_cookies(response, result)
     return {"user": result.user}
+
 
 
 @router.post("/auth/refresh")
@@ -113,35 +97,29 @@ def refresh_token(
 ):
     if not refresh_token:
         raise HTTPException(status_code=401, detail="No refresh token")
-
     try:
         from jose import jwt
-
         payload = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=["HS256"])
         if payload.get("type") != "refresh":
             raise HTTPException(status_code=401, detail="Invalid token type")
-
         user_id = uuid.UUID(payload["sub"])
-    except (JWTError, ValueError):
+    except JWTError:
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+
 
     user = UserRepository(db).get_by_id(user_id)
     if not user or user.status.value != "active":
         raise HTTPException(status_code=401, detail="User not found or inactive")
 
+
     new_access_token = create_access_token(user.id)
-    params = _cookie_params()
-
     response.set_cookie(
-        key="access_token",
-        value=new_access_token,
-        httponly=True,
-        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        path="/",
-        **params,
+        key="access_token", value=new_access_token,
+        httponly=True, secure=settings.APP_ENV == "production",
+        samesite="lax", max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
-
     return {"message": "Token refreshed"}
+
 
 
 @router.put("/auth/password")
@@ -150,126 +128,104 @@ def change_password(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    if not current_user.password or not verify_password(data.current_password, current_user.password):
+    if not verify_password(data.current_password, current_user.password):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
-
     hashed = hash_password(data.new_password)
     UserRepository(db).update_password(current_user.id, hashed)
     return {"message": "Password updated successfully"}
 
 
+
 @router.post("/auth/logout")
 def logout(response: Response):
-    params = _cookie_params()
-
-    # Expirar access_token
-    response.set_cookie(
-        key="access_token",
-        value="",
-        httponly=True,
-        max_age=0,
-        expires=0,
-        path="/",
-        **params,
-    )
-
-    # Expirar refresh_token
-    response.set_cookie(
-        key="refresh_token",
-        value="",
-        httponly=True,
-        max_age=0,
-        expires=0,
-        path="/api/auth/refresh",
-        **params,
-    )
-
+    response.delete_cookie("access_token")
+    response.delete_cookie("refresh_token", path="/auth/refresh")
     return {"message": "Logged out"}
+
+
+
+# ── Google ───────────────────────────────────────────────────────────────────
 
 
 @router.get("/auth/google")
 async def google_login(request: Request):
     if not settings.GOOGLE_CLIENT_ID:
         raise HTTPException(status_code=503, detail="Google OAuth not configured")
-
     redirect_uri = f"{settings.APP_BASE_URL}/api/auth/google/callback"
     return await oauth.google.authorize_redirect(request, redirect_uri)
+
 
 
 @router.get("/auth/google/callback")
 async def google_callback(
     request: Request,
-    auth_service: AuthService = Depends(get_auth_service),
+    db: Session = Depends(get_db),
 ):
     token = await oauth.google.authorize_access_token(request)
     user_info = token.get("userinfo")
-    auth_service = AuthService(UserService(UserRepository(db), AccountRepository(db)))
+    auth_service = AuthService(UserService(UserRepository(db)))
     result = auth_service.login_or_create_oauth_user(
         email=user_info["email"],
         name=user_info.get("name", user_info["email"]),
         provider="google",
         oauth_id=user_info["sub"],
     )
-
     if result is None:
-        return RedirectResponse(
-            f"{settings.ALLOWED_ORIGINS[0]}/login?status=pending",
-            status_code=302,
-        )
+        return RedirectResponse(f"{settings.ALLOWED_ORIGINS[0]}/login?status=pending", status_code=302)
+
 
     redirect = RedirectResponse(f"{settings.ALLOWED_ORIGINS[0]}/", status_code=302)
     _set_auth_cookies(redirect, result)
     return redirect
+
+
+
+# ── GitHub ───────────────────────────────────────────────────────────────────
 
 
 @router.get("/auth/github")
 async def github_login(request: Request):
     if not settings.GITHUB_CLIENT_ID:
         raise HTTPException(status_code=503, detail="GitHub OAuth not configured")
-
     redirect_uri = f"{settings.APP_BASE_URL}/api/auth/github/callback"
     return await oauth.github.authorize_redirect(request, redirect_uri)
+
 
 
 @router.get("/auth/github/callback")
 async def github_callback(
     request: Request,
-    auth_service: AuthService = Depends(get_auth_service),
+    db: Session = Depends(get_db),
 ):
     token = await oauth.github.authorize_access_token(request)
     resp = await oauth.github.get("user", token=token)
     github_user = resp.json()
 
+
     email = github_user.get("email")
     if not email:
         email_resp = await oauth.github.get("user/emails", token=token)
         emails = email_resp.json()
-        primary = next(
-            (e for e in emails if e.get("primary") and e.get("verified")),
-            None,
-        )
+        primary = next((e for e in emails if e.get("primary") and e.get("verified")), None)
         email = primary["email"] if primary else None
 
-    if not email:
-        return RedirectResponse(
-            f"{settings.ALLOWED_ORIGINS[0]}/login?status=no_email",
-            status_code=302,
-        )
 
-    auth_service = AuthService(UserService(UserRepository(db), AccountRepository(db)))
+    if not email:
+        return RedirectResponse(f"{settings.ALLOWED_ORIGINS[0]}/login?status=no_email", status_code=302)
+
+
+    auth_service = AuthService(UserService(UserRepository(db)))
     result = auth_service.login_or_create_oauth_user(
         email=email,
         name=github_user.get("name") or github_user.get("login"),
         provider="github",
         oauth_id=str(github_user["id"]),
     )
-
     if result is None:
-        return RedirectResponse(
-            f"{settings.ALLOWED_ORIGINS[0]}/login?status=pending",
-            status_code=302,
-        )
+        return RedirectResponse(f"{settings.ALLOWED_ORIGINS[0]}/login?status=pending", status_code=302)
+
 
     redirect = RedirectResponse(f"{settings.ALLOWED_ORIGINS[0]}/", status_code=302)
     _set_auth_cookies(redirect, result)
     return redirect
+

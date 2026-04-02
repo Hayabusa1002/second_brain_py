@@ -34,6 +34,7 @@ else:
     app = FastAPI()
 
 
+# Required by Authlib to store OAuth state between redirect and callback
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
@@ -48,7 +49,7 @@ app.add_middleware(
 )
 
 
-
+# Exception handlers
 app.add_exception_handler(AppError, app_error_handler)
 app.add_exception_handler(RequestValidationError, validation_error_handler)
 app.add_exception_handler(JWTError, jwt_error_handler)
