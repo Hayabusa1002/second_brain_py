@@ -50,15 +50,28 @@ def get_controller(db: Session = Depends(get_db)) -> AuthController:
 
 
 def _set_auth_cookies(response: Response, result: TokenResponse):
+    if settings.APP_ENV == "production":
+        samesite = "none"
+        secure = True
+    else:
+        samesite = "lax"
+        secure = False
+
     response.set_cookie(
-        key="access_token", value=result.access_token,
-        httponly=True, secure=settings.APP_ENV == "production",
-        samesite="lax", max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        key="access_token",
+        value=result.access_token,
+        httponly=True,
+        secure=secure,
+        samesite=samesite,
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
     response.set_cookie(
-        key="refresh_token", value=result.refresh_token,
-        httponly=True, secure=settings.APP_ENV == "production",
-        samesite="lax", max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400,
+        key="refresh_token",
+        value=result.refresh_token,
+        httponly=True,
+        secure=secure,
+        samesite=samesite,
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400,
         path="/auth/refresh",
     )
 
@@ -103,11 +116,23 @@ def refresh_token(
         raise HTTPException(status_code=401, detail="User not found or inactive")
 
     new_access_token = create_access_token(user.id)
+    
+    if settings.APP_ENV == "production":
+        samesite = "none"
+        secure = True
+    else:
+        samesite = "lax"
+        secure = False
+
     response.set_cookie(
-        key="access_token", value=new_access_token,
-        httponly=True, secure=settings.APP_ENV == "production",
-        samesite="lax", max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        key="access_token",
+        value=new_access_token,
+        httponly=True,
+        secure=secure,
+        samesite=samesite,
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
+    
     return {"message": "Token refreshed"}
 
 
