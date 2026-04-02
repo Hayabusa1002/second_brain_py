@@ -1,11 +1,19 @@
 from uuid import UUID
 from datetime import datetime
 from pydantic import BaseModel
+
 from app.models.category import CategoryType
+
 
 class CategoryCreate(BaseModel):
     name: str
     type: CategoryType
+
+
+class CategoryUpdate(BaseModel):
+    name: str | None = None
+    type: CategoryType | None = None
+
 
 class CategoryResponse(BaseModel):
     id: UUID

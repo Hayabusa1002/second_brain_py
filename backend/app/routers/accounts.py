@@ -1,5 +1,6 @@
 from uuid import UUID
 from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -13,6 +14,7 @@ from app.schemas.user import UserResponse
 from app.core.exceptions import NotFoundError
 from app.models.user import UserRole
 from app.models.account import AccountType
+
 
 
 router = APIRouter()
@@ -84,7 +86,7 @@ def list_active_users(
 @router.post("/accounts", response_model=AccountResponse, status_code=201)
 def create_account(
     data: AccountCreate,
-    db: Session = Depends(get_db),
+    service: AccountService = Depends(get_service),
     user=Depends(get_current_user),
 ):
     if data.type == AccountType.shared and user.role not in (UserRole.admin, UserRole.owner):
@@ -104,7 +106,7 @@ def create_account(
 def update_account(
     account_id: UUID,
     data: AccountUpdate,
-    db: Session = Depends(get_db),
+    service: AccountService = Depends(get_service),
     user=Depends(get_current_user),
 ):
     account = _get_account_or_404(account_id, db)
@@ -148,7 +150,7 @@ def update_account(
 @router.delete("/accounts/{account_id}", status_code=204)
 def delete_account(
     account_id: UUID,
-    db: Session = Depends(get_db),
+    service: AccountService = Depends(get_service),
     user=Depends(get_current_user),
 ):
     account = _get_account_or_404(account_id, db)
@@ -190,12 +192,14 @@ def delete_account(
     if not deleted:
         raise HTTPException(status_code=404, detail="Account not found")
 
+    return None
+
 
 @router.post("/accounts/{account_id}/owners/{user_id}", status_code=200)
 def assign_owner(
     account_id: UUID,
     user_id: UUID,
-    db: Session = Depends(get_db),
+    service: AccountService = Depends(get_service),
     user=Depends(get_current_user),
 ):
     if not _can_manage_shared_account_owners(user):
@@ -219,7 +223,7 @@ def assign_owner(
         )
 
     try:
-        repo.assign_owner(account_id, user_id)
+        service.assign_owner(account_id, user_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -230,7 +234,7 @@ def assign_owner(
 def unassign_owner(
     account_id: UUID,
     user_id: UUID,
-    db: Session = Depends(get_db),
+    service: AccountService = Depends(get_service),
     user=Depends(get_current_user),
 ):
     if not _can_manage_shared_account_owners(user):
@@ -254,7 +258,7 @@ def unassign_owner(
         )
 
     try:
-        repo.unassign_owner(account_id, user_id)
+        service.unassign_owner(account_id, user_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

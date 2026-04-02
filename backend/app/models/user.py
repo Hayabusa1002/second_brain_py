@@ -34,11 +34,20 @@ class User(Base):
     oauth_id = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
-    # back_populates must match exactly the property name on the other model
     accounts = relationship("Account", secondary="account_owners", back_populates="owners")
     transactions = relationship(
         "Transaction",
         back_populates="creator",
         foreign_keys="Transaction.created_by",
         cascade="all, delete-orphan"
+    )
+    paid_transactions = relationship(
+        "Transaction",
+        back_populates="payer",
+        foreign_keys="Transaction.paid_by"
+    )
+    received_transactions = relationship(
+        "Transaction",
+        back_populates="payee",
+        foreign_keys="Transaction.paid_to"
     )

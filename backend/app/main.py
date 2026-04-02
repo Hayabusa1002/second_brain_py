@@ -4,7 +4,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from jose import JWTError
 
-from app.routers import transactions, categories, accounts, users, auth, export
+from app.routers import (
+    transactions,
+    categories,
+    accounts,
+    users,
+    auth,
+    export,
+    stores,
+    subcategories,
+    cities,
+)
 from app.core.config import settings
 from app.core.exceptions import (
     AppError,
@@ -24,7 +34,6 @@ else:
     app = FastAPI()
 
 
-# Required by Authlib to store OAuth state between redirect and callback
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
@@ -39,7 +48,7 @@ app.add_middleware(
 )
 
 
-# Exception handlers
+
 app.add_exception_handler(AppError, app_error_handler)
 app.add_exception_handler(RequestValidationError, validation_error_handler)
 app.add_exception_handler(JWTError, jwt_error_handler)
@@ -53,6 +62,9 @@ app.include_router(categories.router, prefix="/api")
 app.include_router(accounts.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
 app.include_router(export.router, prefix="/api")
+app.include_router(stores.router, prefix="/api")
+app.include_router(subcategories.router, prefix="/api")
+app.include_router(cities.router, prefix="/api")
 
 
 @app.get("/health")

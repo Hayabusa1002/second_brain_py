@@ -1,4 +1,5 @@
 import uuid
+
 from fastapi import APIRouter, Depends, Response, HTTPException, Cookie, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
@@ -16,9 +17,10 @@ from app.schemas.user import UserCreate, UserLogin, PasswordChange, TokenRespons
 from app.core.config import settings
 from app.core.security import verify_password, hash_password, create_access_token
 
+
 router = APIRouter()
 
-# OAuth client setup
+
 _config = Config(environ={
     "GOOGLE_CLIENT_ID": settings.GOOGLE_CLIENT_ID,
     "GOOGLE_CLIENT_SECRET": settings.GOOGLE_CLIENT_SECRET,
@@ -41,12 +43,14 @@ oauth.register(
 )
 
 
-def get_controller(db: Session = Depends(get_db)) -> AuthController:
+def get_auth_service(db: Session = Depends(get_db)) -> AuthService:
     user_repo = UserRepository(db)
-    account_repo = AccountRepository(db)
-    user_service = UserService(user_repo, account_repo)
-    auth_service = AuthService(user_service)
-    return AuthController(auth_service)
+    user_service = UserService(user_repo)
+    return AuthService(user_service)
+
+
+def get_controller(db: Session = Depends(get_db)) -> AuthController:
+    return AuthController(get_auth_service(db))
 
 
 def _cookie_params():
@@ -82,7 +86,10 @@ def me(current_user=Depends(get_current_user)):
 
 
 @router.post("/auth/register", status_code=201)
-def register(data: UserCreate, controller: AuthController = Depends(get_controller)):
+def register(
+    data: UserCreate,
+    controller: AuthController = Depends(get_controller),
+):
     user = controller.register(data)
     return {"user": user}
 
@@ -106,13 +113,16 @@ def refresh_token(
 ):
     if not refresh_token:
         raise HTTPException(status_code=401, detail="No refresh token")
+
     try:
         from jose import jwt
+
         payload = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=["HS256"])
         if payload.get("type") != "refresh":
             raise HTTPException(status_code=401, detail="Invalid token type")
+
         user_id = uuid.UUID(payload["sub"])
-    except JWTError:
+    except (JWTError, ValueError):
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
 
     user = UserRepository(db).get_by_id(user_id)
@@ -140,8 +150,9 @@ def change_password(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    if not verify_password(data.current_password, current_user.password):
+    if not current_user.password or not verify_password(data.current_password, current_user.password):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
+
     hashed = hash_password(data.new_password)
     UserRepository(db).update_password(current_user.id, hashed)
     return {"message": "Password updated successfully"}
@@ -176,12 +187,11 @@ def logout(response: Response):
     return {"message": "Logged out"}
 
 
-# ── Google ───────────────────────────────────────────────────────────────────
-
 @router.get("/auth/google")
 async def google_login(request: Request):
     if not settings.GOOGLE_CLIENT_ID:
         raise HTTPException(status_code=503, detail="Google OAuth not configured")
+
     redirect_uri = f"{settings.APP_BASE_URL}/api/auth/google/callback"
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
@@ -189,7 +199,7 @@ async def google_login(request: Request):
 @router.get("/auth/google/callback")
 async def google_callback(
     request: Request,
-    db: Session = Depends(get_db),
+    auth_service: AuthService = Depends(get_auth_service),
 ):
     token = await oauth.google.authorize_access_token(request)
     user_info = token.get("userinfo")
@@ -200,6 +210,7 @@ async def google_callback(
         provider="google",
         oauth_id=user_info["sub"],
     )
+
     if result is None:
         return RedirectResponse(
             f"{settings.ALLOWED_ORIGINS[0]}/login?status=pending",
@@ -211,12 +222,11 @@ async def google_callback(
     return redirect
 
 
-# ── GitHub ───────────────────────────────────────────────────────────────────
-
 @router.get("/auth/github")
 async def github_login(request: Request):
     if not settings.GITHUB_CLIENT_ID:
         raise HTTPException(status_code=503, detail="GitHub OAuth not configured")
+
     redirect_uri = f"{settings.APP_BASE_URL}/api/auth/github/callback"
     return await oauth.github.authorize_redirect(request, redirect_uri)
 
@@ -224,7 +234,7 @@ async def github_login(request: Request):
 @router.get("/auth/github/callback")
 async def github_callback(
     request: Request,
-    db: Session = Depends(get_db),
+    auth_service: AuthService = Depends(get_auth_service),
 ):
     token = await oauth.github.authorize_access_token(request)
     resp = await oauth.github.get("user", token=token)
@@ -253,6 +263,7 @@ async def github_callback(
         provider="github",
         oauth_id=str(github_user["id"]),
     )
+
     if result is None:
         return RedirectResponse(
             f"{settings.ALLOWED_ORIGINS[0]}/login?status=pending",
