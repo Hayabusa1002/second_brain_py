@@ -10,8 +10,15 @@ from app.db.base import Base
 
 
 class TransactionType(str, enum.Enum):
-    income  = "income"
+    income = "income"
     expense = "expense"
+
+
+class PaymentMethod(str, enum.Enum):
+    cash = "cash"
+    debit = "debit"
+    credit = "credit"
+    transfer = "transfer"
 
 
 class Transaction(Base):
@@ -21,10 +28,11 @@ class Transaction(Base):
     account_id     = Column(UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False)
     store_id       = Column(UUID(as_uuid=True), ForeignKey("stores.id"), nullable=True)
     category_id    = Column(UUID(as_uuid=True), ForeignKey("categories.id"), nullable=False)
-    subcategory_id = Column(UUID(as_uuid=True), ForeignKey("subcategories.id"), nullable=True)    
+    subcategory_id = Column(UUID(as_uuid=True), ForeignKey("subcategories.id"), nullable=True)
     city_id        = Column(UUID(as_uuid=True), ForeignKey("cities.id"), nullable=True)
 
-    type           = Column(Enum(TransactionType), nullable=False)
+    type           = Column(Enum(TransactionType, name="transaction_type"), nullable=False)
+    payment_method = Column(Enum(PaymentMethod, name="payment_method"), nullable=False)
     amount         = Column(Numeric(12, 2), nullable=False)
     description    = Column(String, nullable=True)
     date           = Column(Date, nullable=False)

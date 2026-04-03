@@ -10,6 +10,7 @@ from app.db.deps import get_db, get_current_user
 from app.controllers.transaction_controller import TransactionController
 from app.services.transaction_service import TransactionService
 from app.repositories.transaction_repository import TransactionRepository
+from app.models.transaction import TransactionType, PaymentMethod
 from app.schemas.transaction import (
     TransactionCreate,
     TransactionUpdate,
@@ -24,11 +25,11 @@ from app.core.exceptions import NotFoundError
 router = APIRouter()
 
 
-TEMPLATE_CSV = """date,amount,type,category,subcategory,account,store,city,paid_by,paid_to,description
-2026-01-15,50000,expense,Food,Restaurant,Personal,Crepes & Waffles,Medellin,Luis,Luis,Lunch at restaurant
-2026-01-16,2000000,income,Salary,Monthly Salary,Personal,,,,,Monthly salary
-2026-01-17,30000,expense,Transport,Bus,Shared,Metro,Medellin,Luis,Daniel,Bus tickets
-2026-01-18,15000,expense,Entertainment,Cinema,Shared,Cine Colombia,Medellin,Daniel,Daniel,Movie night
+TEMPLATE_CSV = """date,amount,type,payment_method,category,subcategory,account,store,city,paid_by,paid_to,description
+2026-01-15,50000,expense,debit,Food,Restaurant,Personal,Crepes & Waffles,Medellin,Luis,Luis,Lunch at restaurant
+2026-01-16,2000000,income,transfer,Salary,Monthly Salary,Personal,,,,,Monthly salary
+2026-01-17,30000,expense,cash,Transport,Bus,Shared,Metro,Medellin,Luis,Daniel,Bus tickets
+2026-01-18,15000,expense,credit,Entertainment,Cinema,Shared,Cine Colombia,Medellin,Daniel,Daniel,Movie night
 """
 
 
@@ -64,7 +65,8 @@ async def import_transactions(
 
 @router.get("/transactions", response_model=List[TransactionResponse])
 def list_transactions(
-    type: Optional[str] = Query(default=None),
+    type: Optional[TransactionType] = Query(default=None),
+    payment_method: Optional[PaymentMethod] = Query(default=None),
     category_id: Optional[UUID] = Query(default=None),
     subcategory_id: Optional[UUID] = Query(default=None),
     account_id: Optional[UUID] = Query(default=None),
@@ -80,6 +82,7 @@ def list_transactions(
 ):
     return controller.list_transactions(
         type=type,
+        payment_method=payment_method,
         category_id=category_id,
         subcategory_id=subcategory_id,
         account_id=account_id,

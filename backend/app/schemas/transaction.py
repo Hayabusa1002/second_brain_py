@@ -3,7 +3,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from pydantic import BaseModel
 
-from app.models.transaction import TransactionType
+from app.models.transaction import TransactionType, PaymentMethod
 from app.schemas.user import UserResponse
 from app.schemas.category import CategoryResponse
 from app.schemas.account import AccountResponse
@@ -23,6 +23,7 @@ class TransactionBase(BaseModel):
     paid_to: UUID | None = None
     amount: Decimal
     type: TransactionType
+    payment_method: PaymentMethod
     date: date
     description: str | None = None
 
@@ -41,6 +42,7 @@ class TransactionUpdate(BaseModel):
     paid_to: UUID | None = None
     amount: Decimal | None = None
     type: TransactionType | None = None
+    payment_method: PaymentMethod | None = None
     date: date | None = None
     description: str | None = None
 
@@ -57,6 +59,7 @@ class TransactionResponse(BaseModel):
     paid_to: UUID | None = None
     amount: Decimal
     type: TransactionType
+    payment_method: PaymentMethod
     date: date
     description: str | None = None
     created_at: datetime
@@ -68,6 +71,7 @@ class TransactionDetailResponse(BaseModel):
     id: UUID
     amount: Decimal
     type: TransactionType
+    payment_method: PaymentMethod
     date: date
     description: str | None = None
     created_at: datetime

@@ -3,7 +3,7 @@ from typing import Optional
 from uuid import UUID
 from datetime import date
 
-from app.models.transaction import Transaction
+from app.models.transaction import Transaction, TransactionType, PaymentMethod
 from app.repositories.transaction_repository import TransactionRepository
 
 
@@ -14,7 +14,8 @@ class TransactionService:
     def list_transactions(
         self,
         user_id: UUID,
-        type: Optional[str] = None,
+        type: Optional[TransactionType] = None,
+        payment_method: Optional[PaymentMethod] = None,
         category_id: Optional[UUID] = None,
         subcategory_id: Optional[UUID] = None,
         account_id: Optional[UUID] = None,
@@ -29,6 +30,7 @@ class TransactionService:
         return self.repository.list(
             user_id=user_id,
             type=type,
+            payment_method=payment_method,
             category_id=category_id,
             subcategory_id=subcategory_id,
             account_id=account_id,
@@ -54,6 +56,7 @@ class TransactionService:
             city_id=getattr(data, "city_id", None),
             amount=data.amount,
             type=data.type,
+            payment_method=data.payment_method,
             description=getattr(data, "description", None),
             date=data.date,
             created_by=created_by_id,

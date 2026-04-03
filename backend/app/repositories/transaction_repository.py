@@ -4,7 +4,7 @@ from datetime import date
 
 from sqlalchemy.orm import Session, joinedload
 
-from app.models.transaction import Transaction
+from app.models.transaction import Transaction, PaymentMethod
 
 
 class TransactionRepository:
@@ -15,6 +15,7 @@ class TransactionRepository:
         self,
         user_id: UUID,
         type: Optional[str] = None,
+        payment_method: Optional[PaymentMethod] = None,
         category_id: Optional[UUID] = None,
         subcategory_id: Optional[UUID] = None,
         account_id: Optional[UUID] = None,
@@ -43,6 +44,8 @@ class TransactionRepository:
 
         if type:
             query = query.filter(Transaction.type == type)
+        if payment_method:
+            query = query.filter(Transaction.payment_method == payment_method)
         if category_id:
             query = query.filter(Transaction.category_id == category_id)
         if subcategory_id:

@@ -5,6 +5,7 @@ from datetime import date
 from sqlalchemy.orm import Session
 from fastapi import UploadFile
 
+from app.models.transaction import TransactionType, PaymentMethod
 from app.services.import_service import ImportService
 from app.repositories.category_repository import CategoryRepository
 from app.repositories.account_repository import AccountRepository
@@ -19,7 +20,8 @@ class TransactionController:
     def list_transactions(
         self,
         user_id: UUID,
-        type: Optional[str] = None,
+        type: Optional[TransactionType] = None,
+        payment_method: Optional[PaymentMethod] = None,
         category_id: Optional[UUID] = None,
         subcategory_id: Optional[UUID] = None,
         account_id: Optional[UUID] = None,
@@ -34,6 +36,7 @@ class TransactionController:
         return self.service.list_transactions(
             user_id=user_id,
             type=type,
+            payment_method=payment_method,
             category_id=category_id,
             subcategory_id=subcategory_id,
             account_id=account_id,
