@@ -58,13 +58,7 @@ second_brain/
 │  │  │
 │  │  ├─ repositories/
 │  │  │
-│  │  ├─ schemas/
-│  │  │
-│  │  └─ templates/
-│  │     ├─ base.html
-│  │     ├─ auth/
-│  │     ├─ transactions/
-│  │     └─ features/
+│  │  └─ schemas/
 │  │
 │  ├─ migrations/
 │  │  ├─ versions/
@@ -78,6 +72,22 @@ second_brain/
 │
 ├─ frontend/
 │  ├─ README.md
+│  │
+│  ├─ app/
+│  │  ├─ dist/
+│  │  ├─ public/
+│  │  └─ src/
+│  │     ├─ api/
+│  │     ├─ assests/
+│  │     ├─ components/
+│  │     ├─ context/
+│  │     ├─ hooks/
+│  │     ├─ pages/
+│  │     ├─ App.css
+│  │     ├─ App.jsx
+│  │     ├─ index.css
+│  │     └─ main.jsx
+│  │
 │  └─ web/
 │     ├─ sw.js
 │     │

@@ -11,6 +11,8 @@ import { IconBrain, IconEye, IconEyeOff, IconSun, IconMoon } from '@tabler/icons
 import { FcGoogle } from 'react-icons/fc'
 import { FaGithub } from 'react-icons/fa'
 
+const API_URL = import.meta.env.VITE_API_URL
+
 export default function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
@@ -138,13 +140,13 @@ export default function Login() {
         <div className="card-body">
           <div className="row">
             <div className="col">
-              <a href="/api/auth/github" className="btn btn-4 w-100">
+              <a href={`${API_URL}/api/auth/github`} className="btn btn-4 w-100">
                 <FaGithub size={20} className="me-2" />
                 Login with Github
               </a>
             </div>
             <div className="col">
-              <a href="/api/auth/google" className="btn btn-4 w-100">
+              <a href={`${API_URL}/api/auth/google`} className="btn btn-4 w-100">
                 <FcGoogle size={20} className="me-2" />
                 Login with Google
               </a>

@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useAuth } from './context/AuthContext'
-import AppLayout from './components/layout/AppLayout'
+import ProtectedRoute from './components/auth/ProtectedRoute'
 
 import Login from './pages/Auth/Login'
 import Register from './pages/Auth/Register'
@@ -12,11 +11,6 @@ import Transactions from './pages/Transactions/Transactions'
 import Accounts from './pages/Accounts/Accounts'
 import Users from './pages/Users/Users'
 
-function ProtectedRoute({ children }) {
-  const { user } = useAuth()
-  if (!user) return <Navigate to="/login" replace />
-  return <AppLayout>{children}</AppLayout>
-}
 
 export default function App() {
   return (

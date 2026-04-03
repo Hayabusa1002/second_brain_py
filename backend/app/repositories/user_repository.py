@@ -1,10 +1,10 @@
 from typing import Optional
 from uuid import UUID
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.user import User, UserStatus, UserRole
-from app.models.account import Account
+from app.models.account import AccountType
+from app.models.transaction import Transaction
 
 
 class UserRepository:
@@ -70,24 +70,40 @@ class UserRepository:
         if not user:
             return False
 
-        # Individual accounts
-        sole_owned = (
-            self.db.query(Account)
-            .join(Account.owners)
-            .filter(User.id == user_id)
-            .having(func.count(User.id) == 1)
-            .group_by(Account.id)
-            .all()
-        )
-        for account in sole_owned:
-            self.db.delete(account)
+        try:
+            # Delete every transaction created by this user first
+            self.db.query(Transaction).filter(
+                Transaction.created_by == user_id
+            ).delete(synchronize_session=False)
 
-        # Shared accounts
-        user.accounts.clear()
+            # Copy the relationship to avoid mutating the collection while iterating
+            accounts = list(user.accounts)
 
-        self.db.delete(user)
-        self.db.commit()
-        return True
+            for account in accounts:
+                # Individual accounts belong to a single user by business rule,
+                # so they must be deleted when that user is deleted
+                if account.type == AccountType.individual:
+                    self.db.delete(account)
+                    continue
+
+                # Shared accounts are deleted only when this user is the last owner
+                # Otherwise, the user is simply removed from the owners relation
+                if account.type == AccountType.shared:
+                    if len(account.owners) <= 1:
+                        self.db.delete(account)
+                    else:
+                        account.owners.remove(user)
+
+            # Delete the user only after all dependent cleanup is done
+            self.db.delete(user)
+            self.db.commit()
+            return True
+
+        except Exception:
+            # Roll back the whole transaction so the database does not end up
+            # in a partially deleted state
+            self.db.rollback()
+            raise
 
     def create_oauth(self, email: str, name: str, provider: str, oauth_id: str) -> User:
         user = User(

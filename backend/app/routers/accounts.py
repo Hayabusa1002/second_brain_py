@@ -3,6 +3,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+
 from app.db.deps import get_db, get_current_user
 from app.controllers.account_controller import AccountController
 from app.services.account_service import AccountService
@@ -13,7 +14,9 @@ from app.schemas.user import UserResponse
 from app.core.exceptions import NotFoundError
 from app.models.user import UserRole
 
+
 router = APIRouter()
+
 
 
 def get_controller(db: Session = Depends(get_db)) -> AccountController:
@@ -22,12 +25,14 @@ def get_controller(db: Session = Depends(get_db)) -> AccountController:
     return AccountController(service, db)
 
 
+
 @router.get("/accounts", response_model=List[AccountResponse])
 def list_accounts(
     controller: AccountController = Depends(get_controller),
     user=Depends(get_current_user)
 ):
     return controller.list_accounts(user_id=user.id)
+
 
 
 @router.get("/accounts/{account_id}/balance")
@@ -42,6 +47,7 @@ def get_balance(
     return balance
 
 
+
 @router.get("/accounts/users/active")
 def list_active_users(
     db: Session = Depends(get_db),
@@ -51,6 +57,7 @@ def list_active_users(
         raise HTTPException(status_code=403, detail="Not allowed")
     users = UserRepository(db).get_active()
     return {"users": [UserResponse.model_validate(u) for u in users]}
+
 
 
 @router.post("/accounts", response_model=AccountResponse, status_code=201)
@@ -68,6 +75,7 @@ def create_account(
     return account
 
 
+
 @router.put("/accounts/{account_id}", response_model=AccountResponse)
 def update_account(
     account_id: UUID,
@@ -83,6 +91,7 @@ def update_account(
     return account
 
 
+
 @router.delete("/accounts/{account_id}", status_code=204)
 def delete_account(
     account_id: UUID,
@@ -94,6 +103,7 @@ def delete_account(
     deleted = AccountRepository(db).delete(account_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Account not found")
+
 
 
 @router.post("/accounts/{account_id}/owners/{user_id}", status_code=200)
@@ -113,6 +123,7 @@ def assign_owner(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return {"detail": "Owner assigned"}
+
 
 
 @router.delete("/accounts/{account_id}/owners/{user_id}", status_code=200)

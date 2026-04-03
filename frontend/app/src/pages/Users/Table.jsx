@@ -5,30 +5,42 @@ const fmtDate = (d) => d
   : '—'
 
 const ROLE_BADGE = {
-  admin:   'bg-purple-lt text-purple',
-  owner:   'bg-blue-lt text-blue',
+  admin: 'bg-purple-lt text-purple',
+  owner: 'bg-blue-lt text-blue',
   partner: 'bg-teal-lt text-teal',
 }
 
 const STATUS_BADGE = {
-  active:   'bg-green-lt text-green',
-  pending:  'bg-yellow-lt text-yellow',
+  active: 'bg-green-lt text-green',
+  pending: 'bg-yellow-lt text-yellow',
   inactive: 'bg-secondary-lt text-secondary',
-  banned:   'bg-red-lt text-red',
+  banned: 'bg-red-lt text-red',
 }
 
-export default function Table({ users, currentUserId, loading, onEdit, onBan, onDelete, onAdd }) {
+export default function Table({
+  users,
+  currentUserId,
+  loading,
+  onEdit,
+  onApprove,
+  onReject,
+  onBan,
+  onUnban,
+  onReopen,
+  onDelete,
+  onAdd,
+}) {
   return (
     <div className="card">
       <div className="table-responsive">
         <table className="table table-vcenter table-hover card-table">
           <colgroup>
+            <col style={{ width: '15%' }} />
             <col style={{ width: '20%' }} />
-            <col style={{ width: '25%' }} />
             <col style={{ width: '15%' }} />
             <col style={{ width: '15%' }} />
             <col style={{ width: '15%' }} />
-            <col style={{ width: '10%' }} />
+            <col style={{ width: '20%' }} />
           </colgroup>
           <thead>
             <tr>
@@ -42,7 +54,9 @@ export default function Table({ users, currentUserId, loading, onEdit, onBan, on
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={6} className="text-center py-5 text-secondary">Loading...</td></tr>
+              <tr>
+                <td colSpan={6} className="text-center py-5 text-secondary">Loading...</td>
+              </tr>
             ) : users.length === 0 ? (
               <tr>
                 <td colSpan={6} className="text-center py-5 text-secondary">
@@ -50,9 +64,13 @@ export default function Table({ users, currentUserId, loading, onEdit, onBan, on
                   <button className="btn btn-link p-0" onClick={onAdd}>Create one</button>
                 </td>
               </tr>
-            ) : users.map(u => {
-              const isMe     = u.id === currentUserId
+            ) : users.map((u) => {
+              const isMe = u.id === currentUserId
+              const isPending = u.status === 'pending'
+              const isActive = u.status === 'active'
+              const isInactive = u.status === 'inactive'
               const isBanned = u.status === 'banned'
+
               return (
                 <tr key={u.id}>
                   <td className="fw-medium">
@@ -72,20 +90,64 @@ export default function Table({ users, currentUserId, loading, onEdit, onBan, on
                   </td>
                   <td className="text-secondary">{fmtDate(u.created_at)}</td>
                   <td>
-                    <div className="d-flex gap-1 justify-content-end">
-                      <button className="btn btn-sm btn-outline-secondary"
-                        onClick={() => onEdit(u)}>
+                    <div className="d-flex gap-1 justify-content-end flex-wrap">
+                      <button
+                        className="btn btn-sm btn-outline-secondary"
+                        onClick={() => onEdit(u)}
+                      >
                         Edit
                       </button>
+
                       {!isMe && (
                         <>
+                          {isPending && (
+                            <>
+                              <button
+                                className="btn btn-sm btn-outline-success"
+                                onClick={() => onApprove(u)}
+                              >
+                                Approve
+                              </button>
+                              <button
+                                className="btn btn-sm btn-outline-warning"
+                                onClick={() => onReject(u)}
+                              >
+                                Reject
+                              </button>
+                            </>
+                          )}
+
+                          {isActive && (
+                            <button
+                              className="btn btn-sm btn-outline-warning"
+                              onClick={() => onBan(u)}
+                            >
+                              Ban
+                            </button>
+                          )}
+
+                          {isInactive && (
+                            <button
+                              className="btn btn-sm btn-outline-primary"
+                              onClick={() => onReopen(u)}
+                            >
+                              Reopen
+                            </button>
+                          )}
+
+                          {isBanned && (
+                            <button
+                              className="btn btn-sm btn-outline-success"
+                              onClick={() => onUnban(u)}
+                            >
+                              Unban
+                            </button>
+                          )}
+
                           <button
-                            className={`btn btn-sm ${isBanned ? 'btn-outline-success' : 'btn-outline-warning'}`}
-                            onClick={() => onBan(u)}>
-                            {isBanned ? 'Unban' : 'Ban'}
-                          </button>
-                          <button className="btn btn-sm btn-outline-danger"
-                            onClick={() => onDelete(u)}>
+                            className="btn btn-sm btn-outline-danger"
+                            onClick={() => onDelete(u)}
+                          >
                             <IconTrash size={14} stroke={1.5} />
                           </button>
                         </>

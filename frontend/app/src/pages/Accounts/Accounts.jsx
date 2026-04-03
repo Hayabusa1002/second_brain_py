@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { IconPlus } from '@tabler/icons-react'
 import { useAuth } from '../../context/AuthContext'
 import client from '../../api/client'
-import Alert       from '../../components/ui/Alert'
-import Table       from './Table'
-import FormModal   from './FormModal'
+import Alert from '../../components/ui/Alert'
+import Table from './Table'
+import FormModal from './FormModal'
 import DeleteModal from './DeleteModal'
 import OwnersModal from './OwnersModal'
 
@@ -12,24 +12,39 @@ const EMPTY_FORM = { name: '', type: 'individual' }
 
 export default function Accounts() {
   const { user } = useAuth()
-  const [accounts, setAccounts]   = useState([])
-  const [allUsers, setAllUsers]   = useState([])
-  const [loading, setLoading]     = useState(true)
-  const [error, setError]         = useState('')
 
-  const [mode, setMode]           = useState(null)   // 'add' | 'edit'
-  const [form, setForm]           = useState(EMPTY_FORM)
-  const [editId, setEditId]       = useState(null)
-  const [saving, setSaving]       = useState(false)
+  const [accounts, setAccounts] = useState([])
+  const [allUsers, setAllUsers] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  const [mode, setMode] = useState(null) // 'add' | 'edit'
+  const [form, setForm] = useState(EMPTY_FORM)
+  const [editId, setEditId] = useState(null)
+  const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
 
   const [deleteAccount, setDeleteAccount] = useState(null)
   const [ownersAccount, setOwnersAccount] = useState(null)
 
+  const canManageSharedAccounts =
+    user?.role === 'admin' || user?.role === 'owner'
+
+  const individualAccountsCount = useMemo(() => {
+    return accounts.filter(acc => acc.type === 'individual').length
+  }, [accounts])
+
   useEffect(() => {
     fetchAccounts()
-    fetchUsers()
   }, [])
+
+  useEffect(() => {
+    if (!canManageSharedAccounts) {
+      setAllUsers([])
+      return
+    }
+    fetchUsers()
+  }, [canManageSharedAccounts])
 
   async function fetchAccounts() {
     setLoading(true)
@@ -48,13 +63,15 @@ export default function Accounts() {
     try {
       const { data } = await client.get('/accounts/users/active')
       setAllUsers(data.users)
-    } catch (e) {
-      console.error('users error:', e)
+    } catch (err) {
+      if (err.response?.status !== 403) {
+        console.error('users error:', err)
+      }
     }
   }
 
   function openAdd() {
-    setForm(EMPTY_FORM)
+    setForm({ ...EMPTY_FORM })
     setEditId(null)
     setFormError('')
     setMode('add')
@@ -67,7 +84,21 @@ export default function Accounts() {
     setMode('edit')
   }
 
-  const setField = (f) => (e) => setForm(prev => ({ ...prev, [f]: e.target.value }))
+  function openDelete(acc) {
+    const isLastIndividual =
+      acc.type === 'individual' && individualAccountsCount <= 1
+
+    if (isLastIndividual) {
+      setError('You must keep at least one individual account.')
+      return
+    }
+
+    setError('')
+    setDeleteAccount(acc)
+  }
+
+  const setField = (field) => (e) =>
+    setForm(prev => ({ ...prev, [field]: e.target.value }))
 
   async function handleSave(e) {
     e.preventDefault()
@@ -80,6 +111,8 @@ export default function Accounts() {
         await client.post('/accounts', form)
       }
       setMode(null)
+      setForm({ ...EMPTY_FORM })
+      setEditId(null)
       fetchAccounts()
     } catch (err) {
       setFormError(err.response?.data?.detail || 'Failed to save account.')
@@ -90,27 +123,33 @@ export default function Accounts() {
 
   async function handleDelete() {
     try {
+      setError('')
+
       await client.delete(`/accounts/${deleteAccount.id}`)
+
       setDeleteAccount(null)
       fetchAccounts()
-    } catch {
-      setError('Failed to delete account.')
+    } catch (err) {
+      const message =
+        err.response?.data?.detail ||
+        (err.response?.status === 403
+          ? 'You do not have permission to delete this account.'
+          : 'Failed to delete account.')
+
+      setError(message)
       setDeleteAccount(null)
     }
   }
 
-  // Actualiza owners localmente sin refetch
   function handleOwnersUpdate(accountId, updatedOwners, selfRemoved = false) {
     if (selfRemoved) {
-      // Si el usuario se eliminó a sí mismo, quitar la cuenta de la lista
       setAccounts(prev => prev.filter(a => a.id !== accountId))
       setOwnersAccount(null)
     } else {
-      setAccounts(prev => prev.map(a =>
-        a.id === accountId ? { ...a, owners: updatedOwners } : a
-      ))
-      // Actualiza también el modal abierto
-      setOwnersAccount(prev => prev ? { ...prev, owners: updatedOwners } : null)
+      setAccounts(prev =>
+        prev.map(a => (a.id === accountId ? { ...a, owners: updatedOwners } : a))
+      )
+      setOwnersAccount(prev => (prev ? { ...prev, owners: updatedOwners } : null))
     }
   }
 
@@ -120,7 +159,10 @@ export default function Accounts() {
       {/* Header */}
       <div className="d-flex align-items-center justify-content-between mb-4">
         <h2 className="mb-0">Accounts</h2>
-        <button className="btn btn-primary d-flex align-items-center gap-1" onClick={openAdd}>
+        <button
+          className="btn btn-primary d-flex align-items-center gap-1"
+          onClick={openAdd}
+        >
           <IconPlus size={16} stroke={1.5} /> New account
         </button>
       </div>
@@ -131,9 +173,11 @@ export default function Accounts() {
         accounts={accounts}
         loading={loading}
         onEdit={openEdit}
-        onDelete={setDeleteAccount}
+        onDelete={openDelete}
         onOwners={setOwnersAccount}
         onAdd={openAdd}
+        individualAccountsCount={individualAccountsCount}
+        currentUser={user}
       />
 
       {mode && (

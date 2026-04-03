@@ -8,9 +8,11 @@ from sqlalchemy.orm import relationship
 
 from app.db.base import Base
 
+
 class CategoryType(str, enum.Enum):
     income = "income"
     expense = "expense"
+
 
 class Category(Base):
     __tablename__ = "categories"
@@ -19,4 +21,6 @@ class Category(Base):
     name = Column(String, nullable=False)
     type = Column(Enum(CategoryType), nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+
     transactions = relationship("Transaction", back_populates="category")
+    subcategories = relationship("Subcategory", back_populates="category")
