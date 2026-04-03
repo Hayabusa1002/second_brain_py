@@ -85,7 +85,7 @@ def _set_auth_cookies(response: Response, result: TokenResponse):
         secure=secure,
         samesite=samesite,
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400,
-        path="/auth/refresh",
+        path="/api/auth/refresh",
     )
 
 

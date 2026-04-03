@@ -1,14 +1,15 @@
 import os
+import uuid
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-# Default environment for tests
 os.environ.setdefault("DATABASE_URL", "sqlite:///./test.db")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-for-pytest-only")
 os.environ.setdefault("APP_BASE_URL", "http://testserver")
+os.environ.setdefault("APP_ENV", "development")
 
 from app.main import app
 from app.db.base import Base
@@ -26,7 +27,6 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_db():
-    """Create all tables once per test session and drop them at the end."""
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
@@ -34,31 +34,25 @@ def setup_db():
         if os.path.exists("test.db"):
             os.remove("test.db")
     except PermissionError:
-        # On Windows the file can be locked; ignore if we cannot delete it
         pass
 
 
 @pytest.fixture()
 def db():
-    """Provide a fresh SQLAlchemy session per test."""
     session = TestingSessionLocal()
     try:
         yield session
     finally:
-        # Roll back any uncommitted changes and close the session
         session.rollback()
         session.close()
 
 
 @pytest.fixture()
 def client(db):
-    """FastAPI TestClient wired to the test database session."""
-
     def override_get_db():
         try:
             yield db
         finally:
-            # The db session is handled by the db fixture
             pass
 
     app.dependency_overrides[get_db] = override_get_db
@@ -67,9 +61,12 @@ def client(db):
     app.dependency_overrides.clear()
 
 
-def _register_and_activate(client, db, email, password, name, role=UserRole.owner):
-    """Register a user, activate it, set the given role and log in."""
-    client.post(
+def _unique_email(prefix: str) -> str:
+    return f"{prefix}-{uuid.uuid4().hex[:10]}@test.com"
+
+
+def _register_and_activate(client, db, email, password, name, role: UserRole):
+    r_reg = client.post(
         "/api/auth/register",
         json={
             "email": email,
@@ -77,71 +74,91 @@ def _register_and_activate(client, db, email, password, name, role=UserRole.owne
             "name": name,
         },
     )
+    assert r_reg.status_code == 201, f"Register failed: {r_reg.status_code} {r_reg.text}"
+
     user = db.query(User).filter(User.email == email).first()
-    if user:
-        user.status = UserStatus.active
-        user.role = role
-        db.commit()
-        db.refresh(user)
-    client.post(
+    assert user is not None, "User not created in DB"
+
+    user.status = UserStatus.active
+    user.role = role
+    db.commit()
+    db.refresh(user)
+
+    r_login = client.post(
         "/api/auth/login",
         json={
             "email": email,
             "password": password,
         },
     )
-    return client
+    assert r_login.status_code == 200, f"Login failed: {r_login.status_code} {r_login.text}"
+
+    return client, user
 
 
 @pytest.fixture()
 def auth_client(client, db):
-    """Authenticated client with active user and owner role."""
-    return _register_and_activate(
+    email = _unique_email("user")
+    password = "Test1234!"
+    _, _user = _register_and_activate(
         client,
         db,
-        email="test@test.com",
-        password="Test1234!",
+        email=email,
+        password=password,
         name="Test User",
         role=UserRole.owner,
     )
+    return client
 
 
 @pytest.fixture()
 def admin_client(client, db):
-    """Authenticated client with active user and admin role."""
-    return _register_and_activate(
+    email = _unique_email("admin")
+    password = "Admin1234!"
+    _, _user = _register_and_activate(
         client,
         db,
-        email="admin@test.com",
-        password="Admin1234!",
+        email=email,
+        password=password,
         name="Admin User",
         role=UserRole.admin,
     )
+    return client
 
 
 @pytest.fixture()
-def auth_client_with_account(auth_client, db):
-    """Authenticated client with one account and one category already created."""
+def auth_user(client, db):
+    email = _unique_email("auth-user")
+    password = "Test1234!"
+    _client, user = _register_and_activate(
+        client,
+        db,
+        email=email,
+        password=password,
+        name="Auth User",
+        role=UserRole.owner,
+    )
+    return {"client": _client, "user": user, "email": email, "password": password}
+
+
+@pytest.fixture()
+def auth_client_with_account(auth_client):
     r_acc = auth_client.post(
         "/api/accounts",
         json={
-            "name": "Bancolombia",
+            "name": f"Account-{uuid.uuid4().hex[:6]}",
             "type": "individual",
         },
     )
-    assert (
-        r_acc.status_code == 201
-    ), f"Create account failed: {r_acc.status_code} {r_acc.json()}"
+    assert r_acc.status_code == 201, f"Create account failed: {r_acc.status_code} {r_acc.json()}"
 
     r_cat = auth_client.post(
         "/api/categories",
         json={
-            "name": "Salary",
+            "name": f"Salary-{uuid.uuid4().hex[:6]}",
             "type": "income",
         },
     )
-    assert (
-        r_cat.status_code == 201
-    ), f"Create category failed: {r_cat.status_code} {r_cat.json()}"
+    assert r_cat.status_code == 201, f"Create category failed: {r_cat.status_code} {r_cat.json()}"
 
     return auth_client, r_acc.json()["id"], r_cat.json()["id"]

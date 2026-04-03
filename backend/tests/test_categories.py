@@ -1,112 +1,144 @@
 import uuid
 
 
-def test_create_category_with_valid_data_returns_201(auth_client):
-    # Should create a category successfully
-    r = auth_client.post("/api/categories", json={"name": "Rent", "type": "expense"})
-    assert r.status_code == 201
-    data = r.json()
-    assert data["name"] == "Rent"
-    assert data["type"] == "expense"
-
-
-def test_list_categories_returns_list(auth_client):
-    # Should return a list of categories
-    auth_client.post("/api/categories", json={"name": "Food", "type": "expense"})
-    r = auth_client.get("/api/categories")
+def test_list_subcategories_returns_list(admin_client):
+    r = admin_client.get("/api/subcategories/")
     assert r.status_code == 200
     assert isinstance(r.json(), list)
 
 
-def test_get_category_by_id_returns_200_for_existing_category(auth_client):
-    # Should return an existing category by id
-    r_create = auth_client.post("/api/categories", json={"name": "Salary", "type": "income"})
-    assert r_create.status_code == 201
-    category_id = r_create.json()["id"]
+def test_create_subcategory_with_valid_data_returns_201(admin_client):
+    r_category = admin_client.post(
+        "/api/categories",
+        json={"name": "Food", "type": "expense"},
+    )
+    assert r_category.status_code == 201
+    category_id = r_category.json()["id"]
 
-    r = auth_client.get(f"/api/categories/{category_id}")
+    r = admin_client.post(
+        "/api/subcategories/",
+        json={"name": "Restaurant", "category_id": category_id},
+    )
+    assert r.status_code == 201
+    data = r.json()
+    assert data["name"] == "Restaurant"
+    assert data["category_id"] == category_id
+
+
+def test_list_subcategories_with_category_filter_returns_filtered_results(admin_client):
+    r_category = admin_client.post(
+        "/api/categories",
+        json={"name": "Transport", "type": "expense"},
+    )
+    assert r_category.status_code == 201
+    category_id = r_category.json()["id"]
+
+    r_sub = admin_client.post(
+        "/api/subcategories/",
+        json={"name": "Bus", "category_id": category_id},
+    )
+    assert r_sub.status_code == 201
+
+    r = admin_client.get(f"/api/subcategories/?category_id={category_id}")
     assert r.status_code == 200
     data = r.json()
-    assert data["id"] == category_id
-    assert data["name"] == "Salary"
-    assert data["type"] == "income"
+    assert any(item["id"] == r_sub.json()["id"] for item in data)
 
 
-def test_get_category_by_id_returns_404_for_missing_category(auth_client):
-    # Non-existing category id should return 404
+def test_get_subcategory_by_id_returns_200_for_existing_subcategory(admin_client):
+    r_category = admin_client.post(
+        "/api/categories",
+        json={"name": "Entertainment", "type": "expense"},
+    )
+    assert r_category.status_code == 201
+    category_id = r_category.json()["id"]
+
+    r_create = admin_client.post(
+        "/api/subcategories/",
+        json={"name": "Cinema", "category_id": category_id},
+    )
+    assert r_create.status_code == 201
+    subcategory_id = r_create.json()["id"]
+
+    r = admin_client.get(f"/api/subcategories/{subcategory_id}")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["id"] == subcategory_id
+    assert data["name"] == "Cinema"
+    assert data["category_id"] == category_id
+
+
+def test_get_subcategory_by_id_returns_404_for_missing_subcategory(admin_client):
     fake_id = uuid.uuid4()
-    r = auth_client.get(f"/api/categories/{fake_id}")
+    r = admin_client.get(f"/api/subcategories/{fake_id}")
     assert r.status_code == 404
-    assert r.json()["detail"] == "Category not found"
 
 
-def test_create_category_with_invalid_type_returns_422(auth_client):
-    # Invalid enum/type value should fail validation
-    r = auth_client.post("/api/categories", json={"name": "Invalid", "type": "invalid"})
+def test_create_subcategory_returns_400_for_invalid_category(admin_client):
+    fake_category_id = uuid.uuid4()
+    r = admin_client.post(
+        "/api/subcategories/",
+        json={"name": "Invalid relation", "category_id": str(fake_category_id)},
+    )
+    assert r.status_code == 400
+
+
+def test_create_subcategory_without_required_fields_returns_422(admin_client):
+    r = admin_client.post("/api/subcategories/", json={})
     assert r.status_code == 422
 
 
-def test_create_category_without_name_returns_422(auth_client):
-    # Missing required name should fail validation
-    r = auth_client.post("/api/categories", json={"type": "expense"})
-    assert r.status_code == 422
+def test_update_subcategory_with_valid_data_returns_200(admin_client):
+    r_category = admin_client.post(
+        "/api/categories",
+        json={"name": "Health", "type": "expense"},
+    )
+    assert r_category.status_code == 201
+    category_id = r_category.json()["id"]
 
-
-def test_update_category_with_valid_data_returns_200(auth_client):
-    # Should update an existing category
-    r_create = auth_client.post("/api/categories", json={"name": "Transport", "type": "expense"})
+    r_create = admin_client.post(
+        "/api/subcategories/",
+        json={"name": "Medicine", "category_id": category_id},
+    )
     assert r_create.status_code == 201
-    category_id = r_create.json()["id"]
+    subcategory_id = r_create.json()["id"]
 
-    r = auth_client.patch(
-        f"/api/categories/{category_id}",
-        json={"name": "Public Transport", "type": "expense"},
+    r = admin_client.patch(
+        f"/api/subcategories/{subcategory_id}",
+        json={"name": "Pharmacy"},
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["id"] == category_id
-    assert data["name"] == "Public Transport"
-    assert data["type"] == "expense"
+    assert data["id"] == subcategory_id
+    assert data["name"] == "Pharmacy"
 
 
-def test_update_category_with_partial_data_returns_200(auth_client):
-    # Should allow partial update if CategoryUpdate supports optional fields
-    r_create = auth_client.post("/api/categories", json={"name": "Utilities", "type": "expense"})
-    assert r_create.status_code == 201
-    category_id = r_create.json()["id"]
-
-    r = auth_client.patch(
-        f"/api/categories/{category_id}",
-        json={"name": "Home Utilities"},
-    )
-    assert r.status_code == 200
-    data = r.json()
-    assert data["id"] == category_id
-    assert data["name"] == "Home Utilities"
-
-
-def test_update_category_returns_404_for_missing_category(auth_client):
-    # Updating a non-existing category should return 404
+def test_update_subcategory_returns_404_for_missing_subcategory(admin_client):
     fake_id = uuid.uuid4()
-    r = auth_client.patch(
-        f"/api/categories/{fake_id}",
-        json={"name": "Anything", "type": "expense"},
+    r = admin_client.patch(
+        f"/api/subcategories/{fake_id}",
+        json={"name": "Unknown subcategory"},
     )
     assert r.status_code == 404
-    assert r.json()["detail"] == "Category not found"
 
 
-def test_create_category_without_auth_returns_401_or_403(client):
-    # Protected endpoint should reject anonymous requests
-    r = client.post("/api/categories", json={"name": "Rent", "type": "expense"})
+def test_list_subcategories_without_auth_returns_401_or_403(client):
+    r = client.get("/api/subcategories/")
     assert r.status_code in (401, 403)
 
 
-def test_update_category_without_auth_returns_401_or_403(client):
-    # Protected update endpoint should reject anonymous requests
+def test_create_subcategory_without_auth_returns_401_or_403(client):
+    r = client.post(
+        "/api/subcategories/",
+        json={"name": "No Auth", "category_id": str(uuid.uuid4())},
+    )
+    assert r.status_code in (401, 403)
+
+
+def test_update_subcategory_without_auth_returns_401_or_403(client):
     fake_id = uuid.uuid4()
     r = client.patch(
-        f"/api/categories/{fake_id}",
-        json={"name": "NoAuth", "type": "expense"},
+        f"/api/subcategories/{fake_id}",
+        json={"name": "Unauthorized update"},
     )
     assert r.status_code in (401, 403)

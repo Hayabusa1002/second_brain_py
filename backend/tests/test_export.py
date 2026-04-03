@@ -2,16 +2,18 @@ def test_export_json_returns_200_and_json_list(auth_client_with_account):
     # Create one transaction and export it as JSON
     client, account_id, category_id = auth_client_with_account
 
-    client.post(
+    r_create = client.post(
         "/api/transactions",
         json={
             "date": "2026-01-15",
             "amount": 50000,
             "type": "expense",
+            "payment_method": "cash",
             "account_id": account_id,
             "category_id": category_id,
         },
     )
+    assert r_create.status_code == 201, r_create.text
 
     r = client.get("/api/export/json")
     assert r.status_code == 200
@@ -28,17 +30,19 @@ def test_export_json_with_type_filter_returns_filtered_results(auth_client_with_
     # Create one expense transaction and filter export by type
     client, account_id, category_id = auth_client_with_account
 
-    client.post(
+    r_create = client.post(
         "/api/transactions",
         json={
             "date": "2026-01-15",
             "amount": 50000,
             "type": "expense",
+            "payment_method": "cash",
             "account_id": account_id,
             "category_id": category_id,
             "description": "Groceries",
         },
     )
+    assert r_create.status_code == 201, r_create.text
 
     r = client.get("/api/export/json?type=expense")
     assert r.status_code == 200
@@ -51,17 +55,19 @@ def test_export_json_with_search_filter_returns_matching_results(auth_client_wit
     # Create one transaction and filter export by description text
     client, account_id, category_id = auth_client_with_account
 
-    client.post(
+    r_create = client.post(
         "/api/transactions",
         json={
             "date": "2026-01-16",
             "amount": 15000,
             "type": "expense",
+            "payment_method": "cash",
             "account_id": account_id,
             "category_id": category_id,
             "description": "Supermarket purchase",
         },
     )
+    assert r_create.status_code == 201, r_create.text
 
     r = client.get("/api/export/json?q=Supermarket")
     assert r.status_code == 200
@@ -115,17 +121,19 @@ def test_export_json_with_date_filter_returns_200(auth_client_with_account):
     # Export with date filters should return a valid response
     client, account_id, category_id = auth_client_with_account
 
-    client.post(
+    r_create = client.post(
         "/api/transactions",
         json={
             "date": "2026-01-20",
             "amount": 100000,
             "type": "income",
+            "payment_method": "cash",
             "account_id": account_id,
             "category_id": category_id,
             "description": "Salary payment",
         },
     )
+    assert r_create.status_code == 201, r_create.text
 
     r = client.get("/api/export/json?date_from=2026-01-01&date_to=2026-01-31")
     assert r.status_code == 200
@@ -138,17 +146,19 @@ def test_export_json_with_account_filter_returns_matching_results(auth_client_wi
     # Export filtered by account_id should return a valid JSON list
     client, account_id, category_id = auth_client_with_account
 
-    client.post(
+    r_create = client.post(
         "/api/transactions",
         json={
             "date": "2026-01-21",
             "amount": 25000,
             "type": "expense",
+            "payment_method": "cash",
             "account_id": account_id,
             "category_id": category_id,
             "description": "Taxi",
         },
     )
+    assert r_create.status_code == 201, r_create.text
 
     r = client.get(f"/api/export/json?account_id={account_id}")
     assert r.status_code == 200
