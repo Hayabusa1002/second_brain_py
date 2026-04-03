@@ -1,5 +1,5 @@
 from uuid import UUID
-from datetime import date, datetime
+import datetime
 from decimal import Decimal
 from pydantic import BaseModel
 
@@ -24,7 +24,7 @@ class TransactionBase(BaseModel):
     amount: Decimal
     type: TransactionType
     payment_method: PaymentMethod
-    date: date
+    date: datetime.date
     description: str | None = None
 
 
@@ -43,7 +43,7 @@ class TransactionUpdate(BaseModel):
     amount: Decimal | None = None
     type: TransactionType | None = None
     payment_method: PaymentMethod | None = None
-    date: date | None = None
+    date: datetime.date | None = None
     description: str | None = None
 
 
@@ -60,9 +60,9 @@ class TransactionResponse(BaseModel):
     amount: Decimal
     type: TransactionType
     payment_method: PaymentMethod
-    date: date
+    date: datetime.date
     description: str | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -72,9 +72,9 @@ class TransactionDetailResponse(BaseModel):
     amount: Decimal
     type: TransactionType
     payment_method: PaymentMethod
-    date: date
+    date: datetime.date
     description: str | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
     account_id: UUID
     category_id: UUID
