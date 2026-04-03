@@ -4,7 +4,7 @@ from alembic import context
 
 from app.core.config import settings
 from app.db.base import Base
-from app.models import user, account, account_owner, category, transaction
+from app.models import user, account, account_owner, transaction, category, subcategory, city, store, item
 
 
 config = context.config
