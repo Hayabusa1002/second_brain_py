@@ -26,7 +26,7 @@ def test_create_transaction_with_valid_data_returns_201(auth_client_with_account
 
 
 def test_list_transactions_returns_list(auth_client_with_account):
-    # Should return a list of transactions for the current user
+    # Should return a paginated list of transactions for the current user
     client, account_id, category_id = auth_client_with_account
     client.post(
         "/api/transactions",
@@ -41,8 +41,13 @@ def test_list_transactions_returns_list(auth_client_with_account):
     )
     r = client.get("/api/transactions")
     assert r.status_code == 200
-    assert isinstance(r.json(), list)
-    assert len(r.json()) >= 1
+    body = r.json()
+    assert isinstance(body, dict)
+    assert "items" in body
+    assert "total" in body
+    assert isinstance(body["items"], list)
+    assert body["total"] >= 1
+    assert len(body["items"]) >= 1
 
 
 def test_filter_transactions_by_type_income_only(auth_client_with_account):
@@ -63,9 +68,10 @@ def test_filter_transactions_by_type_income_only(auth_client_with_account):
 
     r = client.get("/api/transactions?type=income")
     assert r.status_code == 200
-    data = r.json()
-    assert len(data) >= 1
-    assert all(t["type"] == "income" for t in data)
+    body = r.json()
+    items = body["items"]
+    assert len(items) >= 1
+    assert all(t["type"] == "income" for t in items)
 
 
 def test_filter_transactions_by_date_range_returns_200(auth_client_with_account):
@@ -86,7 +92,9 @@ def test_filter_transactions_by_date_range_returns_200(auth_client_with_account)
 
     r = client.get("/api/transactions?date_from=2026-03-01&date_to=2026-03-31")
     assert r.status_code == 200
-    assert isinstance(r.json(), list)
+    body = r.json()
+    assert isinstance(body, dict)
+    assert isinstance(body["items"], list)
 
 
 def test_get_transaction_by_id_returns_200(auth_client_with_account):
