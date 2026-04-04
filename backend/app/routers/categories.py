@@ -1,7 +1,7 @@
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db.deps import get_db, get_current_user
@@ -62,3 +62,14 @@ def update_category(
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
     return category
+
+@router.delete("/categories/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_category(
+    category_id: UUID,
+    controller: CategoryController = Depends(get_controller),
+    current_user=Depends(get_current_user),
+):
+    deleted = controller.delete_category(category_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Category not found")
+    return

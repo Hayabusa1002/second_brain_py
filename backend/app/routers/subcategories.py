@@ -1,7 +1,7 @@
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.db.deps import get_db, require_admin
@@ -70,3 +70,13 @@ def update_subcategory(
     if not subcategory:
         raise HTTPException(status_code=404, detail="Subcategory not found")
     return subcategory
+
+@router.delete("/{subcategory_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_subcategory(
+    subcategory_id: UUID,
+    controller: SubcategoryController = Depends(get_controller),
+):
+    deleted = controller.delete_subcategory(subcategory_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Subcategory not found")
+    return
