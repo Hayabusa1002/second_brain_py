@@ -52,3 +52,12 @@ class SubcategoryRepository:
         self.db.commit()
         self.db.refresh(subcategory)
         return subcategory
+
+    def delete(self, subcategory_id: UUID) -> bool:
+        subcategory = self.get_by_id(subcategory_id)
+        if not subcategory:
+            return False
+
+        self.db.delete(subcategory)
+        self.db.commit()
+        return True

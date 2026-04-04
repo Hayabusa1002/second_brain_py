@@ -18,3 +18,6 @@ class SubcategoryController:
 
     def update_subcategory(self, subcategory_id: UUID, data):
         return self.service.update_subcategory(subcategory_id, data)
+    
+    def delete_subcategory(self, subcategory_id: UUID) -> bool:
+        return self.service.delete_subcategory(subcategory_id)
