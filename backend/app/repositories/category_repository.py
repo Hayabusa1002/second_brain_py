@@ -1,6 +1,7 @@
 from typing import List, Optional
 from uuid import UUID
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.category import Category
@@ -37,12 +38,22 @@ class CategoryRepository:
         self.db.commit()
         self.db.refresh(category)
         return category
-    
+
     def delete(self, category_id: UUID) -> bool:
         category = self.get_by_id(category_id)
         if not category:
             return False
 
-        self.db.delete(category)
-        self.db.commit()
-        return True
+        if category.subcategories:
+            raise ValueError("Category has subcategories. Remove them first.")
+
+        if category.transactions:
+            raise ValueError("Category has transactions. Remove them first.")
+
+        try:
+            self.db.delete(category)
+            self.db.commit()
+            return True
+        except IntegrityError:
+            self.db.rollback()
+            raise ValueError("Category cannot be deleted because it is in use.")
