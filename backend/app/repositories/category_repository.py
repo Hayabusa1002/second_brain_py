@@ -37,3 +37,12 @@ class CategoryRepository:
         self.db.commit()
         self.db.refresh(category)
         return category
+    
+    def delete(self, category_id: UUID) -> bool:
+        category = self.get_by_id(category_id)
+        if not category:
+            return False
+
+        self.db.delete(category)
+        self.db.commit()
+        return True

@@ -18,3 +18,6 @@ class CategoryController:
 
     def update_category(self, category_id: UUID, data):
         return self.service.update_category(category_id, data)
+    
+    def delete_category(self, category_id: UUID) -> bool:
+        return self.service.delete_category(category_id)
