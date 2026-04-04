@@ -4,42 +4,67 @@ import client from '../../api/client'
 import Alert from '../../components/ui/Alert'
 import Table from './Table'
 import FormModal from './FormModal'
+import SubcategoryModal from './SubcategoryModal'
+import ViewModal from './ViewModal'
 import DeleteModal from './DeleteModal'
 
 const EMPTY_FORM = {
   name: '',
-  type: 'expense', 
-  parent_id: null, 
+  type: 'expense',
 }
 
 export default function Categories() {
   const [categories, setCategories] = useState([])
+  const [subcategories, setSubcategories] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const [mode, setMode] = useState(null) // 'add' | 'edit'
+  const [mode, setMode] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [editId, setEditId] = useState(null)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
 
+  const [viewCategory, setViewCategory] = useState(null)
+  const [subcategoryCategory, setSubcategoryCategory] = useState(null)
   const [deleteCategory, setDeleteCategory] = useState(null)
 
   useEffect(() => {
-    fetchCategories()
+    fetchData()
   }, [])
 
-  async function fetchCategories() {
+  async function fetchData() {
     setLoading(true)
     setError('')
+
     try {
-      const { data } = await client.get('/categories')
-      setCategories(data.categories ?? data.items ?? data)
+      const [categoriesRes, subcategoriesRes] = await Promise.all([
+        client.get('/categories'),
+        client.get('/subcategories'),
+      ])
+
+      setCategories(categoriesRes.data.categories ?? categoriesRes.data.items ?? categoriesRes.data)
+      setSubcategories(
+        subcategoriesRes.data.subcategories ??
+        subcategoriesRes.data.items ??
+        subcategoriesRes.data
+      )
     } catch (err) {
-      setError('Failed to load categories.')
+      setError(err.response?.data?.detail || 'Failed to load categories.')
     } finally {
       setLoading(false)
     }
+  }
+
+  function getSubcategories(categoryId) {
+    return subcategories.filter((s) => s.category_id === categoryId)
+  }
+
+  function handleSubcategoriesUpdate(categoryId, updatedSubs) {
+    setSubcategories((prev) => {
+      const withoutCurrent = prev.filter((item) => item.category_id !== categoryId)
+      return [...withoutCurrent, ...updatedSubs]
+    })
   }
 
   function openAdd() {
@@ -49,15 +74,26 @@ export default function Categories() {
     setMode('add')
   }
 
-  function openEdit(c) {
+  function openEdit(category) {
     setForm({
-      name: c.name ?? '',
-      type: c.type ?? 'expense',
-      parent_id: c.parent_id ?? null,
+      name: category?.name ?? '',
+      type: category?.type ?? 'expense',
     })
-    setEditId(c.id)
+    setEditId(category?.id ?? null)
     setFormError('')
     setMode('edit')
+  }
+
+  function openView(category) {
+    setViewCategory(category)
+  }
+
+  function openSubcategories(category) {
+    setSubcategoryCategory(category)
+  }
+
+  function openDeleteModal(category) {
+    setDeleteCategory(category)
   }
 
   const setField =
@@ -69,11 +105,11 @@ export default function Categories() {
     e.preventDefault()
     setSaving(true)
     setFormError('')
+
     try {
       const payload = {
         name: form.name,
         type: form.type,
-        parent_id: form.parent_id || null,
       }
 
       if (mode === 'edit') {
@@ -85,7 +121,7 @@ export default function Categories() {
       setMode(null)
       setForm({ ...EMPTY_FORM })
       setEditId(null)
-      fetchCategories()
+      fetchData()
     } catch (err) {
       setFormError(err.response?.data?.detail || 'Failed to save category.')
     } finally {
@@ -93,16 +129,13 @@ export default function Categories() {
     }
   }
 
-  function openDeleteModal(category) {
-    setDeleteCategory(category)
-  }
-
   async function handleDelete() {
     if (!deleteCategory) return
+
     try {
       await client.delete(`/categories/${deleteCategory.id}`)
       setDeleteCategory(null)
-      fetchCategories()
+      fetchData()
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to delete category.')
       setDeleteCategory(null)
@@ -118,7 +151,8 @@ export default function Categories() {
           className="btn btn-primary d-flex align-items-center gap-1"
           onClick={openAdd}
         >
-          <IconPlus size={16} stroke={1.5} /> New category
+          <IconPlus size={16} stroke={1.5} />
+          New Category
         </button>
       </div>
 
@@ -126,15 +160,18 @@ export default function Categories() {
 
       <Table
         categories={categories}
+        getSubcategories={getSubcategories}
         loading={loading}
+        onShow={openView}
         onEdit={openEdit}
+        onSubcategory={openSubcategories}
         onDelete={openDeleteModal}
         onAdd={openAdd}
       />
 
       {mode && (
         <FormModal
-          key={mode === 'add' ? 'add-category' : `edit-category-${editId}`}
+          key={mode === 'edit' ? `edit-category-${editId}` : 'add-category'}
           form={form}
           mode={mode}
           saving={saving}
@@ -147,6 +184,23 @@ export default function Categories() {
             setEditId(null)
             setFormError('')
           }}
+        />
+      )}
+
+      {subcategoryCategory && (
+        <SubcategoryModal
+          category={subcategoryCategory}
+          subcategories={getSubcategories(subcategoryCategory.id)}
+          onClose={() => setSubcategoryCategory(null)}
+          onUpdate={handleSubcategoriesUpdate}
+        />
+      )}
+
+      {viewCategory && (
+        <ViewModal
+          category={viewCategory}
+          subcategories={getSubcategories(viewCategory.id)}
+          onClose={() => setViewCategory(null)}
         />
       )}
 

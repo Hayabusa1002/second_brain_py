@@ -11,7 +11,7 @@ export default function FormModal({
 }) {
   return (
     <Modal
-      title={mode === 'add' ? 'New category' : 'Edit category'}
+      title={mode === 'edit' ? 'Edit category' : 'New category'}
       onClose={onCancel}
     >
       <form onSubmit={onSave}>
@@ -37,27 +37,18 @@ export default function FormModal({
           </select>
         </div>
 
-        <div className="mb-3">
-          <label className="form-label">Parent category (optional)</label>
-          <input
-            className="form-control"
-            value={form.parent_id ?? ''}
-            onChange={onChange('parent_id')}
-            placeholder="Parent category id"
-          />
-        </div>
-
         {error && <div className="text-danger mb-2">{error}</div>}
 
         <div className="d-flex justify-content-end gap-2 mt-3">
           <button
             type="button"
-            className="btn btn-link"
+            className="btn btn-outline-secondary"
             onClick={onCancel}
             disabled={saving}
           >
             Cancel
           </button>
+
           <button type="submit" className="btn btn-primary" disabled={saving}>
             {saving ? 'Saving...' : 'Save'}
           </button>
