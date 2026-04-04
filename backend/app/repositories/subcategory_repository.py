@@ -1,6 +1,7 @@
 from typing import List, Optional
 from uuid import UUID
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.subcategory import Subcategory
@@ -58,6 +59,13 @@ class SubcategoryRepository:
         if not subcategory:
             return False
 
-        self.db.delete(subcategory)
-        self.db.commit()
-        return True
+        if subcategory.transactions:
+            raise ValueError("Subcategory has transactions. Remove them first.")
+
+        try:
+            self.db.delete(subcategory)
+            self.db.commit()
+            return True
+        except IntegrityError:
+            self.db.rollback()
+            raise ValueError("Subcategory cannot be deleted because it is in use.")
