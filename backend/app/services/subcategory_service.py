@@ -33,3 +33,6 @@ class SubcategoryService:
                 return None
 
         return self.repository.update(subcategory_id, data)
+    
+    def delete_subcategory(self, subcategory_id: UUID) -> bool:
+        return self.repository.delete(subcategory_id)

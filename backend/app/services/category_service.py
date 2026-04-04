@@ -30,3 +30,6 @@ class CategoryService:
                 return None
 
         return self.repository.update(category_id, data)
+    
+    def delete_category(self, category_id: UUID) -> bool:
+        return self.repository.delete(category_id)
