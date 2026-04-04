@@ -69,7 +69,10 @@ def delete_category(
     controller: CategoryController = Depends(get_controller),
     current_user=Depends(get_current_user),
 ):
-    deleted = controller.delete_category(category_id)
-    if not deleted:
-        raise HTTPException(status_code=404, detail="Category not found")
-    return
+    try:
+        deleted = controller.delete_category(category_id)
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Category not found")
+        return
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
