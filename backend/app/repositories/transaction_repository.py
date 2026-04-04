@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from uuid import UUID
 from datetime import date
 
@@ -11,8 +11,9 @@ class TransactionRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def list(
+    def _base_query(
         self,
+        *,
         user_id: UUID,
         type: Optional[str] = None,
         payment_method: Optional[PaymentMethod] = None,
@@ -26,7 +27,7 @@ class TransactionRepository:
         date_from: Optional[date] = None,
         date_to: Optional[date] = None,
         q: Optional[str] = None,
-    ) -> List[Transaction]:
+    ):
         query = (
             self.db.query(Transaction)
             .options(
@@ -67,7 +68,84 @@ class TransactionRepository:
         if q:
             query = query.filter(Transaction.description.ilike(f"%{q}%"))
 
+        return query
+
+    def list(
+        self,
+        user_id: UUID,
+        type: Optional[str] = None,
+        payment_method: Optional[PaymentMethod] = None,
+        category_id: Optional[UUID] = None,
+        subcategory_id: Optional[UUID] = None,
+        account_id: Optional[UUID] = None,
+        store_id: Optional[UUID] = None,
+        city_id: Optional[UUID] = None,
+        paid_by: Optional[UUID] = None,
+        paid_to: Optional[UUID] = None,
+        date_from: Optional[date] = None,
+        date_to: Optional[date] = None,
+        q: Optional[str] = None,
+    ) -> List[Transaction]:
+        query = self._base_query(
+            user_id=user_id,
+            type=type,
+            payment_method=payment_method,
+            category_id=category_id,
+            subcategory_id=subcategory_id,
+            account_id=account_id,
+            store_id=store_id,
+            city_id=city_id,
+            paid_by=paid_by,
+            paid_to=paid_to,
+            date_from=date_from,
+            date_to=date_to,
+            q=q,
+        )
         return query.order_by(Transaction.date.desc(), Transaction.created_at.desc()).all()
+
+    def list_paginated(
+        self,
+        *,
+        user_id: UUID,
+        page: int,
+        limit: int,
+        type: Optional[str] = None,
+        payment_method: Optional[PaymentMethod] = None,
+        category_id: Optional[UUID] = None,
+        subcategory_id: Optional[UUID] = None,
+        account_id: Optional[UUID] = None,
+        store_id: Optional[UUID] = None,
+        city_id: Optional[UUID] = None,
+        paid_by: Optional[UUID] = None,
+        paid_to: Optional[UUID] = None,
+        date_from: Optional[date] = None,
+        date_to: Optional[date] = None,
+        q: Optional[str] = None,
+    ) -> Tuple[List[Transaction], int]:
+        query = self._base_query(
+            user_id=user_id,
+            type=type,
+            payment_method=payment_method,
+            category_id=category_id,
+            subcategory_id=subcategory_id,
+            account_id=account_id,
+            store_id=store_id,
+            city_id=city_id,
+            paid_by=paid_by,
+            paid_to=paid_to,
+            date_from=date_from,
+            date_to=date_to,
+            q=q,
+        )
+
+        total = query.count()
+        items = (
+            query.order_by(Transaction.date.desc(), Transaction.created_at.desc())
+            .offset((page - 1) * limit)
+            .limit(limit)
+            .all()
+        )
+        return items, total
 
     def get_by_id(self, transaction_id: UUID) -> Optional[Transaction]:
         return (

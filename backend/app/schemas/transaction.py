@@ -96,3 +96,10 @@ class TransactionDetailResponse(BaseModel):
     items: list[ItemResponse] = []
 
     model_config = {"from_attributes": True}
+
+
+class TransactionListResponse(BaseModel):
+    items: list[TransactionResponse]
+    total: int
+    page: int
+    limit: int

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 from uuid import UUID
 from datetime import date
 
@@ -32,7 +32,9 @@ class TransactionController:
         date_from: Optional[date] = None,
         date_to: Optional[date] = None,
         q: Optional[str] = None,
-    ):
+        page: Optional[int] = None,
+        limit: Optional[int] = None,
+    ) -> Tuple[list, int]:
         return self.service.list_transactions(
             user_id=user_id,
             type=type,
@@ -47,6 +49,8 @@ class TransactionController:
             date_from=date_from,
             date_to=date_to,
             q=q,
+            page=page,
+            limit=limit,
         )
 
     async def import_transactions(self, file: UploadFile, current_user):
