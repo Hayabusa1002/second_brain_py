@@ -16,6 +16,7 @@ from app.schemas.transaction import (
     TransactionUpdate,
     TransactionResponse,
     TransactionDetailResponse,
+    TransactionListResponse,
 )
 from app.schemas.item import ItemCreate, ItemUpdate, ItemResponse
 from app.schemas.bulk_import import ImportResult
@@ -63,8 +64,10 @@ async def import_transactions(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/transactions", response_model=List[TransactionResponse])
+@router.get("/transactions", response_model=TransactionListResponse)
 def list_transactions(
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
     type: Optional[TransactionType] = Query(default=None),
     payment_method: Optional[PaymentMethod] = Query(default=None),
     category_id: Optional[UUID] = Query(default=None),
@@ -80,7 +83,7 @@ def list_transactions(
     controller: TransactionController = Depends(get_controller),
     current_user=Depends(get_current_user),
 ):
-    return controller.list_transactions(
+    items, total = controller.list_transactions(
         type=type,
         payment_method=payment_method,
         category_id=category_id,
@@ -94,6 +97,14 @@ def list_transactions(
         date_to=date_to,
         q=q,
         user_id=current_user.id,
+        page=page,
+        limit=limit,
+    )
+    return TransactionListResponse(
+        items=items,
+        total=total,
+        page=page,
+        limit=limit,
     )
 
 

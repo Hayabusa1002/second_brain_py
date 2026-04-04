@@ -1,5 +1,5 @@
 import uuid
-from typing import Optional
+from typing import Optional, Tuple
 from uuid import UUID
 from datetime import date
 
@@ -26,9 +26,31 @@ class TransactionService:
         date_from: Optional[date] = None,
         date_to: Optional[date] = None,
         q: Optional[str] = None,
-    ):
-        return self.repository.list(
+        page: Optional[int] = None,
+        limit: Optional[int] = None,
+    ) -> Tuple[list[Transaction], int]:
+        if page is None or limit is None:
+            items = self.repository.list(
+                user_id=user_id,
+                type=type,
+                payment_method=payment_method,
+                category_id=category_id,
+                subcategory_id=subcategory_id,
+                account_id=account_id,
+                store_id=store_id,
+                city_id=city_id,
+                paid_by=paid_by,
+                paid_to=paid_to,
+                date_from=date_from,
+                date_to=date_to,
+                q=q,
+            )
+            return items, len(items)
+
+        return self.repository.list_paginated(
             user_id=user_id,
+            page=page,
+            limit=limit,
             type=type,
             payment_method=payment_method,
             category_id=category_id,
