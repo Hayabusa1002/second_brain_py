@@ -113,7 +113,7 @@ export default function Categories() {
       }
 
       if (mode === 'edit') {
-        await client.put(`/categories/${editId}`, payload)
+        await client.patch(`/categories/${editId}`, payload)
       } else {
         await client.post('/categories', payload)
       }
