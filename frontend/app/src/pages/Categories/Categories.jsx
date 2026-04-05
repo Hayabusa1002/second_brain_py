@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { IconPlus } from '@tabler/icons-react'
+import { IconPlus, IconUpload } from '@tabler/icons-react'
 import client from '../../api/client'
 import Alert from '../../components/ui/Alert'
 import Table from './Table'
 import FormModal from './FormModal'
+import ImportModal from './ImportModal'
 import SubcategoryModal from './SubcategoryModal'
 import ViewModal from './ViewModal'
 import DeleteModal from './DeleteModal'
@@ -19,7 +20,7 @@ export default function Categories() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const [mode, setMode] = useState(null)
+  const [mode, setMode] = useState('table')
   const [form, setForm] = useState(EMPTY_FORM)
   const [editId, setEditId] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -46,8 +47,8 @@ export default function Categories() {
       setCategories(categoriesRes.data.categories ?? categoriesRes.data.items ?? categoriesRes.data)
       setSubcategories(
         subcategoriesRes.data.subcategories ??
-        subcategoriesRes.data.items ??
-        subcategoriesRes.data
+          subcategoriesRes.data.items ??
+          subcategoriesRes.data
       )
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to load categories.')
@@ -118,7 +119,7 @@ export default function Categories() {
         await client.post('/categories', payload)
       }
 
-      setMode(null)
+      setMode('table')
       setForm({ ...EMPTY_FORM })
       setEditId(null)
       fetchData()
@@ -145,18 +146,49 @@ export default function Categories() {
   return (
     <div className="container-xl py-4">
       <div className="d-flex align-items-center justify-content-between mb-4">
-        <h2 className="mb-0">Categories</h2>
+        <div>
+          <h2 className="mb-0">Categories</h2>
+        </div>
 
-        <button
-          className="btn btn-primary d-flex align-items-center gap-1"
-          onClick={openAdd}
-        >
-          <IconPlus size={16} stroke={1.5} />
-          New Category
-        </button>
+        <div className="d-flex gap-2">
+          <button
+            className="btn btn-outline-primary d-flex align-items-center gap-1"
+            onClick={openAdd}
+          >
+            <IconPlus size={16} stroke={1.5} />
+            New Category
+          </button>
+
+          <button
+            className="btn btn-outline-primary d-flex align-items-center gap-1"
+            onClick={() => setMode('import')}
+          >
+            <IconUpload size={16} stroke={1.5} />
+            Import
+          </button>
+        </div>
       </div>
 
       <Alert message={error} />
+
+      {(mode === 'add' || mode === 'edit') && (
+        <FormModal
+          form={form}
+          mode={mode}
+          saving={saving}
+          error={formError}
+          onChange={setField}
+          onSave={handleSave}
+          onCancel={() => setMode('table')}
+        />
+      )}
+
+      {mode === 'import' && (
+        <ImportModal
+          onClose={() => setMode('table')}
+          onSuccess={fetchData}
+        />
+      )}
 
       <Table
         categories={categories}
@@ -168,24 +200,6 @@ export default function Categories() {
         onDelete={openDeleteModal}
         onAdd={openAdd}
       />
-
-      {mode && (
-        <FormModal
-          key={mode === 'edit' ? `edit-category-${editId}` : 'add-category'}
-          form={form}
-          mode={mode}
-          saving={saving}
-          error={formError}
-          onChange={setField}
-          onSave={handleSave}
-          onCancel={() => {
-            setMode(null)
-            setForm({ ...EMPTY_FORM })
-            setEditId(null)
-            setFormError('')
-          }}
-        />
-      )}
 
       {subcategoryCategory && (
         <SubcategoryModal

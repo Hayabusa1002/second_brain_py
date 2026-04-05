@@ -1,9 +1,13 @@
+import { useState } from 'react'
 import {
   IconEye,
   IconEdit,
   IconTrash,
   IconListDetails,
+  IconDownload,
+  IconChevronDown,
 } from '@tabler/icons-react'
+import * as YAML from 'js-yaml'
 
 const TYPE_BADGE = {
   income: 'bg-green-lt text-green',
@@ -20,8 +24,153 @@ export default function Table({
   onDelete,
   onAdd,
 }) {
+  const [exportOpen, setExportOpen] = useState(false)
+
+  function exportRows() {
+    return categories.map((category) => ({
+      id: category.id,
+      name: category.name,
+      type: category.type,
+      created_at: category.created_at ?? '',
+      subcategories: getSubcategories(category.id).map((s) => ({
+        id: s.id,
+        name: s.name,
+        created_at: s.created_at ?? '',
+      })),
+    }))
+  }
+
+  function exportFlatRows() {
+    return exportRows().map((row) => ({
+      id: row.id,
+      name: row.name,
+      type: row.type,
+      subcategory_names: row.subcategories.map((s) => s.name).join(' | '),
+      created_at: row.created_at,
+    }))
+  }
+
+  function exportData(format) {
+    setExportOpen(false)
+    if (format === 'csv') return exportCSV()
+    if (format === 'json') return exportJSON()
+    if (format === 'xlsx') return exportXLSX()
+    if (format === 'yaml') return exportYAML()
+  }
+
+  function exportCSV() {
+    const rows = exportFlatRows()
+    const headers = ['id', 'name', 'type', 'subcategory_names', 'created_at']
+    const data = rows.map((row) =>
+      headers.map((h) => `"${String(row[h] ?? '').replace(/"/g, '""')}"`).join(',')
+    )
+
+    download(
+      new Blob([[headers.join(','), ...data].join('\n')], {
+        type: 'text/csv;charset=utf-8;',
+      }),
+      'categories.csv'
+    )
+  }
+
+  function exportJSON() {
+    download(
+      new Blob([JSON.stringify(exportRows(), null, 2)], {
+        type: 'application/json',
+      }),
+      'categories.json'
+    )
+  }
+
+  function exportXLSX() {
+    import('xlsx').then((XLSX) => {
+      const rows = exportFlatRows()
+      const ws = XLSX.utils.json_to_sheet(rows)
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Categories')
+      XLSX.writeFile(wb, 'categories.xlsx')
+    })
+  }
+
+  function exportYAML() {
+    const yaml = YAML.dump(exportRows(), {
+      noRefs: true,
+      lineWidth: 120,
+    })
+
+    download(
+      new Blob([yaml], {
+        type: 'application/x-yaml;charset=utf-8;',
+      }),
+      'categories.yaml'
+    )
+  }
+
+  function download(blob, filename) {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="card">
+      <div className="card-header d-flex align-items-center justify-content-between">
+        <span className="text-secondary small">
+          {categories.length} records
+        </span>
+
+        <div style={{ position: 'relative' }}>
+          <button
+            className="btn btn-primary d-flex align-items-center gap-1"
+            onClick={() => setExportOpen((o) => !o)}
+          >
+            <IconDownload size={16} stroke={1.5} />
+            Export
+            <IconChevronDown size={14} stroke={1.5} />
+          </button>
+
+          {exportOpen && (
+            <>
+              <div
+                style={{ position: 'fixed', inset: 0, zIndex: 999 }}
+                onClick={() => setExportOpen(false)}
+              />
+
+              <div
+                className="dropdown-menu show"
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: '100%',
+                  zIndex: 1000,
+                  minWidth: 180,
+                }}
+              >
+                {[
+                  ['CSV', 'csv'],
+                  ['Excel (XLSX)', 'xlsx'],
+                  ['JSON', 'json'],
+                  ['YAML', 'yaml'],
+                ].map(([label, fmt]) => (
+                  <button
+                    key={fmt}
+                    className="dropdown-item"
+                    onClick={() => exportData(fmt)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
       <div className="table-responsive">
         <table className="table table-vcenter table-hover card-table">
           <colgroup>
@@ -63,7 +212,11 @@ export default function Table({
                 return (
                   <tr key={category.id}>
                     <td>
-                      <span className={`badge ${TYPE_BADGE[category.type] ?? 'bg-secondary-lt'}`}>
+                      <span
+                        className={`badge ${
+                          TYPE_BADGE[category.type] ?? 'bg-secondary-lt'
+                        }`}
+                      >
                         {category.type}
                       </span>
                     </td>
