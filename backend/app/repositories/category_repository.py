@@ -17,11 +17,22 @@ class CategoryRepository:
     def get_by_id(self, category_id: UUID) -> Optional[Category]:
         return self.db.query(Category).filter(Category.id == category_id).first()
 
-    def get_by_name(self, name: str) -> Optional[Category]:
-        return self.db.query(Category).filter(Category.name.ilike(name.strip())).first()
+    def get_by_name_and_type(self, name: str, category_type: str) -> Optional[Category]:
+        normalized_name = name.strip()
+        return (
+            self.db.query(Category)
+            .filter(
+                Category.name.ilike(normalized_name),
+                Category.type == category_type,
+            )
+            .first()
+        )
 
     def add(self, data) -> Category:
-        category = Category(name=data.name, type=data.type)
+        category = Category(
+            name=data.name.strip(),
+            type=data.type,
+        )
         self.db.add(category)
         self.db.commit()
         self.db.refresh(category)
@@ -33,6 +44,8 @@ class CategoryRepository:
             return None
 
         for field, value in data.model_dump(exclude_unset=True).items():
+            if isinstance(value, str):
+                value = value.strip()
             setattr(category, field, value)
 
         self.db.commit()
