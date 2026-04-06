@@ -8,6 +8,7 @@ export default function ImportModal({ onClose, onSuccess }) {
   const [importing, setImporting] = useState(false)
   const [error, setError] = useState('')
   const [summary, setSummary] = useState(null)
+  const [importLog, setImportLog] = useState(null)
 
   function normalizeRows(rows) {
     return rows
@@ -74,17 +75,38 @@ export default function ImportModal({ onClose, onSuccess }) {
     throw new Error('Unsupported file format.')
   }
 
-  async function findCategoryId(name, type) {
+  async function getCategories() {
     const { data } = await client.get('/categories')
-    const categories = data.categories ?? data.items ?? data
+    return data.categories ?? data.items ?? data ?? []
+  }
 
-    const existing = categories.find(
-      (c) =>
-        c.name?.trim().toLowerCase() === name.trim().toLowerCase() &&
-        c.type === type
+  async function findCategory(name, type) {
+    const categories = await getCategories()
+
+    return (
+      categories.find(
+        (c) =>
+          c.name?.trim().toLowerCase() === name.trim().toLowerCase() &&
+          c.type === type
+      ) ?? null
     )
+  }
 
-    return existing?.id ?? null
+  function downloadLog() {
+    if (!importLog) return
+
+    const blob = new Blob([JSON.stringify(importLog, null, 2)], {
+      type: 'application/json;charset=utf-8;',
+    })
+
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `categories-import-log-${new Date().toISOString().replace(/[:.]/g, '-')}.json`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
   }
 
   async function handleImport() {
@@ -93,6 +115,7 @@ export default function ImportModal({ onClose, onSuccess }) {
     setImporting(true)
     setError('')
     setSummary(null)
+    setImportLog(null)
 
     try {
       const parsedRows = await parseFile(file)
@@ -101,39 +124,108 @@ export default function ImportModal({ onClose, onSuccess }) {
       let createdCategories = 0
       let createdSubcategories = 0
 
+      const log = {
+        file_name: file.name,
+        imported_at: new Date().toISOString(),
+        totals: {
+          rows_detected: parsedRows.length,
+          rows_normalized: items.length,
+          categories_created: 0,
+          subcategories_created: 0,
+          category_existing: 0,
+          subcategory_existing_or_skipped: 0,
+          failed_categories: 0,
+          failed_subcategories: 0,
+        },
+        details: [],
+      }
+
       for (const item of items) {
         let categoryId = null
+        let categoryStatus = 'unknown'
+        let categoryMessage = ''
+        const subcategoryLogs = []
 
         try {
           const { data } = await client.post('/categories', {
             name: item.name,
             type: item.type,
           })
+
           categoryId = data.id
           createdCategories += 1
-        } catch {
-          categoryId = await findCategoryId(item.name, item.type)
+          categoryStatus = 'created'
+          categoryMessage = 'Category created successfully.'
+        } catch (err) {
+          const existing = await findCategory(item.name, item.type)
+
+          if (existing?.id) {
+            categoryId = existing.id
+            categoryStatus = 'existing'
+            categoryMessage = 'Category already existed.'
+          } else {
+            categoryStatus = 'failed'
+            categoryMessage =
+              err.response?.data?.detail || 'Failed to create or locate category.'
+            log.totals.failed_categories += 1
+          }
+        }
+
+        if (categoryStatus === 'existing') {
+          log.totals.category_existing += 1
         }
 
         if (categoryId && item.subcategories.length > 0) {
           for (const subName of item.subcategories) {
             try {
-              await client.post('/subcategories', {
+              await client.post(`/categories/${categoryId}/subcategories/`, {
                 name: subName,
-                category_id: categoryId,
               })
+
               createdSubcategories += 1
-            } catch {
-              // ignore duplicates
+              subcategoryLogs.push({
+                name: subName,
+                status: 'created',
+                message: 'Subcategory created successfully.',
+              })
+            } catch (err) {
+              log.totals.subcategory_existing_or_skipped += 1
+              const message =
+                err.response?.data?.detail || 'Skipped or already exists.'
+
+              subcategoryLogs.push({
+                name: subName,
+                status: 'skipped',
+                message,
+              })
             }
           }
+        } else if (categoryId && item.subcategories.length === 0) {
+          categoryMessage =
+            categoryMessage || 'Category processed with no subcategories.'
         }
+
+        log.details.push({
+          category: {
+            name: item.name,
+            type: item.type,
+            id: categoryId,
+            status: categoryStatus,
+            message: categoryMessage,
+          },
+          subcategories: subcategoryLogs,
+        })
       }
+
+      log.totals.categories_created = createdCategories
+      log.totals.subcategories_created = createdSubcategories
 
       setSummary({
         categories: createdCategories,
         subcategories: createdSubcategories,
       })
+
+      setImportLog(log)
 
       if (onSuccess) await onSuccess()
     } catch (err) {
@@ -159,8 +251,20 @@ export default function ImportModal({ onClose, onSuccess }) {
             {error && <div className="alert alert-danger">{error}</div>}
 
             {summary && (
-              <div className="alert alert-success">
-                Imported {summary.categories} categories and {summary.subcategories} subcategories.
+              <div className="alert alert-success d-flex justify-content-between align-items-center gap-3">
+                <span>
+                  Imported {summary.categories} categories and {summary.subcategories} subcategories.
+                </span>
+
+                {importLog && (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-success"
+                    onClick={downloadLog}
+                  >
+                    Download log
+                  </button>
+                )}
               </div>
             )}
 
