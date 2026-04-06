@@ -3,6 +3,8 @@ import * as XLSX from 'xlsx'
 import * as YAML from 'js-yaml'
 import client from '../../api/client'
 
+const API_URL = import.meta.env.VITE_API_URL
+
 export default function ImportModal({ onClose, onSuccess }) {
   const [file, setFile] = useState(null)
   const [importing, setImporting] = useState(false)
@@ -107,6 +109,11 @@ export default function ImportModal({ onClose, onSuccess }) {
     a.click()
     a.remove()
     URL.revokeObjectURL(url)
+  }
+
+  function openTemplate(format) {
+    const url = new URL(`/api/categories/import/template/${format}`, API_URL)
+    window.open(url.toString(), '_blank', 'noopener,noreferrer')
   }
 
   async function handleImport() {
@@ -275,12 +282,7 @@ export default function ImportModal({ onClose, onSuccess }) {
                 <button
                   type="button"
                   className="btn btn-outline-secondary btn-sm"
-                  onClick={() =>
-                    window.open(
-                      'http://localhost:8000/api/categories/import/template/csv',
-                      '_blank'
-                    )
-                  }
+                  onClick={() => openTemplate('csv')}
                 >
                   CSV
                 </button>
@@ -288,12 +290,7 @@ export default function ImportModal({ onClose, onSuccess }) {
                 <button
                   type="button"
                   className="btn btn-outline-secondary btn-sm"
-                  onClick={() =>
-                    window.open(
-                      'http://localhost:8000/api/categories/import/template/json',
-                      '_blank'
-                    )
-                  }
+                  onClick={() => openTemplate('json')}
                 >
                   JSON
                 </button>
@@ -301,12 +298,7 @@ export default function ImportModal({ onClose, onSuccess }) {
                 <button
                   type="button"
                   className="btn btn-outline-secondary btn-sm"
-                  onClick={() =>
-                    window.open(
-                      'http://localhost:8000/api/categories/import/template/yaml',
-                      '_blank'
-                    )
-                  }
+                  onClick={() => openTemplate('yaml')}
                 >
                   YAML
                 </button>

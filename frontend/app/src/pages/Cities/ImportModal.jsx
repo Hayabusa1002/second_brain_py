@@ -3,6 +3,8 @@ import * as XLSX from 'xlsx'
 import * as YAML from 'js-yaml'
 import client from '../../api/client'
 
+const API_URL = import.meta.env.VITE_API_URL
+
 export default function ImportModal({ onClose, onSuccess }) {
   const [file, setFile] = useState(null)
   const [importing, setImporting] = useState(false)
@@ -10,7 +12,6 @@ export default function ImportModal({ onClose, onSuccess }) {
   const [summary, setSummary] = useState(null)
   const [importLog, setImportLog] = useState(null)
 
-  // Normaliza filas de cualquier formato a { name, state, country }
   function normalizeRows(rows) {
     return rows
       .map((row) => ({
@@ -181,9 +182,8 @@ export default function ImportModal({ onClose, onSuccess }) {
   }
 
   function openTemplate(format) {
-    const base = 'http://localhost:8000/api'
-    const url = `${base}/cities/import/template/${format}`
-    window.open(url, '_blank')
+    const url = new URL(`/api/cities/import/template/${format}`, API_URL)
+    window.open(url.toString(), '_blank', 'noopener,noreferrer')
   }
 
   return (
