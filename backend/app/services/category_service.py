@@ -3,11 +3,11 @@ from __future__ import annotations
 import csv
 import io
 import json
+import yaml
 from types import SimpleNamespace
 from typing import Any
 from uuid import UUID
 
-import yaml
 from fastapi import UploadFile
 from openpyxl import load_workbook
 
