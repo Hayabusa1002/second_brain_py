@@ -89,7 +89,7 @@ export default function Cities() {
       }
 
       if (mode === 'edit') {
-        await client.put(`/cities/${editId}`, payload)
+        await client.patch(`/cities/${editId}`, payload)
       } else {
         await client.post('/cities', payload)
       }
