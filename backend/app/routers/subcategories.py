@@ -1,7 +1,7 @@
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db.deps import get_db, require_admin
@@ -17,7 +17,7 @@ from app.schemas.subcategory import (
 
 
 router = APIRouter(
-    prefix="/subcategories",
+    prefix="/categories/{category_id}/subcategories",
     tags=["subcategories"],
     dependencies=[Depends(require_admin)],
 )
@@ -32,51 +32,64 @@ def get_controller(db: Session = Depends(get_db)) -> SubcategoryController:
 
 @router.get("/", response_model=List[SubcategoryResponse])
 def list_subcategories(
-    category_id: UUID | None = Query(default=None),
+    category_id: UUID,
     controller: SubcategoryController = Depends(get_controller),
 ):
-    return controller.list_subcategories(category_id=category_id)
+    return controller.list_subcategories(category_id)
 
 
 @router.get("/{subcategory_id}", response_model=SubcategoryResponse)
 def get_subcategory(
+    category_id: UUID,
     subcategory_id: UUID,
     controller: SubcategoryController = Depends(get_controller),
 ):
-    subcategory = controller.get_subcategory(subcategory_id)
+    subcategory = controller.get_subcategory(category_id, subcategory_id)
+
     if not subcategory:
         raise HTTPException(status_code=404, detail="Subcategory not found")
+
     return subcategory
 
 
 @router.post("/", response_model=SubcategoryResponse, status_code=201)
 def create_subcategory(
+    category_id: UUID,
     data: SubcategoryCreate,
     controller: SubcategoryController = Depends(get_controller),
 ):
-    subcategory = controller.create_subcategory(data)
+    subcategory = controller.create_subcategory(category_id, data)
+
     if not subcategory:
         raise HTTPException(status_code=400, detail="Invalid category")
+
     return subcategory
 
 
 @router.patch("/{subcategory_id}", response_model=SubcategoryResponse)
 def update_subcategory(
+    category_id: UUID,
     subcategory_id: UUID,
     data: SubcategoryUpdate,
     controller: SubcategoryController = Depends(get_controller),
 ):
-    subcategory = controller.update_subcategory(subcategory_id, data)
-    if not subcategory:
+    updated = controller.update_subcategory(category_id, subcategory_id, data)
+
+    if not updated:
         raise HTTPException(status_code=404, detail="Subcategory not found")
-    return subcategory
+
+    return updated
+
 
 @router.delete("/{subcategory_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_subcategory(
+    category_id: UUID,
     subcategory_id: UUID,
     controller: SubcategoryController = Depends(get_controller),
 ):
-    deleted = controller.delete_subcategory(subcategory_id)
+    deleted = controller.delete_subcategory(category_id, subcategory_id)
+
     if not deleted:
         raise HTTPException(status_code=404, detail="Subcategory not found")
+
     return

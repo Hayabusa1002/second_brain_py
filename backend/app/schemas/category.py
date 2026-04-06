@@ -3,6 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from app.models.category import CategoryType
+from app.schemas.subcategory import SubcategoryResponse
 
 
 class CategoryCreate(BaseModel):
@@ -20,5 +21,6 @@ class CategoryResponse(BaseModel):
     name: str
     type: CategoryType
     created_at: datetime
+    subcategories: list[SubcategoryResponse] = []
 
     model_config = {"from_attributes": True}
