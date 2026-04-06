@@ -1,5 +1,8 @@
 from uuid import UUID
 
+from fastapi import UploadFile
+
+from app.schemas.bulk_import import ImportResult
 from app.services.category_service import CategoryService
 
 
@@ -18,6 +21,9 @@ class CategoryController:
 
     def update_category(self, category_id: UUID, data):
         return self.service.update_category(category_id, data)
-    
+
     def delete_category(self, category_id: UUID) -> bool:
         return self.service.delete_category(category_id)
+
+    async def import_categories(self, file: UploadFile, current_user) -> ImportResult:
+        return await self.service.import_categories(file, current_user)
