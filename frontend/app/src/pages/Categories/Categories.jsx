@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
-import { IconPlus } from '@tabler/icons-react'
+import { useState, useEffect, useCallback } from 'react'
+import { IconPlus, IconUpload } from '@tabler/icons-react'
 import client from '../../api/client'
 import Alert from '../../components/ui/Alert'
 import Table from './Table'
 import FormModal from './FormModal'
+import ImportModal from './ImportModal'
 import SubcategoryModal from './SubcategoryModal'
 import ViewModal from './ViewModal'
 import DeleteModal from './DeleteModal'
@@ -15,11 +16,10 @@ const EMPTY_FORM = {
 
 export default function Categories() {
   const [categories, setCategories] = useState([])
-  const [subcategories, setSubcategories] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const [mode, setMode] = useState(null)
+  const [mode, setMode] = useState('table')
   const [form, setForm] = useState(EMPTY_FORM)
   const [editId, setEditId] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -29,42 +29,48 @@ export default function Categories() {
   const [subcategoryCategory, setSubcategoryCategory] = useState(null)
   const [deleteCategory, setDeleteCategory] = useState(null)
 
-  useEffect(() => {
-    fetchData()
-  }, [])
+  const normalizeCategories = (data) => {
+    if (Array.isArray(data?.categories)) return data.categories
+    if (Array.isArray(data?.items)) return data.items
+    if (Array.isArray(data)) return data
+    return []
+  }
 
-  async function fetchData() {
+  const fetchData = useCallback(async () => {
     setLoading(true)
     setError('')
 
     try {
-      const [categoriesRes, subcategoriesRes] = await Promise.all([
-        client.get('/categories'),
-        client.get('/subcategories'),
-      ])
-
-      setCategories(categoriesRes.data.categories ?? categoriesRes.data.items ?? categoriesRes.data)
-      setSubcategories(
-        subcategoriesRes.data.subcategories ??
-        subcategoriesRes.data.items ??
-        subcategoriesRes.data
-      )
+      const res = await client.get('/categories')
+      const items = normalizeCategories(res.data)
+      setCategories(items)
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to load categories.')
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   function getSubcategories(categoryId) {
-    return subcategories.filter((s) => s.category_id === categoryId)
+    const category = categories.find((item) => item.id === categoryId)
+    return category?.subcategories ?? []
   }
 
   function handleSubcategoriesUpdate(categoryId, updatedSubs) {
-    setSubcategories((prev) => {
-      const withoutCurrent = prev.filter((item) => item.category_id !== categoryId)
-      return [...withoutCurrent, ...updatedSubs]
-    })
+    setCategories((prev) =>
+      prev.map((category) =>
+        category.id === categoryId
+          ? {
+              ...category,
+              subcategories: Array.isArray(updatedSubs) ? updatedSubs : [],
+            }
+          : category
+      )
+    )
   }
 
   function openAdd() {
@@ -113,15 +119,15 @@ export default function Categories() {
       }
 
       if (mode === 'edit') {
-        await client.put(`/categories/${editId}`, payload)
+        await client.patch(`/categories/${editId}`, payload)
       } else {
         await client.post('/categories', payload)
       }
 
-      setMode(null)
+      setMode('table')
       setForm({ ...EMPTY_FORM })
       setEditId(null)
-      fetchData()
+      await fetchData()
     } catch (err) {
       setFormError(err.response?.data?.detail || 'Failed to save category.')
     } finally {
@@ -135,7 +141,7 @@ export default function Categories() {
     try {
       await client.delete(`/categories/${deleteCategory.id}`)
       setDeleteCategory(null)
-      fetchData()
+      await fetchData()
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to delete category.')
       setDeleteCategory(null)
@@ -145,18 +151,49 @@ export default function Categories() {
   return (
     <div className="container-xl py-4">
       <div className="d-flex align-items-center justify-content-between mb-4">
-        <h2 className="mb-0">Categories</h2>
+        <div>
+          <h2 className="mb-0">Categories</h2>
+        </div>
 
-        <button
-          className="btn btn-primary d-flex align-items-center gap-1"
-          onClick={openAdd}
-        >
-          <IconPlus size={16} stroke={1.5} />
-          New Category
-        </button>
+        <div className="d-flex gap-2">
+          <button
+            className="btn btn-outline-primary d-flex align-items-center gap-1"
+            onClick={openAdd}
+          >
+            <IconPlus size={16} stroke={1.5} />
+            New Category
+          </button>
+
+          <button
+            className="btn btn-outline-primary d-flex align-items-center gap-1"
+            onClick={() => setMode('import')}
+          >
+            <IconUpload size={16} stroke={1.5} />
+            Import
+          </button>
+        </div>
       </div>
 
       <Alert message={error} />
+
+      {(mode === 'add' || mode === 'edit') && (
+        <FormModal
+          form={form}
+          mode={mode}
+          saving={saving}
+          error={formError}
+          onChange={setField}
+          onSave={handleSave}
+          onCancel={() => setMode('table')}
+        />
+      )}
+
+      {mode === 'import' && (
+        <ImportModal
+          onClose={() => setMode('table')}
+          onSuccess={fetchData}
+        />
+      )}
 
       <Table
         categories={categories}
@@ -168,24 +205,6 @@ export default function Categories() {
         onDelete={openDeleteModal}
         onAdd={openAdd}
       />
-
-      {mode && (
-        <FormModal
-          key={mode === 'edit' ? `edit-category-${editId}` : 'add-category'}
-          form={form}
-          mode={mode}
-          saving={saving}
-          error={formError}
-          onChange={setField}
-          onSave={handleSave}
-          onCancel={() => {
-            setMode(null)
-            setForm({ ...EMPTY_FORM })
-            setEditId(null)
-            setFormError('')
-          }}
-        />
-      )}
 
       {subcategoryCategory && (
         <SubcategoryModal
