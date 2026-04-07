@@ -18,3 +18,9 @@ class CityController:
 
     def update_city(self, city_id: UUID, data):
         return self.service.update_city(city_id, data)
+
+    def delete_city(self, city_id: UUID):
+        return self.service.delete_city(city_id)
+
+    async def import_cities(self, file, current_user=None):
+        return await self.service.import_cities(file, current_user)
