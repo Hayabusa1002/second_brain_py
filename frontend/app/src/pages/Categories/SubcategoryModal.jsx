@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import client from '../../api/client'
 
 export default function SubcategoryModal({
@@ -12,6 +12,20 @@ export default function SubcategoryModal({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
+  useEffect(() => {
+    setItems(subcategories ?? [])
+  }, [subcategories, category?.id])
+
+  async function refreshSubcategories() {
+    const { data } = await client.get(`/categories/${category.id}/subcategories/`)
+    const updated = data.subcategories ?? data.items ?? data ?? []
+    const normalized = Array.isArray(updated) ? updated : []
+
+    setItems(normalized)
+    onUpdate(category.id, normalized)
+    return normalized
+  }
+
   async function handleAdd() {
     if (!name.trim()) return
 
@@ -19,18 +33,12 @@ export default function SubcategoryModal({
     setError('')
 
     try {
-      const payload = {
+      await client.post(`/categories/${category.id}/subcategories/`, {
         name: name.trim(),
-        category_id: category.id,
-      }
+      })
 
-      const { data } = await client.post('/subcategories', payload)
-      const created = data.subcategory ?? data.item ?? data
-      const updated = [...items, created]
-
-      setItems(updated)
+      await refreshSubcategories()
       setName('')
-      onUpdate(category.id, updated)
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to create subcategory.')
     } finally {
@@ -42,10 +50,11 @@ export default function SubcategoryModal({
     setError('')
 
     try {
-      await client.delete(`/subcategories/${subcategoryId}`)
-      const updated = items.filter((item) => item.id !== subcategoryId)
-      setItems(updated)
-      onUpdate(category.id, updated)
+      await client.delete(
+        `/categories/${category.id}/subcategories/${subcategoryId}`
+      )
+
+      await refreshSubcategories()
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to remove subcategory.')
     }
@@ -74,6 +83,11 @@ export default function SubcategoryModal({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Subcategory name..."
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && name.trim() && !saving) {
+                      handleAdd()
+                    }
+                  }}
                 />
                 <button
                   className="btn btn-primary px-3"
