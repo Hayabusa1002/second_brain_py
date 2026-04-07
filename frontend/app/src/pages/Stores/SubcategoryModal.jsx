@@ -22,49 +22,36 @@ function normalizeError(error) {
   return String(error)
 }
 
-export default function StoreSubcategoryModal({ store, onClose, onUpdated }) {
-  const [subcategories, setSubcategories] = useState([])
+export default function SubcategoryModal({
+  store,
+  subcategories,
+  onClose,
+  onUpdated,
+}) {
+  const [items, setItems] = useState(subcategories ?? [])
   const [selectedId, setSelectedId] = useState(
     store?.category_default?.subcategory?.id ?? ''
   )
-  const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    fetchSubcategories()
-  }, [store?.id])
-
-  async function fetchSubcategories() {
-    if (!store?.id) return
-    setLoading(true)
-    setError('')
-    try {
-      const { data } = await client.get('/subcategories')
-      const items = data.subcategories ?? data.items ?? data ?? []
-      const normalized = Array.isArray(items) ? items : []
-      setSubcategories(normalized)
-    } catch (err) {
-      setError(
-        err.response?.data?.detail ||
-          err.response?.data ||
-          err.message ||
-          'Failed to load subcategories.'
-      )
-    } finally {
-      setLoading(false)
-    }
-  }
+    setItems(subcategories ?? [])
+    setSelectedId(store?.category_default?.subcategory?.id ?? '')
+  }, [subcategories, store?.id])
 
   async function handleAssign() {
     if (!store?.id || !selectedId) return
+
     setSaving(true)
     setError('')
+
     try {
       await client.put(`/stores/${store.id}/category-default`, {
         subcategory_id: selectedId,
       })
-      if (onUpdated) await onUpdated()
+
+      await onUpdated()
       onClose()
     } catch (err) {
       setError(
@@ -80,11 +67,13 @@ export default function StoreSubcategoryModal({ store, onClose, onUpdated }) {
 
   async function handleClear() {
     if (!store?.id) return
+
     setSaving(true)
     setError('')
+
     try {
       await client.delete(`/stores/${store.id}/category-default`)
-      if (onUpdated) await onUpdated()
+      await onUpdated()
       onClose()
     } catch (err) {
       setError(
@@ -109,7 +98,7 @@ export default function StoreSubcategoryModal({ store, onClose, onUpdated }) {
         <div className="modal-content">
           <div className="modal-header">
             <h5 className="modal-title">
-              Default subcategory — {store?.name ?? ''}
+              Default subcategory — {store?.name}
             </h5>
             <button className="btn-close" onClick={onClose} />
           </div>
@@ -139,16 +128,14 @@ export default function StoreSubcategoryModal({ store, onClose, onUpdated }) {
                   className="form-select"
                   value={selectedId}
                   onChange={(e) => setSelectedId(e.target.value)}
-                  disabled={loading || saving}
+                  disabled={saving}
                 >
-                  <option value="">
-                    {loading
-                      ? 'Loading subcategories...'
-                      : 'Select a subcategory'}
-                  </option>
-                  {subcategories.map((sub) => (
+                  <option value="">Select a subcategory</option>
+                  {items.map((sub) => (
                     <option key={sub.id} value={sub.id}>
-                      {sub.name}
+                      {sub.category_name
+                        ? `${sub.category_name} / ${sub.name}`
+                        : sub.name}
                     </option>
                   ))}
                 </select>
