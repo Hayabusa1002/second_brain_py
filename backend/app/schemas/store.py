@@ -20,6 +20,27 @@ class StoreUpdate(BaseModel):
     website: HttpUrl | str | None = None
 
 
+class StoreSubcategoryResponse(BaseModel):
+    id: UUID
+    name: str
+
+    model_config = {"from_attributes": True}
+
+
+class StoreCategoryDefaultUpsert(BaseModel):
+    subcategory_id: UUID
+
+
+class StoreCategoryDefaultResponse(BaseModel):
+    id: UUID
+    store_id: UUID
+    subcategory_id: UUID
+    created_at: datetime
+    subcategory: StoreSubcategoryResponse | None = None
+
+    model_config = {"from_attributes": True}
+
+
 class StoreResponse(BaseModel):
     id: UUID
     name: str
@@ -27,5 +48,6 @@ class StoreResponse(BaseModel):
     address: str | None = None
     website: str | None = None
     created_at: datetime
+    category_default: StoreCategoryDefaultResponse | None = None
 
     model_config = {"from_attributes": True}
