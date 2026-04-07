@@ -17,6 +17,7 @@ import {
   IconCategory,
   IconMapPin,
   IconPackage,
+  IconBuildingStore,
 } from '@tabler/icons-react'
 
 const BASE_NAV_ITEMS = [
@@ -29,6 +30,7 @@ const ADMIN_NAV_ITEMS = [
   { path: '/users', label: 'Users', icon: <IconUsers size={16} stroke={1.5} /> },
   { path: '/access-requests', label: 'Access requests', icon: <IconShieldPlus size={16} stroke={1.5} /> },
   { path: '/categories', label: 'Categories', icon: <IconCategory size={16} stroke={1.5} /> },
+  { path: '/stores', label: 'Stores', icon: <IconBuildingStore size={16} stroke={1.5} /> },
   { path: '/cities', label: 'Cities', icon: <IconMapPin size={16} stroke={1.5} /> },
   { path: '/items', label: 'Items', icon: <IconPackage size={16} stroke={1.5} /> },
 ]
