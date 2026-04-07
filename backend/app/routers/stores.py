@@ -10,7 +10,13 @@ from app.db.deps import get_db, get_current_user
 from app.controllers.store_controller import StoreController
 from app.services.store_service import StoreService
 from app.repositories.store_repository import StoreRepository
-from app.schemas.store import StoreCreate, StoreUpdate, StoreResponse
+from app.schemas.store import (
+    StoreCreate,
+    StoreUpdate,
+    StoreResponse,
+    StoreCategoryDefaultUpsert,
+    StoreCategoryDefaultResponse,
+)
 from app.schemas.bulk_import import ImportResult
 
 
@@ -82,6 +88,7 @@ TEMPLATE_YAML = """- name: Exito
   type: online
   address:
   website: https://store.steampowered.com
+
 """
 
 
@@ -212,4 +219,54 @@ def delete_store(
     deleted = controller.delete_store(store_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Store not found")
+    return
+
+
+# --------- CATEGORY DEFAULT ---------
+
+
+@router.get("/stores/{store_id}/category-default", response_model=StoreCategoryDefaultResponse)
+def get_store_category_default(
+    store_id: UUID,
+    controller: StoreController = Depends(get_controller),
+    current_user=Depends(get_current_user),
+):
+    default = controller.get_category_default(store_id)
+    if not default:
+        raise HTTPException(status_code=404, detail="Default subcategory not found")
+    return default
+
+
+@router.put("/stores/{store_id}/category-default", response_model=StoreCategoryDefaultResponse)
+def upsert_store_category_default(
+    store_id: UUID,
+    data: StoreCategoryDefaultUpsert,
+    controller: StoreController = Depends(get_controller),
+    current_user=Depends(get_current_user),
+):
+    try:
+        return controller.upsert_category_default(store_id, data.subcategory_id)
+    except ValueError as e:
+        message = str(e)
+        if message in {"Store not found", "Subcategory not found"}:
+            raise HTTPException(status_code=404, detail=message)
+        raise HTTPException(status_code=400, detail=message)
+
+
+@router.delete("/stores/{store_id}/category-default", status_code=status.HTTP_204_NO_CONTENT)
+def delete_store_category_default(
+    store_id: UUID,
+    controller: StoreController = Depends(get_controller),
+    current_user=Depends(get_current_user),
+):
+    try:
+        deleted = controller.delete_category_default(store_id)
+    except ValueError as e:
+        message = str(e)
+        if message == "Store not found":
+            raise HTTPException(status_code=404, detail=message)
+        raise HTTPException(status_code=400, detail=message)
+
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Default subcategory not found")
     return

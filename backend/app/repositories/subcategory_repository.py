@@ -11,6 +11,13 @@ class SubcategoryRepository:
     def __init__(self, db: Session):
         self.db = db
 
+    def list_all(self) -> List[Subcategory]:
+        return (
+            self.db.query(Subcategory)
+            .order_by(Subcategory.name.asc())
+            .all()
+        )
+
     def list(self, category_id: UUID) -> List[Subcategory]:
         return (
             self.db.query(Subcategory)
@@ -20,7 +27,11 @@ class SubcategoryRepository:
         )
 
     def get_by_id(self, subcategory_id: UUID) -> Optional[Subcategory]:
-        return self.db.query(Subcategory).filter(Subcategory.id == subcategory_id).first()
+        return (
+            self.db.query(Subcategory)
+            .filter(Subcategory.id == subcategory_id)
+            .first()
+        )
 
     def get_by_id_and_category(self, subcategory_id: UUID, category_id: UUID) -> Optional[Subcategory]:
         return (

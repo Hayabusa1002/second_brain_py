@@ -22,12 +22,24 @@ router = APIRouter(
     dependencies=[Depends(require_admin)],
 )
 
+base_router = APIRouter(
+    tags=["subcategories"],
+    dependencies=[Depends(require_admin)],
+)
+
 
 def get_controller(db: Session = Depends(get_db)) -> SubcategoryController:
     sub_repo = SubcategoryRepository(db)
     cat_repo = CategoryRepository(db)
     service = SubcategoryService(sub_repo, cat_repo)
     return SubcategoryController(service)
+
+
+@base_router.get("/subcategories", response_model=List[SubcategoryResponse])
+def list_all_subcategories(
+    controller: SubcategoryController = Depends(get_controller),
+):
+    return controller.list_all_subcategories()
 
 
 @router.get("/", response_model=List[SubcategoryResponse])
@@ -87,7 +99,10 @@ def delete_subcategory(
     subcategory_id: UUID,
     controller: SubcategoryController = Depends(get_controller),
 ):
-    deleted = controller.delete_subcategory(category_id, subcategory_id)
+    try:
+        deleted = controller.delete_subcategory(category_id, subcategory_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     if not deleted:
         raise HTTPException(status_code=404, detail="Subcategory not found")

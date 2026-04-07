@@ -14,6 +14,9 @@ class SubcategoryService:
         self.repository = repository
         self.category_repository = category_repository
 
+    def list_all_subcategories(self):
+        return self.repository.list_all()
+
     def list_subcategories(self, category_id: UUID):
         category = self.category_repository.get_by_id(category_id)
         if not category:

@@ -1,15 +1,18 @@
 import csv
 import io
 import json
+from uuid import UUID
 
 import pandas as pd
 import yaml
 from fastapi import UploadFile
 
-from uuid import UUID
-
 from app.repositories.store_repository import StoreRepository
-from app.schemas.store import StoreCreate, StoreUpdate
+from app.schemas.store import (
+    StoreCreate,
+    StoreUpdate,
+    StoreCategoryDefaultResponse,
+)
 from app.schemas.bulk_import import ImportResult, ImportError, ImportLogItem
 
 
@@ -36,6 +39,45 @@ class StoreService:
 
     def delete_store(self, store_id: UUID):
         return self.repository.delete(store_id)
+
+    def get_store_category_default(self, store_id: UUID) -> StoreCategoryDefaultResponse | None:
+        default = self.repository.get_category_default(store_id)
+        if not default:
+            return None
+
+        return StoreCategoryDefaultResponse(
+            id=default.id,
+            store_id=default.store_id,
+            subcategory_id=default.subcategory_id,
+            created_at=default.created_at,
+            subcategory=default.subcategory,
+        )
+
+    def upsert_store_category_default(self, store_id: UUID, subcategory_id: UUID) -> StoreCategoryDefaultResponse:
+        store = self.repository.get_by_id(store_id)
+        if not store:
+            raise ValueError("Store not found")
+
+        subcategory = self.repository.get_subcategory_by_id(subcategory_id)
+        if not subcategory:
+            raise ValueError("Subcategory not found")
+
+        default = self.repository.upsert_category_default(store_id, subcategory_id)
+
+        return StoreCategoryDefaultResponse(
+            id=default.id,
+            store_id=default.store_id,
+            subcategory_id=default.subcategory_id,
+            created_at=default.created_at,
+            subcategory=subcategory,
+        )
+
+    def delete_store_category_default(self, store_id: UUID) -> bool:
+        store = self.repository.get_by_id(store_id)
+        if not store:
+            raise ValueError("Store not found")
+
+        return self.repository.delete_category_default(store_id)
 
     async def import_stores(self, file: UploadFile, current_user=None) -> ImportResult:
         result = ImportResult()
