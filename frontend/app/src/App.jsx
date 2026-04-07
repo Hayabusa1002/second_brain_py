@@ -11,6 +11,7 @@ import Transactions from './pages/Transactions/Transactions'
 import Accounts from './pages/Accounts/Accounts'
 import Users from './pages/Users/Users'
 import Categories from './pages/Categories/Categories'
+import Stores from './pages/Stores/Stores'
 import Cities from './pages/Cities/Cities'
 import Items from './pages/Items/Items'
 
@@ -28,6 +29,7 @@ export default function App() {
         <Route path="/accounts" element={<ProtectedRoute><Accounts /></ProtectedRoute>} />
         <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
         <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
+        <Route path="/stores" element={<ProtectedRoute><Stores /></ProtectedRoute>} />
         <Route path="/cities" element={<ProtectedRoute><Cities /></ProtectedRoute>} />
         <Route path="/items" element={<ProtectedRoute><Items /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
