@@ -26,6 +26,12 @@ export default function Table({
 }) {
   const [exportOpen, setExportOpen] = useState(false)
 
+  // Global text search and type filter
+  const [search, setSearch] = useState('')
+  const [typeFilter, setTypeFilter] = useState('')
+  const [searchFocused, setSearchFocused] = useState(false)
+
+  // Build full nested export rows
   function exportRows() {
     return categories.map((category) => ({
       id: category.id,
@@ -40,6 +46,7 @@ export default function Table({
     }))
   }
 
+  // Flatten subcategories for tabular formats (CSV / XLSX)
   function exportFlatRows() {
     return exportRows().map((row) => ({
       id: row.id,
@@ -50,6 +57,7 @@ export default function Table({
     }))
   }
 
+  // Export dispatcher
   function exportData(format) {
     setExportOpen(false)
     if (format === 'csv') return exportCSV()
@@ -106,6 +114,7 @@ export default function Table({
     )
   }
 
+  // Generic file download helper
   function download(blob, filename) {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -117,60 +126,151 @@ export default function Table({
     URL.revokeObjectURL(url)
   }
 
+  // In‑memory filtering for search + type
+  const filteredCategories = categories.filter((category) => {
+    const matchesType = typeFilter ? category.type === typeFilter : true
+
+    const haystack = [
+      category.name ?? '',
+      ...getSubcategories(category.id).map((s) => s.name ?? ''),
+    ]
+      .join(' ')
+      .toLowerCase()
+
+    const matchesSearch = search
+      ? haystack.includes(search.toLowerCase())
+      : true
+
+    return matchesType && matchesSearch
+  })
+
+  // We keep this state only for future tweaks; it no longer changes width
+  const searchExpanded = Boolean(search || typeFilter || searchFocused)
+
   return (
     <div className="card">
-      <div className="card-header d-flex align-items-center justify-content-between">
-        <span className="text-secondary small">
-          {categories.length} records
-        </span>
-
-        <div style={{ position: 'relative' }}>
-          <button
-            className="btn btn-primary d-flex align-items-center gap-1"
-            onClick={() => setExportOpen((o) => !o)}
-          >
-            <IconDownload size={16} stroke={1.5} />
-            Export
-            <IconChevronDown size={14} stroke={1.5} />
-          </button>
-
-          {exportOpen && (
-            <>
-              <div
-                style={{ position: 'fixed', inset: 0, zIndex: 999 }}
-                onClick={() => setExportOpen(false)}
-              />
-
-              <div
-                className="dropdown-menu show"
-                style={{
-                  position: 'absolute',
-                  right: 0,
-                  top: '100%',
-                  zIndex: 1000,
-                  minWidth: 180,
-                }}
-              >
-                {[
-                  ['CSV', 'csv'],
-                  ['Excel (XLSX)', 'xlsx'],
-                  ['JSON', 'json'],
-                  ['YAML', 'yaml'],
-                ].map(([label, fmt]) => (
-                  <button
-                    key={fmt}
-                    className="dropdown-item"
-                    onClick={() => exportData(fmt)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </>
+      {/* Fixed-height header, filters + Export on the right */}
+      <div
+        className="card-header d-flex align-items-center"
+        style={{
+          minHeight: 72,
+          paddingTop: 12,
+          paddingBottom: 12,
+        }}
+      >
+        {/* Records counter on the left */}
+        <div className="text-secondary small">
+          {filteredCategories.length} records
+          {filteredCategories.length !== categories.length && (
+            <span className="text-muted ms-1">
+              (de {categories.length})
+            </span>
           )}
+        </div>
+
+        {/* Filters + Export aligned to the right, single row */}
+        <div
+          className="d-flex align-items-center ms-auto"
+          style={{
+            gap: 8,
+            width: '100%',
+            maxWidth: 800,
+            whiteSpace: 'nowrap', // prevent wrapping to next line
+          }}
+        >
+          {/* Search input (fixed horizontal behavior) */}
+          <div
+            className="input-group input-group-flat search-stable"
+            style={{
+              flex: '1 1 auto',
+            }}
+          >
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Search categories or subcategories"
+              value={search}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <span className="input-group-text">
+              {search && (
+                <button
+                  type="button"
+                  className="btn btn-link p-0 text-secondary"
+                  onClick={() => setSearch('')}
+                  title="Clear"
+                >
+                  ✕
+                </button>
+              )}
+            </span>
+          </div>
+
+          {/* Type filter select */}
+          <select
+            className="form-select"
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            style={{ width: 160, flex: '0 0 auto' }}
+          >
+            <option value="">All types</option>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+
+          {/* Export dropdown button */}
+          <div style={{ position: 'relative', flex: '0 0 auto' }}>
+            <button
+              className="btn btn-primary d-flex align-items-center gap-1"
+              onClick={() => setExportOpen((o) => !o)}
+            >
+              <IconDownload size={16} stroke={1.5} />
+              Export
+              <IconChevronDown size={14} stroke={1.5} />
+            </button>
+
+            {exportOpen && (
+              <>
+                {/* Backdrop to close dropdown when clicking outside */}
+                <div
+                  style={{ position: 'fixed', inset: 0, zIndex: 999 }}
+                  onClick={() => setExportOpen(false)}
+                />
+
+                <div
+                  className="dropdown-menu show"
+                  style={{
+                    position: 'absolute',
+                    right: 0,
+                    top: '100%',
+                    zIndex: 1000,
+                    minWidth: 180,
+                  }}
+                >
+                  {[
+                    ['CSV', 'csv'],
+                    ['Excel (XLSX)', 'xlsx'],
+                    ['JSON', 'json'],
+                    ['YAML', 'yaml'],
+                  ].map(([label, fmt]) => (
+                    <button
+                      key={fmt}
+                      className="dropdown-item"
+                      onClick={() => exportData(fmt)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
+      {/* Table body */}
       <div className="table-responsive">
         <table className="table table-vcenter table-hover card-table">
           <colgroup>
@@ -196,7 +296,7 @@ export default function Table({
                   Loading...
                 </td>
               </tr>
-            ) : categories.length === 0 ? (
+            ) : filteredCategories.length === 0 ? (
               <tr>
                 <td colSpan={4} className="text-center py-5 text-secondary">
                   No categories yet.{' '}
@@ -206,7 +306,7 @@ export default function Table({
                 </td>
               </tr>
             ) : (
-              categories.map((category) => {
+              filteredCategories.map((category) => {
                 const subcategories = getSubcategories(category.id)
 
                 return (
