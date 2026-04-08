@@ -5,3 +5,9 @@ html, body, #root {
 body {
   margin: 0;
 }
+
+.search-stable .form-control,
+.search-stable .input-group-text {
+  height: 36px;
+  min-height: 36px;
+}

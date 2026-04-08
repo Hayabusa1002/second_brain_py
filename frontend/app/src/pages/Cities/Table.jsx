@@ -18,6 +18,10 @@ export default function Table({
 }) {
   const [exportOpen, setExportOpen] = useState(false)
 
+  const [search, setSearch] = useState('')
+  const [countryFilter, setCountryFilter] = useState('')
+  const [searchFocused, setSearchFocused] = useState(false)
+
   function exportRows() {
     return cities.map((city) => ({
       id: city.id,
@@ -95,55 +99,140 @@ export default function Table({
     URL.revokeObjectURL(url)
   }
 
+  const countries = [...new Set(cities.map((c) => c.country).filter(Boolean))].sort()
+
+  const filteredCities = cities.filter((city) => {
+    const matchesCountry = countryFilter ? city.country === countryFilter : true
+
+    const haystack = [city.name ?? '', city.state ?? '', city.country ?? '']
+      .join(' ')
+      .toLowerCase()
+
+    const matchesSearch = search
+      ? haystack.includes(search.toLowerCase())
+      : true
+
+    return matchesCountry && matchesSearch
+  })
+
+  const searchExpanded = Boolean(search || countryFilter || searchFocused)
+
   return (
     <div className="card">
-      <div className="card-header d-flex align-items-center justify-content-between">
-        <span className="text-secondary small">{cities.length} records</span>
-
-        <div style={{ position: 'relative' }}>
-          <button
-            className="btn btn-primary d-flex align-items-center gap-1"
-            onClick={() => setExportOpen((o) => !o)}
-          >
-            <IconDownload size={16} stroke={1.5} />
-            Export
-            <IconChevronDown size={14} stroke={1.5} />
-          </button>
-
-          {exportOpen && (
-            <>
-              <div
-                style={{ position: 'fixed', inset: 0, zIndex: 999 }}
-                onClick={() => setExportOpen(false)}
-              />
-
-              <div
-                className="dropdown-menu show"
-                style={{
-                  position: 'absolute',
-                  right: 0,
-                  top: '100%',
-                  zIndex: 1000,
-                  minWidth: 180,
-                }}
-              >
-                {[
-                  ['CSV', 'csv'],
-                  ['Excel (XLSX)', 'xlsx'],
-                  ['JSON', 'json'],
-                  ['YAML', 'yaml'],
-                ].map(([label, fmt]) => (
-                  <button
-                    key={fmt}
-                    className="dropdown-item"
-                    onClick={() => exportData(fmt)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </>
+      <div
+        className="card-header d-flex align-items-center"
+        style={{
+          minHeight: 72,
+          paddingTop: 12,
+          paddingBottom: 12,
+        }}
+      >
+        <div className="text-secondary small">
+          {filteredCities.length} records
+          {filteredCities.length !== cities.length && (
+            <span className="text-muted ms-1">
+              (de {cities.length})
+            </span>
           )}
+        </div>
+
+        <div
+          className="d-flex align-items-center ms-auto"
+          style={{
+            gap: 8,
+            width: '100%',
+            maxWidth: 800,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <div
+            className="input-group input-group-flat search-stable"
+            style={{
+              flex: '1 1 auto',
+            }}
+          >
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Search cities, state or country"
+              value={search}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <span className="input-group-text">
+              {search && (
+                <button
+                  type="button"
+                  className="btn btn-link p-0 text-secondary"
+                  onClick={() => setSearch('')}
+                  title="Clear"
+                >
+                  ✕
+                </button>
+              )}
+            </span>
+          </div>
+
+          <select
+            className="form-select"
+            value={countryFilter}
+            onChange={(e) => setCountryFilter(e.target.value)}
+            style={{ width: 180, flex: '0 0 auto' }}
+          >
+            <option value="">All countries</option>
+            {countries.map((country) => (
+              <option key={country} value={country}>
+                {country}
+              </option>
+            ))}
+          </select>
+
+          <div style={{ position: 'relative', flex: '0 0 auto' }}>
+            <button
+              className="btn btn-primary d-flex align-items-center gap-1"
+              onClick={() => setExportOpen((o) => !o)}
+            >
+              <IconDownload size={16} stroke={1.5} />
+              Export
+              <IconChevronDown size={14} stroke={1.5} />
+            </button>
+
+            {exportOpen && (
+              <>
+                <div
+                  style={{ position: 'fixed', inset: 0, zIndex: 999 }}
+                  onClick={() => setExportOpen(false)}
+                />
+
+                <div
+                  className="dropdown-menu show"
+                  style={{
+                    position: 'absolute',
+                    right: 0,
+                    top: '100%',
+                    zIndex: 1000,
+                    minWidth: 180,
+                  }}
+                >
+                  {[
+                    ['CSV', 'csv'],
+                    ['Excel (XLSX)', 'xlsx'],
+                    ['JSON', 'json'],
+                    ['YAML', 'yaml'],
+                  ].map(([label, fmt]) => (
+                    <button
+                      key={fmt}
+                      className="dropdown-item"
+                      onClick={() => exportData(fmt)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -151,9 +240,9 @@ export default function Table({
         <table className="table table-vcenter table-hover card-table">
           <colgroup>
             <col style={{ width: '35%' }} />
-            <col style={{ width: '35%' }} />
+            <col style={{ width: '25%' }} />
             <col style={{ width: '20%' }} />
-            <col style={{ width: '10%' }} />
+            <col style={{ width: '20%' }} />
           </colgroup>
 
           <thead>
@@ -172,21 +261,21 @@ export default function Table({
                   Loading...
                 </td>
               </tr>
-            ) : cities.length === 0 ? (
+            ) : filteredCities.length === 0 ? (
               <tr>
                 <td colSpan={4} className="text-center py-5 text-secondary">
-                  No cities yet.{' '}
+                  No cities found.{' '}
                   <button className="btn btn-link p-0" onClick={onAdd}>
                     Create one
                   </button>
                 </td>
               </tr>
             ) : (
-              cities.map((c) => (
+              filteredCities.map((c) => (
                 <tr key={c.id}>
                   <td className="fw-medium">{c.name}</td>
                   <td>{c.state || '—'}</td>
-                  <td>{c.country}</td>
+                  <td>{c.country || '—'}</td>
                   <td>
                     <div className="d-flex gap-1 justify-content-end">
                       <button
