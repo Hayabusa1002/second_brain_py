@@ -13,6 +13,10 @@ export default function SubcategoryModal({
   const [deletingAll, setDeletingAll] = useState(false)
   const [error, setError] = useState('')
 
+  const [renamingId, setRenamingId] = useState(null)
+  const [renameValue, setRenameValue] = useState('')
+  const [renaming, setRenaming] = useState(false)
+
   useEffect(() => {
     setItems(subcategories ?? [])
   }, [subcategories, category?.id])
@@ -70,9 +74,7 @@ export default function SubcategoryModal({
       !window.confirm(
         'This will delete all subcategories in this category. Are you sure?'
       )
-    ) {
-      return
-    }
+    ) return
 
     setDeletingAll(true)
     setError('')
@@ -80,22 +82,50 @@ export default function SubcategoryModal({
     try {
       await Promise.all(
         items.map((item) =>
-          client.delete(
-            `/categories/${category.id}/subcategories/${item.id}`
-          )
+          client.delete(`/categories/${category.id}/subcategories/${item.id}`)
         )
       )
 
       await refreshSubcategories()
     } catch (err) {
       setError(
-        err.response?.data?.detail ||
-          'Failed to remove all subcategories.'
+        err.response?.data?.detail || 'Failed to remove all subcategories.'
       )
     } finally {
       setDeletingAll(false)
     }
   }
+
+  function startRename(item) {
+    setRenamingId(item.id)
+    setRenameValue(item.name)
+    setError('')
+  }
+
+  function cancelRename() {
+    setRenamingId(null)
+    setRenameValue('')
+  }
+
+  async function handleRename(subcategoryId) {
+    if (!renameValue.trim()) return
+    setRenaming(true)
+    setError('')
+    try {
+      await client.patch(
+        `/categories/${category.id}/subcategories/${subcategoryId}`,
+        { name: renameValue.trim() }
+      )
+      await refreshSubcategories()
+      cancelRename()
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to rename subcategory.')
+    } finally {
+      setRenaming(false)
+    }
+  }
+
+  const isBusy = saving || deletingAll || renaming
 
   return (
     <div
@@ -116,6 +146,7 @@ export default function SubcategoryModal({
               <div className="alert alert-danger mb-3">{error}</div>
             )}
 
+            {/* Add subcategory */}
             <div className="mb-4">
               <label className="form-label fw-medium">Add subcategory</label>
               <div className="d-flex gap-2">
@@ -125,42 +156,83 @@ export default function SubcategoryModal({
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Subcategory name..."
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && name.trim() && !saving) {
-                      handleAdd()
-                    }
+                    if (e.key === 'Enter' && name.trim() && !saving) handleAdd()
                   }}
-                  disabled={saving || deletingAll}
+                  disabled={isBusy}
                 />
                 <button
                   className="btn btn-primary px-3"
                   onClick={handleAdd}
-                  disabled={!name.trim() || saving || deletingAll}
+                  disabled={!name.trim() || isBusy}
                 >
                   {saving ? '...' : 'Add'}
                 </button>
               </div>
             </div>
 
+            {/* List */}
             <div className="mt-2">
               {items.length === 0 ? (
-                <div className="text-secondary">
-                  No subcategories yet.
-                </div>
+                <div className="text-secondary">No subcategories yet.</div>
               ) : (
                 <>
                   {items.map((item) => (
                     <div
                       key={item.id}
-                      className="d-flex align-items-center justify-content-between py-2 border-bottom"
+                      className="py-2 border-bottom"
                     >
-                      <span>{item.name}</span>
-                      <button
-                        className="btn btn-sm btn-danger"
-                        onClick={() => handleRemove(item.id)}
-                        disabled={deletingAll}
-                      >
-                        Remove
-                      </button>
+                      {renamingId === item.id ? (
+                        /* ── Rename row ── */
+                        <div className="d-flex gap-2 align-items-center">
+                          <input
+                            className="form-control form-control-sm"
+                            value={renameValue}
+                            autoFocus
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && renameValue.trim() && !renaming)
+                                handleRename(item.id)
+                              if (e.key === 'Escape') cancelRename()
+                            }}
+                            disabled={renaming}
+                          />
+                          <button
+                            className="btn btn-sm btn-success"
+                            onClick={() => handleRename(item.id)}
+                            disabled={!renameValue.trim() || renaming}
+                          >
+                            {renaming ? '...' : 'Save'}
+                          </button>
+                          <button
+                            className="btn btn-sm btn-outline-secondary"
+                            onClick={cancelRename}
+                            disabled={renaming}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        /* ── Normal row ── */
+                        <div className="d-flex align-items-center justify-content-between">
+                          <span>{item.name}</span>
+                          <div className="d-flex gap-2">
+                            <button
+                              className="btn btn-sm btn-outline-secondary"
+                              onClick={() => startRename(item)}
+                              disabled={isBusy}
+                            >
+                              Rename
+                            </button>
+                            <button
+                              className="btn btn-sm btn-danger"
+                              onClick={() => handleRemove(item.id)}
+                              disabled={isBusy}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
 
@@ -169,7 +241,7 @@ export default function SubcategoryModal({
                       type="button"
                       className="btn btn-outline-danger"
                       onClick={handleRemoveAll}
-                      disabled={deletingAll || !items.length}
+                      disabled={isBusy || !items.length}
                     >
                       {deletingAll ? 'Removing...' : 'Remove all'}
                     </button>
@@ -183,7 +255,7 @@ export default function SubcategoryModal({
             <button
               className="btn btn-outline-secondary"
               onClick={onClose}
-              disabled={saving || deletingAll}
+              disabled={isBusy}
             >
               Close
             </button>
