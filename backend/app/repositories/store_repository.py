@@ -91,7 +91,7 @@ class StoreRepository:
             .first()
         )
 
-    def get_subcategories_by_ids(self, subcategory_ids: list[UUID]) -> List[Subcategory]:
+    def get_subcategories_by_ids(self, subcategory_ids: List[UUID]) -> List[Subcategory]:
         if not subcategory_ids:
             return []
 
@@ -109,7 +109,11 @@ class StoreRepository:
             .all()
         )
 
-    def replace_store_subcategories(self, store_id: UUID, subcategory_ids: list[UUID]) -> List[StoreSubcategory]:
+    def replace_store_subcategories(
+        self,
+        store_id: UUID,
+        subcategory_ids: List[UUID],
+    ) -> List[StoreSubcategory]:
         self.db.query(StoreSubcategory).filter(
             StoreSubcategory.store_id == store_id
         ).delete(synchronize_session=False)

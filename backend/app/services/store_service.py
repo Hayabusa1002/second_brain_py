@@ -1,6 +1,7 @@
 import csv
 import io
 import json
+from typing import List
 from uuid import UUID
 
 import pandas as pd
@@ -40,7 +41,7 @@ class StoreService:
     def delete_store(self, store_id: UUID):
         return self.repository.delete(store_id)
 
-    def list_store_subcategories(self, store_id: UUID):
+    def list_store_subcategories(self, store_id: UUID) -> List[StoreSubcategoryLinkResponse]:
         store = self.repository.get_by_id(store_id)
         if not store:
             raise ValueError("Store not found")
@@ -57,7 +58,11 @@ class StoreService:
             for link in links
         ]
 
-    def replace_store_subcategories(self, store_id: UUID, subcategory_ids: list[UUID]):
+    def replace_store_subcategories(
+        self,
+        store_id: UUID,
+        subcategory_ids: List[UUID],
+    ) -> List[StoreSubcategoryLinkResponse]:
         store = self.repository.get_by_id(store_id)
         if not store:
             raise ValueError("Store not found")
