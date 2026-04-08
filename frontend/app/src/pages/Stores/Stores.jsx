@@ -29,7 +29,6 @@ export default function Stores() {
 
   const [viewStore, setViewStore] = useState(null)
   const [deleteStore, setDeleteStore] = useState(null)
-
   const [subcategoryStore, setSubcategoryStore] = useState(null)
 
   useEffect(() => {
@@ -39,6 +38,7 @@ export default function Stores() {
   async function fetchStores() {
     setLoading(true)
     setError('')
+
     try {
       const { data } = await client.get('/stores')
       setStores(data.stores ?? data.items ?? data)
@@ -122,6 +122,7 @@ export default function Stores() {
 
   async function handleDelete() {
     if (!deleteStore) return
+
     try {
       await client.delete(`/stores/${deleteStore.id}`)
       setDeleteStore(null)
@@ -130,6 +131,11 @@ export default function Stores() {
       setError(err.response?.data?.detail || 'Failed to delete store.')
       setDeleteStore(null)
     }
+  }
+
+  async function handleStoreSubcategoriesUpdate() {
+    setSubcategoryStore(null)
+    await fetchStores()
   }
 
   return (
@@ -178,7 +184,10 @@ export default function Stores() {
       )}
 
       {mode === 'import' && (
-        <ImportModal onClose={() => setMode('table')} onSuccess={fetchStores} />
+        <ImportModal
+          onClose={() => setMode('table')}
+          onSuccess={fetchStores}
+        />
       )}
 
       <Table
@@ -192,7 +201,10 @@ export default function Stores() {
       />
 
       {viewStore && (
-        <ViewModal store={viewStore} onClose={() => setViewStore(null)} />
+        <ViewModal
+          store={viewStore}
+          onClose={() => setViewStore(null)}
+        />
       )}
 
       {deleteStore && (
@@ -207,7 +219,7 @@ export default function Stores() {
         <SubcategoryModal
           store={subcategoryStore}
           onClose={() => setSubcategoryStore(null)}
-          onUpdated={fetchStores}
+          onUpdate={handleStoreSubcategoriesUpdate}
         />
       )}
     </div>

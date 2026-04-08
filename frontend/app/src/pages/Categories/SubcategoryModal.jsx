@@ -10,6 +10,7 @@ export default function SubcategoryModal({
   const [items, setItems] = useState(subcategories ?? [])
   const [name, setName] = useState('')
   const [saving, setSaving] = useState(false)
+  const [deletingAll, setDeletingAll] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -17,7 +18,9 @@ export default function SubcategoryModal({
   }, [subcategories, category?.id])
 
   async function refreshSubcategories() {
-    const { data } = await client.get(`/categories/${category.id}/subcategories/`)
+    const { data } = await client.get(
+      `/categories/${category.id}/subcategories/`
+    )
     const updated = data.subcategories ?? data.items ?? data ?? []
     const normalized = Array.isArray(updated) ? updated : []
 
@@ -60,6 +63,40 @@ export default function SubcategoryModal({
     }
   }
 
+  async function handleRemoveAll() {
+    if (!items.length) return
+
+    if (
+      !window.confirm(
+        'This will delete all subcategories in this category. Are you sure?'
+      )
+    ) {
+      return
+    }
+
+    setDeletingAll(true)
+    setError('')
+
+    try {
+      await Promise.all(
+        items.map((item) =>
+          client.delete(
+            `/categories/${category.id}/subcategories/${item.id}`
+          )
+        )
+      )
+
+      await refreshSubcategories()
+    } catch (err) {
+      setError(
+        err.response?.data?.detail ||
+          'Failed to remove all subcategories.'
+      )
+    } finally {
+      setDeletingAll(false)
+    }
+  }
+
   return (
     <div
       className="modal modal-blur fade show d-block"
@@ -68,12 +105,16 @@ export default function SubcategoryModal({
       <div className="modal-dialog modal-dialog-centered">
         <div className="modal-content">
           <div className="modal-header">
-            <h5 className="modal-title">Subcategories — {category.name}</h5>
+            <h5 className="modal-title">
+              Subcategories — {category.name}
+            </h5>
             <button className="btn-close" onClick={onClose} />
           </div>
 
           <div className="modal-body">
-            {error && <div className="alert alert-danger mb-3">{error}</div>}
+            {error && (
+              <div className="alert alert-danger mb-3">{error}</div>
+            )}
 
             <div className="mb-4">
               <label className="form-label fw-medium">Add subcategory</label>
@@ -88,11 +129,12 @@ export default function SubcategoryModal({
                       handleAdd()
                     }
                   }}
+                  disabled={saving || deletingAll}
                 />
                 <button
                   className="btn btn-primary px-3"
                   onClick={handleAdd}
-                  disabled={!name.trim() || saving}
+                  disabled={!name.trim() || saving || deletingAll}
                 >
                   {saving ? '...' : 'Add'}
                 </button>
@@ -101,28 +143,48 @@ export default function SubcategoryModal({
 
             <div className="mt-2">
               {items.length === 0 ? (
-                <div className="text-secondary">No subcategories yet.</div>
+                <div className="text-secondary">
+                  No subcategories yet.
+                </div>
               ) : (
-                items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="d-flex align-items-center justify-content-between py-2 border-bottom"
-                  >
-                    <span>{item.name}</span>
-                    <button
-                      className="btn btn-sm btn-danger"
-                      onClick={() => handleRemove(item.id)}
+                <>
+                  {items.map((item) => (
+                    <div
+                      key={item.id}
+                      className="d-flex align-items-center justify-content-between py-2 border-bottom"
                     >
-                      Remove
+                      <span>{item.name}</span>
+                      <button
+                        className="btn btn-sm btn-danger"
+                        onClick={() => handleRemove(item.id)}
+                        disabled={deletingAll}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+
+                  <div className="mt-3 d-flex justify-content-end">
+                    <button
+                      type="button"
+                      className="btn btn-outline-danger"
+                      onClick={handleRemoveAll}
+                      disabled={deletingAll || !items.length}
+                    >
+                      {deletingAll ? 'Removing...' : 'Remove all'}
                     </button>
                   </div>
-                ))
+                </>
               )}
             </div>
           </div>
 
           <div className="modal-footer">
-            <button className="btn btn-outline-secondary" onClick={onClose}>
+            <button
+              className="btn btn-outline-secondary"
+              onClick={onClose}
+              disabled={saving || deletingAll}
+            >
               Close
             </button>
           </div>
