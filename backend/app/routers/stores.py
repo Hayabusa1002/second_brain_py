@@ -10,7 +10,13 @@ from app.db.deps import get_db, get_current_user
 from app.controllers.store_controller import StoreController
 from app.services.store_service import StoreService
 from app.repositories.store_repository import StoreRepository
-from app.schemas.store import StoreCreate, StoreUpdate, StoreResponse
+from app.schemas.store import (
+    StoreCreate,
+    StoreUpdate,
+    StoreResponse,
+    StoreSubcategoryAssign,
+    StoreSubcategoryLinkResponse,
+)
 from app.schemas.bulk_import import ImportResult
 
 
@@ -24,6 +30,7 @@ Spotify,subscription,,https://spotify.com
 Netflix,subscription,,https://netflix.com
 Steam,online,,https://store.steampowered.com
 """
+
 
 TEMPLATE_JSON = [
     {
@@ -57,6 +64,7 @@ TEMPLATE_JSON = [
         "website": "https://store.steampowered.com",
     },
 ]
+
 
 TEMPLATE_YAML = """- name: Exito
   type: physical
@@ -213,3 +221,40 @@ def delete_store(
     if not deleted:
         raise HTTPException(status_code=404, detail="Store not found")
     return
+
+
+# --------- STORE SUBCATEGORIES ---------
+
+
+@router.get(
+    "/stores/{store_id}/subcategories",
+    response_model=List[StoreSubcategoryLinkResponse],
+)
+def list_store_subcategories(
+    store_id: UUID,
+    controller: StoreController = Depends(get_controller),
+    current_user=Depends(get_current_user),
+):
+    try:
+        return controller.list_store_subcategories(store_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.put(
+    "/stores/{store_id}/subcategories",
+    response_model=List[StoreSubcategoryLinkResponse],
+)
+def replace_store_subcategories(
+    store_id: UUID,
+    data: StoreSubcategoryAssign,
+    controller: StoreController = Depends(get_controller),
+    current_user=Depends(get_current_user),
+):
+    try:
+        return controller.replace_store_subcategories(store_id, data.subcategory_ids)
+    except ValueError as e:
+        message = str(e)
+        if message == "Store not found":
+            raise HTTPException(status_code=404, detail=message)
+        raise HTTPException(status_code=400, detail=message)

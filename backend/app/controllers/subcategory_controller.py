@@ -8,6 +8,9 @@ class SubcategoryController:
     def __init__(self, service: SubcategoryService):
         self.service = service
 
+    def list_all_subcategories(self):
+        return self.service.list_all_subcategories()
+
     def list_subcategories(self, category_id: UUID):
         return self.service.list_subcategories(category_id)
 

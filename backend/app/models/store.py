@@ -35,18 +35,17 @@ class Store(Base):
         foreign_keys="Transaction.store_id",
     )
 
-    category_default = relationship(
-        "StoreCategoryDefault",
+    store_subcategories = relationship(
+        "StoreSubcategory",
         back_populates="store",
-        uselist=False,
         cascade="all, delete-orphan",
     )
 
 
-class StoreCategoryDefault(Base):
-    __tablename__ = "store_category_defaults"
+class StoreSubcategory(Base):
+    __tablename__ = "store_subcategories"
     __table_args__ = (
-        UniqueConstraint("store_id", name="uq_store_category_defaults_store_id"),
+        UniqueConstraint("store_id", "subcategory_id", name="uq_store_subcategories_store_subcategory"),
     )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -62,5 +61,5 @@ class StoreCategoryDefault(Base):
     )
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
-    store = relationship("Store", back_populates="category_default")
-    subcategory = relationship("Subcategory", back_populates="store_category_defaults")
+    store = relationship("Store", back_populates="store_subcategories")
+    subcategory = relationship("Subcategory", back_populates="store_subcategories")

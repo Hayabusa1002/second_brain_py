@@ -1,15 +1,18 @@
 import csv
 import io
 import json
+from uuid import UUID
 
 import pandas as pd
 import yaml
 from fastapi import UploadFile
 
-from uuid import UUID
-
 from app.repositories.store_repository import StoreRepository
-from app.schemas.store import StoreCreate, StoreUpdate
+from app.schemas.store import (
+    StoreCreate,
+    StoreUpdate,
+    StoreSubcategoryLinkResponse,
+)
 from app.schemas.bulk_import import ImportResult, ImportError, ImportLogItem
 
 
@@ -36,6 +39,47 @@ class StoreService:
 
     def delete_store(self, store_id: UUID):
         return self.repository.delete(store_id)
+
+    def list_store_subcategories(self, store_id: UUID):
+        store = self.repository.get_by_id(store_id)
+        if not store:
+            raise ValueError("Store not found")
+
+        links = self.repository.list_store_subcategories(store_id)
+        return [
+            StoreSubcategoryLinkResponse(
+                id=link.id,
+                store_id=link.store_id,
+                subcategory_id=link.subcategory_id,
+                created_at=link.created_at,
+                subcategory=link.subcategory,
+            )
+            for link in links
+        ]
+
+    def replace_store_subcategories(self, store_id: UUID, subcategory_ids: list[UUID]):
+        store = self.repository.get_by_id(store_id)
+        if not store:
+            raise ValueError("Store not found")
+
+        unique_ids = list(dict.fromkeys(subcategory_ids))
+        subcategories = self.repository.get_subcategories_by_ids(unique_ids)
+
+        if len(subcategories) != len(unique_ids):
+            raise ValueError("One or more subcategories were not found")
+
+        links = self.repository.replace_store_subcategories(store_id, unique_ids)
+
+        return [
+            StoreSubcategoryLinkResponse(
+                id=link.id,
+                store_id=link.store_id,
+                subcategory_id=link.subcategory_id,
+                created_at=link.created_at,
+                subcategory=link.subcategory,
+            )
+            for link in links
+        ]
 
     async def import_stores(self, file: UploadFile, current_user=None) -> ImportResult:
         result = ImportResult()
