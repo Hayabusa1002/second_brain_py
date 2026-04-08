@@ -174,7 +174,7 @@ export default function SubcategoryModal({
 
                     <button
                       type="button"
-                      className="btn btn-sm btn-outline-secondary"
+                      className="btn btn-sm btn-outline-danger"
                       onClick={clearSelection}
                       disabled={saving || selectedIds.length === 0}
                     >
