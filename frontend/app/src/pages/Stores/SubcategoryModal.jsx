@@ -22,65 +22,77 @@ function normalizeError(error) {
   return String(error)
 }
 
-export default function SubcategoryModal({
-  store,
-  subcategories,
-  onClose,
-  onUpdated,
-}) {
-  const [items, setItems] = useState(subcategories ?? [])
-  const [selectedId, setSelectedId] = useState(
-    store?.category_default?.subcategory?.id ?? ''
-  )
+export default function SubcategoryModal({ store, onClose, onUpdated }) {
+  const [items, setItems] = useState([])
+  const [selectedIds, setSelectedIds] = useState([])
+  const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    setItems(subcategories ?? [])
-    setSelectedId(store?.category_default?.subcategory?.id ?? '')
-  }, [subcategories, store?.id])
+    if (!store?.id) return
+    fetchData()
+  }, [store?.id])
 
-  async function handleAssign() {
-    if (!store?.id || !selectedId) return
-
-    setSaving(true)
+  async function fetchData() {
+    setLoading(true)
     setError('')
 
     try {
-      await client.put(`/stores/${store.id}/category-default`, {
-        subcategory_id: selectedId,
-      })
+      const [allRes, selectedRes] = await Promise.all([
+        client.get('/subcategories'),
+        client.get(`/stores/${store.id}/subcategories`),
+      ])
 
-      await onUpdated()
-      onClose()
+      const allItems = allRes.data?.subcategories ?? allRes.data?.items ?? allRes.data ?? []
+      const selectedItems = selectedRes.data?.subcategories ?? selectedRes.data?.items ?? selectedRes.data ?? []
+
+      setItems(Array.isArray(allItems) ? allItems : [])
+      setSelectedIds(
+        Array.isArray(selectedItems) ? selectedItems.map((item) => item.id) : []
+      )
     } catch (err) {
       setError(
         err.response?.data?.detail ||
           err.response?.data ||
           err.message ||
-          'Failed to assign subcategory.'
+          'Failed to load subcategories.'
       )
     } finally {
-      setSaving(false)
+      setLoading(false)
     }
   }
 
-  async function handleClear() {
+  function toggleSubcategory(id) {
+    setSelectedIds((prev) =>
+      prev.includes(id)
+        ? prev.filter((itemId) => itemId !== id)
+        : [...prev, id]
+    )
+  }
+
+  async function handleSave() {
     if (!store?.id) return
 
     setSaving(true)
     setError('')
 
     try {
-      await client.delete(`/stores/${store.id}/category-default`)
-      await onUpdated()
+      await client.put(`/stores/${store.id}/subcategories`, {
+        subcategory_ids: selectedIds,
+      })
+
+      if (onUpdated) {
+        await onUpdated()
+      }
+
       onClose()
     } catch (err) {
       setError(
         err.response?.data?.detail ||
           err.response?.data ||
           err.message ||
-          'Failed to clear subcategory.'
+          'Failed to save subcategories.'
       )
     } finally {
       setSaving(false)
@@ -94,13 +106,17 @@ export default function SubcategoryModal({
       className="modal modal-blur fade show d-block"
       style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
     >
-      <div className="modal-dialog modal-dialog-centered">
+      <div className="modal-dialog modal-dialog-centered modal-lg">
         <div className="modal-content">
           <div className="modal-header">
             <h5 className="modal-title">
-              Default subcategory — {store?.name}
+              Store subcategories — {store?.name ?? ''}
             </h5>
-            <button className="btn-close" onClick={onClose} />
+            <button
+              type="button"
+              className="btn-close"
+              onClick={onClose}
+            />
           </div>
 
           <div className="modal-body">
@@ -108,63 +124,53 @@ export default function SubcategoryModal({
               <div className="alert alert-danger mb-3">{errorMessage}</div>
             )}
 
-            <div className="mb-3">
-              <div className="text-secondary small">Current default</div>
-              <div className="mt-1">
-                {store?.category_default?.subcategory?.name ? (
-                  <span className="badge bg-blue-lt text-blue">
-                    {store.category_default.subcategory.name}
-                  </span>
-                ) : (
-                  <span className="text-secondary">None</span>
-                )}
+            {loading ? (
+              <div className="text-secondary">Loading subcategories...</div>
+            ) : items.length === 0 ? (
+              <div className="text-secondary">No subcategories available.</div>
+            ) : (
+              <div className="row">
+                {items.map((sub) => (
+                  <div className="col-md-6 mb-2" key={sub.id}>
+                    <label className="form-check">
+                      <input
+                        type="checkbox"
+                        className="form-check-input"
+                        checked={selectedIds.includes(sub.id)}
+                        onChange={() => toggleSubcategory(sub.id)}
+                        disabled={saving}
+                      />
+                      <span className="form-check-label">{sub.name}</span>
+                    </label>
+                  </div>
+                ))}
               </div>
-            </div>
-
-            <div className="mb-4">
-              <label className="form-label fw-medium">Assign subcategory</label>
-              <div className="d-flex gap-2">
-                <select
-                  className="form-select"
-                  value={selectedId}
-                  onChange={(e) => setSelectedId(e.target.value)}
-                  disabled={saving}
-                >
-                  <option value="">Select a subcategory</option>
-                  {items.map((sub) => (
-                    <option key={sub.id} value={sub.id}>
-                      {sub.category_name
-                        ? `${sub.category_name} / ${sub.name}`
-                        : sub.name}
-                    </option>
-                  ))}
-                </select>
-
-                <button
-                  className="btn btn-primary px-3"
-                  onClick={handleAssign}
-                  disabled={!selectedId || saving}
-                >
-                  {saving ? '...' : 'Assign'}
-                </button>
-              </div>
-            </div>
-
-            <div className="mt-2">
-              <button
-                className="btn btn-outline-danger"
-                onClick={handleClear}
-                disabled={saving || !store?.category_default}
-              >
-                Clear default
-              </button>
-            </div>
+            )}
           </div>
 
-          <div className="modal-footer">
-            <button className="btn btn-outline-secondary" onClick={onClose}>
-              Close
-            </button>
+          <div className="modal-footer d-flex justify-content-between">
+            <div className="text-secondary small">
+              Selected: {selectedIds.length}
+            </div>
+
+            <div className="d-flex gap-2">
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={onClose}
+                disabled={saving}
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleSave}
+                disabled={saving || loading}
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
