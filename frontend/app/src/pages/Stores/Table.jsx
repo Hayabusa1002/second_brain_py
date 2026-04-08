@@ -23,16 +23,28 @@ export default function Table({
   const [typeFilter, setTypeFilter] = useState('')
   const [searchFocused, setSearchFocused] = useState(false)
 
+  function getStoreSubcategories(store) {
+    if (!Array.isArray(store.store_subcategories)) return []
+
+    return store.store_subcategories
+      .map((item) => item?.subcategory)
+      .filter(Boolean)
+  }
+
   function exportRows() {
-    return stores.map((store) => ({
-      id: store.id,
-      name: store.name,
-      type: store.type ?? '',
-      address: store.address ?? '',
-      website: store.website ?? '',
-      default_subcategory: store.category_default?.subcategory?.name ?? '',
-      created_at: store.created_at ?? '',
-    }))
+    return stores.map((store) => {
+      const subcategories = getStoreSubcategories(store)
+
+      return {
+        id: store.id,
+        name: store.name,
+        type: store.type ?? '',
+        address: store.address ?? '',
+        website: store.website ?? '',
+        subcategories: subcategories.map((s) => s.name).join(', '),
+        created_at: store.created_at ?? '',
+      }
+    })
   }
 
   function exportData(format) {
@@ -45,7 +57,16 @@ export default function Table({
 
   function exportCSV() {
     const rows = exportRows()
-    const headers = ['id', 'name', 'type', 'address', 'website', 'default_subcategory', 'created_at']
+    const headers = [
+      'id',
+      'name',
+      'type',
+      'address',
+      'website',
+      'subcategories',
+      'created_at',
+    ]
+
     const data = rows.map((row) =>
       headers.map((h) => `"${String(row[h] ?? '').replace(/"/g, '""')}"`).join(',')
     )
@@ -107,12 +128,16 @@ export default function Table({
   const filteredStores = stores.filter((store) => {
     const matchesType = typeFilter ? store.type === typeFilter : true
 
+    const subcategoryNames = getStoreSubcategories(store)
+      .map((sub) => sub.name ?? '')
+      .join(' ')
+
     const haystack = [
       store.name ?? '',
       store.type ?? '',
       store.address ?? '',
       store.website ?? '',
-      store.category_default?.subcategory?.name ?? '',
+      subcategoryNames,
     ]
       .join(' ')
       .toLowerCase()
@@ -148,7 +173,7 @@ export default function Table({
           style={{
             gap: 8,
             width: '100%',
-            maxWidth: 900,
+            maxWidth: 1000,
             whiteSpace: 'nowrap',
           }}
         >
@@ -246,17 +271,17 @@ export default function Table({
       <div className="table-responsive">
         <table className="table table-vcenter table-hover card-table">
           <colgroup>
-            <col style={{ width: '30%' }} />
+            <col style={{ width: '28%' }} />
             <col style={{ width: '18%' }} />
-            <col style={{ width: '22%' }} />
-            <col style={{ width: '30%' }} />
+            <col style={{ width: '34%' }} />
+            <col style={{ width: '20%' }} />
           </colgroup>
 
           <thead>
             <tr>
               <th>Name</th>
               <th>Type</th>
-              <th>Default subcategory</th>
+              <th>Subcategories</th>
               <th />
             </tr>
           </thead>
@@ -271,71 +296,81 @@ export default function Table({
             ) : filteredStores.length === 0 ? (
               <tr>
                 <td colSpan={4} className="text-center py-5 text-secondary">
-                  No stores found.{' '}
+                  No stores found{' '}
                   <button className="btn btn-link p-0" onClick={onAdd}>
                     Create one
                   </button>
                 </td>
               </tr>
             ) : (
-              filteredStores.map((s) => (
-                <tr key={s.id}>
-                  <td className="fw-medium">{s.name}</td>
-                  <td>{s.type || '—'}</td>
-                  <td>
-                    {s.category_default?.subcategory?.name ? (
-                      <span className="badge bg-blue-lt text-blue">
-                        {s.category_default.subcategory.name}
-                      </span>
-                    ) : (
-                      <span className="text-secondary">None</span>
-                    )}
-                  </td>
-                  <td>
-                    <div className="d-flex gap-1 justify-content-end flex-wrap">
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-ghost-secondary"
-                        title="View"
-                        onClick={() => onShow(s)}
-                      >
-                        <IconEye size={16} stroke={1.5} />
-                      </button>
+              filteredStores.map((s) => {
+                const subcategories = getStoreSubcategories(s)
 
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-ghost-secondary"
-                        title="Edit"
-                        onClick={() => onEdit(s)}
-                      >
-                        <IconEdit size={16} stroke={1.5} />
-                      </button>
+                return (
+                  <tr key={s.id}>
+                    <td className="fw-medium">{s.name}</td>
 
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-ghost-secondary"
-                        title={
-                          s.category_default?.subcategory?.name
-                            ? 'Change default subcategory'
-                            : 'Assign default subcategory'
-                        }
-                        onClick={() => onAssignSubcategory?.(s)}
-                      >
-                        <IconTags size={16} stroke={1.5} />
-                      </button>
+                    <td>{s.type || '—'}</td>
 
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-ghost-danger"
-                        title="Delete"
-                        onClick={() => onDelete(s)}
-                      >
-                        <IconTrash size={16} stroke={1.5} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+                    <td>
+                      {subcategories.length > 0 ? (
+                        <div className="d-flex flex-wrap gap-1">
+                          {subcategories.map((sub, index) => (
+                            <span
+                              key={sub.id ?? `${s.id}-${index}`}
+                              className="badge bg-secondary-lt text-secondary"
+                            >
+                              {sub.name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-secondary">None</span>
+                      )}
+                    </td>
+
+                    <td>
+                      <div className="d-flex gap-1 justify-content-end flex-wrap">
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-ghost-secondary"
+                          title="View"
+                          onClick={() => onShow(s)}
+                        >
+                          <IconEye size={16} stroke={1.5} />
+                        </button>
+
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-ghost-secondary"
+                          title="Edit"
+                          onClick={() => onEdit(s)}
+                        >
+                          <IconEdit size={16} stroke={1.5} />
+                        </button>
+
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-ghost-secondary"
+                          title="Manage subcategories"
+                          onClick={() => onAssignSubcategory?.(s)}
+                        >
+                          <IconTags size={16} stroke={1.5} />
+                        </button>
+
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-ghost-danger"
+                          title="Delete"
+                          onClick={() => onDelete(s)}
+                        >
+                          <IconTrash size={16} stroke={1.5} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })
             )}
           </tbody>
         </table>
