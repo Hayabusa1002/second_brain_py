@@ -33,7 +33,11 @@ class SubcategoryRepository:
             .first()
         )
 
-    def get_by_id_and_category(self, subcategory_id: UUID, category_id: UUID) -> Optional[Subcategory]:
+    def get_by_id_and_category(
+        self,
+        subcategory_id: UUID,
+        category_id: UUID,
+    ) -> Optional[Subcategory]:
         return (
             self.db.query(Subcategory)
             .filter(
@@ -43,7 +47,11 @@ class SubcategoryRepository:
             .first()
         )
 
-    def get_by_name_and_category(self, name: str, category_id: UUID) -> Optional[Subcategory]:
+    def get_by_name_and_category(
+        self,
+        name: str,
+        category_id: UUID,
+    ) -> Optional[Subcategory]:
         normalized_name = name.strip()
         return (
             self.db.query(Subcategory)
@@ -88,6 +96,12 @@ class SubcategoryRepository:
 
         if subcategory.transactions:
             raise ValueError("Subcategory has transactions. Remove them first.")
+
+        if getattr(subcategory, "items", None):
+            raise ValueError("Subcategory has items. Remove them first.")
+
+        if getattr(subcategory, "store_subcategories", None):
+            raise ValueError("Subcategory is assigned to stores. Remove them first.")
 
         try:
             self.db.delete(subcategory)
