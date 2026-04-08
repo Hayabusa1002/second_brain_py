@@ -65,6 +65,7 @@ app.include_router(users.router, prefix="/api")
 app.include_router(export.router, prefix="/api")
 app.include_router(stores.router, prefix="/api")
 app.include_router(subcategories.router, prefix="/api")
+app.include_router(subcategories.base_router, prefix="/api")
 app.include_router(cities.router, prefix="/api")
 
 

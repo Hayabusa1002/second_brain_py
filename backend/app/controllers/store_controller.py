@@ -25,14 +25,11 @@ class StoreController:
     def delete_store(self, store_id: UUID):
         return self.service.delete_store(store_id)
 
-    def get_category_default(self, store_id: UUID):
-        return self.service.get_store_category_default(store_id)
+    def list_store_subcategories(self, store_id: UUID):
+        return self.service.list_store_subcategories(store_id)
 
-    def upsert_category_default(self, store_id: UUID, subcategory_id: UUID):
-        return self.service.upsert_store_category_default(store_id, subcategory_id)
-
-    def delete_category_default(self, store_id: UUID):
-        return self.service.delete_store_category_default(store_id)
+    def replace_store_subcategories(self, store_id: UUID, subcategory_ids: list[UUID]):
+        return self.service.replace_store_subcategories(store_id, subcategory_ids)
 
     async def import_stores(self, file: UploadFile, current_user=None):
         return await self.service.import_stores(file, current_user)

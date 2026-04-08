@@ -18,4 +18,4 @@ class Subcategory(Base):
 
     category = relationship("Category", back_populates="subcategories")
     transactions = relationship("Transaction", back_populates="subcategory")
-    store_category_defaults = relationship("StoreCategoryDefault", back_populates="subcategory")
+    store_subcategories = relationship("StoreSubcategory", back_populates="subcategory")
