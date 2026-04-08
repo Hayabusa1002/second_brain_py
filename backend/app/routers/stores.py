@@ -14,8 +14,8 @@ from app.schemas.store import (
     StoreCreate,
     StoreUpdate,
     StoreResponse,
-    StoreCategoryDefaultUpsert,
-    StoreCategoryDefaultResponse,
+    StoreSubcategoryAssign,
+    StoreSubcategoryLinkResponse,
 )
 from app.schemas.bulk_import import ImportResult
 
@@ -30,6 +30,7 @@ Spotify,subscription,,https://spotify.com
 Netflix,subscription,,https://netflix.com
 Steam,online,,https://store.steampowered.com
 """
+
 
 TEMPLATE_JSON = [
     {
@@ -64,6 +65,7 @@ TEMPLATE_JSON = [
     },
 ]
 
+
 TEMPLATE_YAML = """- name: Exito
   type: physical
   address: Carrera 43A # 1 Sur-150
@@ -88,7 +90,6 @@ TEMPLATE_YAML = """- name: Exito
   type: online
   address:
   website: https://store.steampowered.com
-
 """
 
 
@@ -222,51 +223,38 @@ def delete_store(
     return
 
 
-# --------- CATEGORY DEFAULT ---------
+# --------- STORE SUBCATEGORIES ---------
 
 
-@router.get("/stores/{store_id}/category-default", response_model=StoreCategoryDefaultResponse)
-def get_store_category_default(
+@router.get(
+    "/stores/{store_id}/subcategories",
+    response_model=List[StoreSubcategoryLinkResponse],
+)
+def list_store_subcategories(
     store_id: UUID,
-    controller: StoreController = Depends(get_controller),
-    current_user=Depends(get_current_user),
-):
-    default = controller.get_category_default(store_id)
-    if not default:
-        raise HTTPException(status_code=404, detail="Default subcategory not found")
-    return default
-
-
-@router.put("/stores/{store_id}/category-default", response_model=StoreCategoryDefaultResponse)
-def upsert_store_category_default(
-    store_id: UUID,
-    data: StoreCategoryDefaultUpsert,
     controller: StoreController = Depends(get_controller),
     current_user=Depends(get_current_user),
 ):
     try:
-        return controller.upsert_category_default(store_id, data.subcategory_id)
+        return controller.list_store_subcategories(store_id)
     except ValueError as e:
-        message = str(e)
-        if message in {"Store not found", "Subcategory not found"}:
-            raise HTTPException(status_code=404, detail=message)
-        raise HTTPException(status_code=400, detail=message)
+        raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.delete("/stores/{store_id}/category-default", status_code=status.HTTP_204_NO_CONTENT)
-def delete_store_category_default(
+@router.put(
+    "/stores/{store_id}/subcategories",
+    response_model=List[StoreSubcategoryLinkResponse],
+)
+def replace_store_subcategories(
     store_id: UUID,
+    data: StoreSubcategoryAssign,
     controller: StoreController = Depends(get_controller),
     current_user=Depends(get_current_user),
 ):
     try:
-        deleted = controller.delete_category_default(store_id)
+        return controller.replace_store_subcategories(store_id, data.subcategory_ids)
     except ValueError as e:
         message = str(e)
         if message == "Store not found":
             raise HTTPException(status_code=404, detail=message)
         raise HTTPException(status_code=400, detail=message)
-
-    if not deleted:
-        raise HTTPException(status_code=404, detail="Default subcategory not found")
-    return

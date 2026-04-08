@@ -11,7 +11,7 @@ from app.repositories.store_repository import StoreRepository
 from app.schemas.store import (
     StoreCreate,
     StoreUpdate,
-    StoreCategoryDefaultResponse,
+    StoreSubcategoryLinkResponse,
 )
 from app.schemas.bulk_import import ImportResult, ImportError, ImportLogItem
 
@@ -40,44 +40,46 @@ class StoreService:
     def delete_store(self, store_id: UUID):
         return self.repository.delete(store_id)
 
-    def get_store_category_default(self, store_id: UUID) -> StoreCategoryDefaultResponse | None:
-        default = self.repository.get_category_default(store_id)
-        if not default:
-            return None
-
-        return StoreCategoryDefaultResponse(
-            id=default.id,
-            store_id=default.store_id,
-            subcategory_id=default.subcategory_id,
-            created_at=default.created_at,
-            subcategory=default.subcategory,
-        )
-
-    def upsert_store_category_default(self, store_id: UUID, subcategory_id: UUID) -> StoreCategoryDefaultResponse:
+    def list_store_subcategories(self, store_id: UUID):
         store = self.repository.get_by_id(store_id)
         if not store:
             raise ValueError("Store not found")
 
-        subcategory = self.repository.get_subcategory_by_id(subcategory_id)
-        if not subcategory:
-            raise ValueError("Subcategory not found")
+        links = self.repository.list_store_subcategories(store_id)
+        return [
+            StoreSubcategoryLinkResponse(
+                id=link.id,
+                store_id=link.store_id,
+                subcategory_id=link.subcategory_id,
+                created_at=link.created_at,
+                subcategory=link.subcategory,
+            )
+            for link in links
+        ]
 
-        default = self.repository.upsert_category_default(store_id, subcategory_id)
-
-        return StoreCategoryDefaultResponse(
-            id=default.id,
-            store_id=default.store_id,
-            subcategory_id=default.subcategory_id,
-            created_at=default.created_at,
-            subcategory=subcategory,
-        )
-
-    def delete_store_category_default(self, store_id: UUID) -> bool:
+    def replace_store_subcategories(self, store_id: UUID, subcategory_ids: list[UUID]):
         store = self.repository.get_by_id(store_id)
         if not store:
             raise ValueError("Store not found")
 
-        return self.repository.delete_category_default(store_id)
+        unique_ids = list(dict.fromkeys(subcategory_ids))
+        subcategories = self.repository.get_subcategories_by_ids(unique_ids)
+
+        if len(subcategories) != len(unique_ids):
+            raise ValueError("One or more subcategories were not found")
+
+        links = self.repository.replace_store_subcategories(store_id, unique_ids)
+
+        return [
+            StoreSubcategoryLinkResponse(
+                id=link.id,
+                store_id=link.store_id,
+                subcategory_id=link.subcategory_id,
+                created_at=link.created_at,
+                subcategory=link.subcategory,
+            )
+            for link in links
+        ]
 
     async def import_stores(self, file: UploadFile, current_user=None) -> ImportResult:
         result = ImportResult()
