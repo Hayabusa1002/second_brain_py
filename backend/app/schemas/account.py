@@ -2,6 +2,7 @@ from uuid import UUID
 from datetime import datetime
 from typing import List
 from pydantic import BaseModel
+
 from app.models.account import AccountType
 
 
@@ -26,7 +27,11 @@ class AccountResponse(BaseModel):
     id:         UUID
     name:       str
     type:       AccountType
-    created_at: datetime
     owners:     List[OwnerResponse] = []
+
+    created_by: UUID
+    created_at: datetime
+    updated_by: UUID
+    updated_at: datetime
 
     model_config = {"from_attributes": True}

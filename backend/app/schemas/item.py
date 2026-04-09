@@ -1,32 +1,32 @@
 from uuid import UUID
-from decimal import Decimal
+from datetime import datetime
+from typing import Optional
 from pydantic import BaseModel
+
+from app.schemas.subcategory import SubcategoryResponse
 
 
 class ItemCreate(BaseModel):
-    name: str
+    name:           str
     subcategory_id: UUID | None = None
-    quantity: Decimal = Decimal("1.00")
-    unit_price: Decimal
-    notes: str | None = None
+    notes:          str | None = None
 
 
 class ItemUpdate(BaseModel):
-    name: str | None = None
+    name:           str | None = None
     subcategory_id: UUID | None = None
-    quantity: Decimal | None = None
-    unit_price: Decimal | None = None
-    notes: str | None = None
+    notes:          str | None = None
 
 
 class ItemResponse(BaseModel):
-    id: UUID
-    transaction_id: UUID
-    subcategory_id: UUID | None = None
-    name: str
-    quantity: Decimal
-    unit_price: Decimal
-    subtotal: Decimal
-    notes: str | None = None
+    id:             UUID
+    name:           str
+    subcategory:    Optional[SubcategoryResponse] = None
+    notes:          str | None = None
+    
+    created_by:     UUID
+    created_at:     datetime
+    updated_by:     UUID
+    updated_at:     datetime
 
     model_config = {"from_attributes": True}

@@ -1,8 +1,7 @@
 from uuid import UUID
 from datetime import datetime
 from typing import Optional
-
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 
 class SubcategoryCreate(BaseModel):
@@ -14,9 +13,13 @@ class SubcategoryUpdate(BaseModel):
 
 
 class SubcategoryResponse(BaseModel):
-    id: UUID
-    name: str
+    id:          UUID
+    name:        str
     category_id: UUID
-    created_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    created_by:  UUID
+    created_at:  datetime
+    updated_by:  UUID
+    updated_at:  datetime
+
+    model_config = {"from_attributes": True}
