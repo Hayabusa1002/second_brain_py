@@ -1,23 +1,22 @@
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 from sqlalchemy.orm import Session, selectinload
 
-from app.models.store import Store, StoreSubcategory
-from app.models.subcategory import Subcategory
+from app.models.store import Store
+from app.schemas.store import StoreCreate, StoreUpdate
 
 
 class StoreRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def list(self) -> List[Store]:
+    # ---------- Reads ----------
+
+    def list(self) -> list[Store]:
         return (
             self.db.query(Store)
-            .options(
-                selectinload(Store.store_subcategories)
-                .selectinload(StoreSubcategory.subcategory)
-            )
+            .options(selectinload(Store.subcategories))
             .order_by(Store.name.asc())
             .all()
         )
@@ -25,10 +24,7 @@ class StoreRepository:
     def get_by_id(self, store_id: UUID) -> Optional[Store]:
         return (
             self.db.query(Store)
-            .options(
-                selectinload(Store.store_subcategories)
-                .selectinload(StoreSubcategory.subcategory)
-            )
+            .options(selectinload(Store.subcategories))
             .filter(Store.id == store_id)
             .first()
         )
@@ -36,40 +32,53 @@ class StoreRepository:
     def get_by_name(self, name: str) -> Optional[Store]:
         return (
             self.db.query(Store)
+            .options(selectinload(Store.subcategories))
             .filter(Store.name.ilike(name.strip()))
             .first()
         )
 
-    def add(self, data) -> Store:
+    def get_by_name_and_type(self, name: str, type: str) -> Optional[Store]:
+        return (
+            self.db.query(Store)
+            .options(selectinload(Store.subcategories))
+            .filter(
+                Store.name.ilike(name.strip()),
+                Store.type == type,
+            )
+            .first()
+        )
+
+    # ---------- Writes ----------
+
+    def create(self, data: StoreCreate, user_id: UUID) -> Store:
         store = Store(
             name=data.name.strip(),
             type=data.type,
             address=data.address.strip() if data.address else None,
-            website=str(data.website).strip() if data.website is not None else None,
+            website=data.website.strip() if data.website else None,
+            created_by=user_id,
+            updated_by=user_id,
         )
         self.db.add(store)
         self.db.commit()
         self.db.refresh(store)
-        return store
+        return self.get_by_id(store.id)
 
-    def update(self, store_id: UUID, data) -> Optional[Store]:
+    def update(self, store_id: UUID, data: StoreUpdate, user_id: UUID) -> Optional[Store]:
         store = self.get_by_id(store_id)
         if not store:
             return None
 
-        update_data = data.model_dump(exclude_unset=True)
+        for field, value in data.model_dump(exclude_unset=True).items():
+            if isinstance(value, str):
+                value = value.strip()
 
-        if "name" in update_data and update_data["name"] is not None:
-            update_data["name"] = update_data["name"].strip()
+            if field in {"address", "website"} and value == "":
+                value = None
 
-        if "address" in update_data and update_data["address"] is not None:
-            update_data["address"] = update_data["address"].strip()
-
-        if "website" in update_data and update_data["website"] is not None:
-            update_data["website"] = str(update_data["website"]).strip()
-
-        for field, value in update_data.items():
             setattr(store, field, value)
+
+        store.updated_by = user_id
 
         self.db.commit()
         self.db.refresh(store)
@@ -83,49 +92,3 @@ class StoreRepository:
         self.db.delete(store)
         self.db.commit()
         return True
-
-    def get_subcategory_by_id(self, subcategory_id: UUID) -> Optional[Subcategory]:
-        return (
-            self.db.query(Subcategory)
-            .filter(Subcategory.id == subcategory_id)
-            .first()
-        )
-
-    def get_subcategories_by_ids(self, subcategory_ids: List[UUID]) -> List[Subcategory]:
-        if not subcategory_ids:
-            return []
-
-        return (
-            self.db.query(Subcategory)
-            .filter(Subcategory.id.in_(subcategory_ids))
-            .all()
-        )
-
-    def list_store_subcategories(self, store_id: UUID) -> List[StoreSubcategory]:
-        return (
-            self.db.query(StoreSubcategory)
-            .options(selectinload(StoreSubcategory.subcategory))
-            .filter(StoreSubcategory.store_id == store_id)
-            .all()
-        )
-
-    def replace_store_subcategories(
-        self,
-        store_id: UUID,
-        subcategory_ids: List[UUID],
-    ) -> List[StoreSubcategory]:
-        self.db.query(StoreSubcategory).filter(
-            StoreSubcategory.store_id == store_id
-        ).delete(synchronize_session=False)
-
-        links = [
-            StoreSubcategory(store_id=store_id, subcategory_id=subcategory_id)
-            for subcategory_id in subcategory_ids
-        ]
-
-        if links:
-            self.db.add_all(links)
-
-        self.db.commit()
-
-        return self.list_store_subcategories(store_id)
