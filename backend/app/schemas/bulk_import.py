@@ -1,5 +1,16 @@
-from typing import List, Literal, Optional
+from typing import List, Literal, Optional, TypeAlias
 from pydantic import BaseModel, Field
+
+
+ImportEntity: TypeAlias = Literal[
+    "file",
+    "category",
+    "subcategory",
+    "transaction",
+    "city",
+    "store",
+    "item",
+]
 
 
 class ImportError(BaseModel):
@@ -10,7 +21,7 @@ class ImportError(BaseModel):
 class ImportLogItem(BaseModel):
     row:     int
     level:   Literal["info", "warning", "error"]
-    entity:  Literal["file", "category", "subcategory"]
+    entity:  ImportEntity
     name:    Optional[str] = None
     message: str
 

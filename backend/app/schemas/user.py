@@ -17,6 +17,7 @@ class UserCreate(BaseModel):
     email:    EmailStr
     password: str
     role:     UserRole = UserRole.partner
+    status:   UserStatus = UserStatus.pending
 
     @field_validator("password")
     @classmethod
@@ -24,9 +25,20 @@ class UserCreate(BaseModel):
         return validate_password_length(v)
 
 
+class UserOAuthCreate(BaseModel):
+    name:     str
+    email:    EmailStr
+    provider: str
+    oauth_id: str
+    role:     UserRole = UserRole.partner
+    status:   UserStatus = UserStatus.pending
+
+
 class UserUpdate(BaseModel):
-    name:  str | None = None
-    role:  UserRole | None = None
+    name:   str | None = None
+    email:  EmailStr | None = None
+    role:   UserRole | None = None
+    status: UserStatus | None = None
 
 
 class PasswordChange(BaseModel):
@@ -53,7 +65,7 @@ class UserResponse(BaseModel):
     
     created_by: UUID
     created_at: datetime
-    updated_by: UUID
+    updated_by: UUID | None
     updated_at: datetime
 
     model_config = {"from_attributes": True}

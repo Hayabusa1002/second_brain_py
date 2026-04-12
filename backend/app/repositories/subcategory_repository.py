@@ -13,6 +13,13 @@ class SubcategoryRepository:
 
     # ---------- Reads ----------
 
+    def list(self) -> list[Subcategory]:
+        return (
+            self.db.query(Subcategory)
+            .order_by(Subcategory.name.asc())
+            .all()
+        )
+    
     def list_by_category(self, category_id: UUID) -> list[Subcategory]:
         return (
             self.db.query(Subcategory)
@@ -35,11 +42,11 @@ class SubcategoryRepository:
             .first()
         )
 
-    def get_by_identity(self, name: str, category_id: UUID) -> Optional[Subcategory]:
+    def get_by_id_and_category(self, subcategory_id: UUID, category_id: UUID) -> Optional[Subcategory]:
         return (
             self.db.query(Subcategory)
             .filter(
-                Subcategory.name.ilike(name.strip()),
+                Subcategory.id == subcategory_id,
                 Subcategory.category_id == category_id,
             )
             .first()

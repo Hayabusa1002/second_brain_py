@@ -4,7 +4,7 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session, selectinload
 
-from app.models.account import Account, AccountType
+from app.models.account import Account
 from app.models.account_owner import account_owners
 from app.schemas.account import AccountCreate, AccountUpdate
 
@@ -22,6 +22,15 @@ class AccountRepository:
             .filter(Account.created_by == user_id)
             .all()
         )
+    
+    def list_owner_ids(self, account_id: UUID) -> list[UUID]:
+        rows = self.db.execute(
+            account_owners.select().where(
+                account_owners.c.account_id == account_id
+            )
+        ).fetchall()
+
+        return [row.user_id for row in rows]
 
     def get_by_id(self, account_id: UUID) -> Optional[Account]:
         return (
@@ -80,39 +89,18 @@ class AccountRepository:
         self.db.commit()
         return True
 
+    # ---------- Owners assignation ----------
+
     def assign_owner(self, account_id: UUID, user_id: UUID) -> None:
-        account = self.get_by_id(account_id)
-        if not account:
-            raise ValueError("Account not found")
-
-        existing_owners = self.db.execute(
-            account_owners.select().where(
-                account_owners.c.account_id == account_id
+        self.db.execute(
+            account_owners.insert().values(
+                account_id=account_id,
+                user_id=user_id,
             )
-        ).fetchall()
-
-        # Individual accounts can only have one owner
-        if account.type == AccountType.individual and existing_owners:
-            raise ValueError("Individual accounts can only have one owner")
-
-        already_assigned = any(str(row.user_id) == str(user_id) for row in existing_owners)
-        if not already_assigned:
-            self.db.execute(
-                account_owners.insert().values(
-                    account_id=account_id,
-                    user_id=user_id,
-                )
-            )
-            self.db.commit()
+        )
+        self.db.commit()
 
     def unassign_owner(self, account_id: UUID, user_id: UUID) -> None:
-        account = self.get_by_id(account_id)
-        if not account:
-            raise ValueError("Account not found")
-
-        if account.type == AccountType.individual:
-            raise ValueError("Individual account owners cannot be modified")
-
         self.db.execute(
             account_owners.delete().where(
                 account_owners.c.account_id == account_id,

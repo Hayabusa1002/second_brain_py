@@ -5,7 +5,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session, selectinload
 
 from app.models.user import User
-from app.schemas.user import UserCreate, UserUpdate
+from app.schemas.user import UserCreate, UserOAuthCreate, UserUpdate
 
 
 class UserRepository:
@@ -38,28 +38,6 @@ class UserRepository:
             .first()
         )
 
-    def get_by_name(self, name: str) -> Optional[User]:
-        return (
-            self.db.query(User)
-            .options(selectinload(User.accounts))
-            .filter(User.name.ilike(name.strip()))
-            .first()
-        )
-
-    def get_by_email_or_name(self, value: str) -> Optional[User]:
-        value = value.strip()
-        return (
-            self.db.query(User)
-            .options(selectinload(User.accounts))
-            .filter(
-                or_(
-                    User.email.ilike(value),
-                    User.name.ilike(value),
-                )
-            )
-            .first()
-        )
-
     # ---------- Writes ----------
 
     def create(self, data: UserCreate, user_id: UUID) -> User:
@@ -69,6 +47,20 @@ class UserRepository:
             password=data.password,
             role=data.role,
             status=data.status,
+            created_by=user_id,
+            updated_by=user_id,
+        )
+        self.db.add(user)
+        self.db.commit()
+        self.db.refresh(user)
+        return self.get_by_id(user.id)
+
+    def create_oauth(self, data: UserOAuthCreate, user_id: UUID) -> User:
+        user = User(
+            name=data.name.strip(),
+            email=data.email.strip().lower(),
+            provider=data.provider.strip(),
+            oauth_id=data.oauth_id.strip(),
             created_by=user_id,
             updated_by=user_id,
         )

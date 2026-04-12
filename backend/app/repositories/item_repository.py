@@ -37,20 +37,6 @@ class ItemRepository:
             .first()
         )
 
-    def get_by_identity(self, name: str, subcategory_id: UUID | None = None) -> Optional[Item]:
-        query = (
-            self.db.query(Item)
-            .options(joinedload(Item.subcategory))
-            .filter(Item.name.ilike(name.strip()))
-        )
-
-        if subcategory_id is None:
-            query = query.filter(Item.subcategory_id.is_(None))
-        else:
-            query = query.filter(Item.subcategory_id == subcategory_id)
-
-        return query.first()
-
     # ---------- Writes ----------
 
     def create(self, data: ItemCreate, user_id: UUID) -> Item:
