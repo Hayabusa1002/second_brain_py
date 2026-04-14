@@ -1,20 +1,18 @@
 import uuid
 
-from app.models.user import User, UserStatus, UserRole
+from app.models.user import User, UserRole, UserStatus
 
 
-def test_list_all_users_returns_users_array(admin_client, db):
-    # Should return all users including the admin created by admin_client
+def test_list_all_users_returns_list(admin_client, db):
     r = admin_client.get("/api/users")
     assert r.status_code == 200
+
     data = r.json()
-    assert "users" in data
-    assert isinstance(data["users"], list)
-    assert len(data["users"]) >= 1
+    assert isinstance(data, list)
+    assert len(data) >= 1
 
 
 def test_list_pending_users_returns_only_pending(admin_client, db):
-    # Create a pending user directly in DB
     pending = User(
         email="pending-user@test.com",
         name="Pending User",
@@ -28,13 +26,14 @@ def test_list_pending_users_returns_only_pending(admin_client, db):
 
     r = admin_client.get("/api/users/pending")
     assert r.status_code == 200
+
     data = r.json()
-    assert "users" in data
-    assert any(u["email"] == "pending-user@test.com" for u in data["users"])
+    assert isinstance(data, list)
+    assert any(u["email"] == "pending-user@test.com" for u in data)
+    assert all(u["status"] == UserStatus.pending.value for u in data)
 
 
 def test_list_active_users_returns_only_active(admin_client, db):
-    # Create an active user in DB
     active = User(
         email="active-user@test.com",
         name="Active User",
@@ -48,13 +47,14 @@ def test_list_active_users_returns_only_active(admin_client, db):
 
     r = admin_client.get("/api/users/active")
     assert r.status_code == 200
+
     data = r.json()
-    assert "users" in data
-    assert any(u["email"] == "active-user@test.com" for u in data["users"])
+    assert isinstance(data, list)
+    assert any(u["email"] == "active-user@test.com" for u in data)
+    assert all(u["status"] == UserStatus.active.value for u in data)
 
 
 def test_get_user_by_id_returns_200_for_existing_user(admin_client, db):
-    # Create a user and fetch it by id
     user = User(
         email="detail-user@test.com",
         name="Detail User",
@@ -68,10 +68,10 @@ def test_get_user_by_id_returns_200_for_existing_user(admin_client, db):
 
     r = admin_client.get(f"/api/users/{user.id}")
     assert r.status_code == 200
+
     data = r.json()
-    assert "user" in data
-    assert data["user"]["id"] == str(user.id)
-    assert data["user"]["email"] == "detail-user@test.com"
+    assert data["id"] == str(user.id)
+    assert data["email"] == "detail-user@test.com"
 
 
 def test_get_user_by_id_returns_404_for_missing_user(admin_client):
@@ -97,10 +97,11 @@ def test_update_user_with_valid_data_returns_200(admin_client, db):
         json={"name": "New Name", "role": "admin"},
     )
     assert r.status_code == 200
+
     data = r.json()
-    assert data["user"]["id"] == str(user.id)
-    assert data["user"]["name"] == "New Name"
-    assert data["user"]["role"] == "admin"
+    assert data["id"] == str(user.id)
+    assert data["name"] == "New Name"
+    assert data["role"] == "admin"
 
 
 def test_update_user_returns_404_for_missing_user(admin_client):
@@ -126,8 +127,9 @@ def test_approve_user_changes_status_to_active(admin_client, db):
 
     r = admin_client.post(f"/api/users/{user.id}/approve")
     assert r.status_code == 200
+
     data = r.json()
-    assert data["user"]["status"] == UserStatus.active.value
+    assert data["status"] == UserStatus.active.value
 
 
 def test_reject_user_changes_status_to_inactive(admin_client, db):
@@ -144,8 +146,9 @@ def test_reject_user_changes_status_to_inactive(admin_client, db):
 
     r = admin_client.post(f"/api/users/{user.id}/reject")
     assert r.status_code == 200
+
     data = r.json()
-    assert data["user"]["status"] == UserStatus.inactive.value
+    assert data["status"] == UserStatus.inactive.value
 
 
 def test_ban_user_changes_status_to_banned(admin_client, db):
@@ -162,8 +165,9 @@ def test_ban_user_changes_status_to_banned(admin_client, db):
 
     r = admin_client.post(f"/api/users/{user.id}/ban")
     assert r.status_code == 200
+
     data = r.json()
-    assert data["user"]["status"] == UserStatus.banned.value
+    assert data["status"] == UserStatus.banned.value
 
 
 def test_unban_user_changes_status_to_active(admin_client, db):
@@ -180,12 +184,14 @@ def test_unban_user_changes_status_to_active(admin_client, db):
 
     r = admin_client.post(f"/api/users/{user.id}/unban")
     assert r.status_code == 200
+
     data = r.json()
-    assert data["user"]["status"] == UserStatus.active.value
+    assert data["status"] == UserStatus.active.value
 
 
 def test_status_change_returns_404_for_missing_user(admin_client):
     fake_id = uuid.uuid4()
+
     for action in ["approve", "reject", "ban", "unban"]:
         r = admin_client.post(f"/api/users/{fake_id}/{action}")
         assert r.status_code == 404
@@ -219,11 +225,13 @@ def test_delete_user_cannot_delete_own_account(auth_user):
     current = auth_user["user"]
 
     r = client.delete(f"/api/users/{current.id}")
-    assert r.status_code == 403
+    assert r.status_code == 400
+    assert r.json()["detail"] == "Cannot delete your own account"
 
 
 def test_users_endpoints_without_auth_return_401_or_403(client):
     r = client.get("/api/users")
     assert r.status_code in (401, 403)
+
     r2 = client.get("/api/users/active")
     assert r2.status_code in (401, 403)

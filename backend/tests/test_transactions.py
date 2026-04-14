@@ -3,7 +3,6 @@ import uuid
 
 
 def test_create_transaction_with_valid_data_returns_201(auth_client_with_account):
-    # Should create a transaction successfully
     client, account_id, category_id = auth_client_with_account
     r = client.post(
         "/api/transactions",
@@ -26,7 +25,6 @@ def test_create_transaction_with_valid_data_returns_201(auth_client_with_account
 
 
 def test_list_transactions_returns_list(auth_client_with_account):
-    # Should return a paginated list of transactions for the current user
     client, account_id, category_id = auth_client_with_account
     client.post(
         "/api/transactions",
@@ -51,7 +49,6 @@ def test_list_transactions_returns_list(auth_client_with_account):
 
 
 def test_filter_transactions_by_type_income_only(auth_client_with_account):
-    # Filter by type=income should only return income transactions
     client, account_id, category_id = auth_client_with_account
 
     client.post(
@@ -75,7 +72,6 @@ def test_filter_transactions_by_type_income_only(auth_client_with_account):
 
 
 def test_filter_transactions_by_date_range_returns_200(auth_client_with_account):
-    # Date range filters should return a valid response
     client, account_id, category_id = auth_client_with_account
 
     client.post(
@@ -98,7 +94,6 @@ def test_filter_transactions_by_date_range_returns_200(auth_client_with_account)
 
 
 def test_get_transaction_by_id_returns_200(auth_client_with_account):
-    # Should return transaction detail for an existing id
     client, account_id, category_id = auth_client_with_account
     r_create = client.post(
         "/api/transactions",
@@ -123,7 +118,6 @@ def test_get_transaction_by_id_returns_200(auth_client_with_account):
 
 
 def test_get_transaction_by_id_returns_404_for_missing_transaction(auth_client_with_account):
-    # Non-existing transaction id should return 404
     client, _, _ = auth_client_with_account
     fake_id = uuid.uuid4()
     r = client.get(f"/api/transactions/{fake_id}")
@@ -131,7 +125,6 @@ def test_get_transaction_by_id_returns_404_for_missing_transaction(auth_client_w
 
 
 def test_update_transaction_with_valid_data_returns_200(auth_client_with_account):
-    # Should update an existing transaction
     client, account_id, category_id = auth_client_with_account
     r_create = client.post(
         "/api/transactions",
@@ -159,7 +152,6 @@ def test_update_transaction_with_valid_data_returns_200(auth_client_with_account
 
 
 def test_update_transaction_returns_404_for_missing_transaction(auth_client_with_account):
-    # Updating non-existing transaction should return 404
     client, _, _ = auth_client_with_account
     fake_id = uuid.uuid4()
 
@@ -171,7 +163,6 @@ def test_update_transaction_returns_404_for_missing_transaction(auth_client_with
 
 
 def test_delete_transaction_returns_204(auth_client_with_account):
-    # Should delete an existing transaction
     client, account_id, category_id = auth_client_with_account
     r_create = client.post(
         "/api/transactions",
@@ -192,7 +183,6 @@ def test_delete_transaction_returns_204(auth_client_with_account):
 
 
 def test_delete_transaction_returns_404_for_missing_transaction(auth_client_with_account):
-    # Deleting non-existing transaction should return 404
     client, _, _ = auth_client_with_account
     fake_id = uuid.uuid4()
     r_del = client.delete(f"/api/transactions/{fake_id}")
@@ -200,7 +190,6 @@ def test_delete_transaction_returns_404_for_missing_transaction(auth_client_with
 
 
 def test_create_transaction_with_invalid_type_returns_422(auth_client_with_account):
-    # Invalid enum/type value should fail validation
     client, account_id, category_id = auth_client_with_account
     r = client.post(
         "/api/transactions",
@@ -216,7 +205,6 @@ def test_create_transaction_with_invalid_type_returns_422(auth_client_with_accou
 
 
 def test_download_import_template_returns_csv(auth_client):
-    # Template endpoint should return CSV content as attachment
     r = auth_client.get("/api/transactions/import/template")
     assert r.status_code == 200
     assert "text/csv" in r.headers["content-type"]
@@ -225,7 +213,6 @@ def test_download_import_template_returns_csv(auth_client):
 
 
 def test_import_transactions_with_unsupported_extension_returns_400(auth_client):
-    # Uploading a file with unsupported extension should return 400
     fake_content = b"not,a,csv"
     file_obj = io.BytesIO(fake_content)
     r = auth_client.post(
@@ -237,7 +224,6 @@ def test_import_transactions_with_unsupported_extension_returns_400(auth_client)
 
 
 def test_list_items_returns_404_for_missing_transaction(auth_client_with_account):
-    # Listing items for non-existing transaction should return 404
     client, _, _ = auth_client_with_account
     fake_tx_id = uuid.uuid4()
     r = client.get(f"/api/transactions/{fake_tx_id}/items")
@@ -245,7 +231,6 @@ def test_list_items_returns_404_for_missing_transaction(auth_client_with_account
 
 
 def test_create_item_for_missing_transaction_returns_404(auth_client_with_account):
-    # Creating item for non-existing transaction should return 404
     client, _, _ = auth_client_with_account
     fake_tx_id = uuid.uuid4()
     r = client.post(
@@ -260,6 +245,5 @@ def test_create_item_for_missing_transaction_returns_404(auth_client_with_accoun
 
 
 def test_transactions_endpoints_without_auth_return_401_or_403(client):
-    # Anonymous users should not be able to access transactions list
     r = client.get("/api/transactions")
     assert r.status_code in (401, 403)
