@@ -1,70 +1,30 @@
+import json
 from typing import List
 from uuid import UUID
-import json
 
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
-from fastapi.responses import PlainTextResponse, Response
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
-from app.db.deps import get_db, get_current_user
 from app.controllers.city_controller import CityController
-from app.services.city_service import CityService
+from app.db.deps import get_current_user, get_db
 from app.repositories.city_repository import CityRepository
-from app.schemas.city import CityCreate, CityUpdate, CityResponse
+from app.routers.helpers.downloads import build_template_download
+from app.routers.templates.cities import (
+    TEMPLATE_CSV,
+    TEMPLATE_JSON,
+    TEMPLATE_YAML,
+)
 from app.schemas.bulk_import import ImportResult
+from app.schemas.city import CityCreate, CityResponse, CityUpdate
+from app.services.city_service import (
+    CityNotFoundError,
+    CityService,
+    DuplicateCityError,
+)
+from app.services.helpers.import_service import UnsupportedImportFormatError
 
 
-router = APIRouter()
-
-
-TEMPLATE_CSV = """name,state,country
-Medellin,Antioquia,Colombia
-Bogota,Cundinamarca,Colombia
-Madrid,,Spain
-Buenos Aires,,Argentina
-"""
-
-
-TEMPLATE_JSON = [
-    {
-        "name": "Medellin",
-        "state": "Antioquia",
-        "country": "Colombia",
-    },
-    {
-        "name": "Bogota",
-        "state": "Cundinamarca",
-        "country": "Colombia",
-    },
-    {
-        "name": "Madrid",
-        "state": None,
-        "country": "Spain",
-    },
-    {
-        "name": "Buenos Aires",
-        "state": None,
-        "country": "Argentina",
-    },
-]
-
-
-TEMPLATE_YAML = """- name: Medellin
-  state: Antioquia
-  country: Colombia
-
-- name: Bogota
-  state: Cundinamarca
-  country: Colombia
-
-- name: Madrid
-  state:
-  country: Spain
-
-- name: Buenos Aires
-  state:
-  country: Argentina
-"""
+router = APIRouter(prefix="/cities")
 
 
 def get_controller(db: Session = Depends(get_db)) -> CityController:
@@ -73,125 +33,108 @@ def get_controller(db: Session = Depends(get_db)) -> CityController:
     return CityController(service)
 
 
-# --------- IMPORT TEMPLATES ---------
+# ---------- Import templates ----------
 
-
-@router.get("/cities/import/template/csv", response_class=PlainTextResponse)
-def download_cities_template_csv(
-    current_user=Depends(get_current_user),
-):
-    return PlainTextResponse(
+@router.get("/import/template/csv")
+def download_cities_template_csv():
+    return build_template_download(
         content=TEMPLATE_CSV,
+        filename="cities_template.csv",
         media_type="text/csv",
-        headers={
-            "Content-Disposition": "attachment; filename=cities_template.csv",
-            "Access-Control-Expose-Headers": "Content-Disposition",
-        },
     )
 
 
-@router.get("/cities/import/template/json")
-def download_cities_template_json(
-    current_user=Depends(get_current_user),
-):
-    return Response(
+@router.get("/import/template/json")
+def download_cities_template_json():
+    return build_template_download(
         content=json.dumps(TEMPLATE_JSON, indent=2),
+        filename="cities_template.json",
         media_type="application/json",
-        headers={
-            "Content-Disposition": "attachment; filename=cities_template.json",
-            "Access-Control-Expose-Headers": "Content-Disposition",
-        },
     )
 
 
-@router.get("/cities/import/template/yaml", response_class=PlainTextResponse)
-def download_cities_template_yaml(
-    current_user=Depends(get_current_user),
-):
-    return PlainTextResponse(
+@router.get("/import/template/yaml")
+def download_cities_template_yaml():
+    return build_template_download(
         content=TEMPLATE_YAML,
+        filename="cities_template.yaml",
         media_type="application/x-yaml",
-        headers={
-            "Content-Disposition": "attachment; filename=cities_template.yaml",
-            "Access-Control-Expose-Headers": "Content-Disposition",
-        },
     )
 
 
-# --------- IMPORT ---------
+# ---------- Import ----------
 
-
-@router.post("/cities/import", response_model=ImportResult)
+@router.post("/import", response_model=ImportResult)
 async def import_cities(
     file: UploadFile = File(...),
     controller: CityController = Depends(get_controller),
-    current_user=Depends(get_current_user),
+    user=Depends(get_current_user),
 ):
-    if not file.filename or not any(
-        file.filename.lower().endswith(ext)
-        for ext in (".csv", ".xlsx", ".xls", ".json", ".yaml", ".yml")
-    ):
-        raise HTTPException(
-            status_code=400,
-            detail="Unsupported format. Use CSV, XLSX, JSON or YAML.",
-        )
-
     try:
-        return await controller.import_cities(file, current_user)
+        return await controller.import_cities(file=file, current_user=user)
+    except UnsupportedImportFormatError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-# --------- CRUD ---------
+# ---------- Reads ----------
 
-
-@router.get("/cities", response_model=List[CityResponse])
+@router.get("/", response_model=List[CityResponse])
 def list_cities(
     controller: CityController = Depends(get_controller),
 ):
     return controller.list_cities()
 
 
-@router.get("/cities/{city_id}", response_model=CityResponse)
+@router.get("/{city_id}", response_model=CityResponse)
 def get_city(
     city_id: UUID,
     controller: CityController = Depends(get_controller),
 ):
-    city = controller.get_city(city_id)
-    if not city:
-        raise HTTPException(status_code=404, detail="City not found")
-    return city
+    try:
+        return controller.get_city(city_id)
+    except CityNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
-@router.post("/cities", response_model=CityResponse, status_code=201)
+# ---------- Writes ----------
+
+@router.post("", response_model=CityResponse, status_code=status.HTTP_201_CREATED)
 def create_city(
     data: CityCreate,
     controller: CityController = Depends(get_controller),
-    current_user=Depends(get_current_user),
+    user=Depends(get_current_user),
 ):
-    return controller.create_city(data)
+    try:
+        return controller.create_city(data=data, user_id=user.id)
+    except DuplicateCityError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.patch("/cities/{city_id}", response_model=CityResponse)
+@router.patch("/{city_id}", response_model=CityResponse)
 def update_city(
     city_id: UUID,
     data: CityUpdate,
     controller: CityController = Depends(get_controller),
-    current_user=Depends(get_current_user),
+    user=Depends(get_current_user),
 ):
-    city = controller.update_city(city_id, data)
-    if not city:
-        raise HTTPException(status_code=404, detail="City not found")
-    return city
+    try:
+        return controller.update_city(city_id=city_id, data=data, user_id=user.id)
+    except CityNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except DuplicateCityError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.delete("/cities/{city_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{city_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_city(
     city_id: UUID,
     controller: CityController = Depends(get_controller),
-    current_user=Depends(get_current_user),
+    user=Depends(get_current_user),
 ):
-    deleted = controller.delete_city(city_id)
-    if not deleted:
-        raise HTTPException(status_code=404, detail="City not found")
-    return
+    try:
+        controller.delete_city(city_id=city_id, user_id=user.id)
+        return
+    except CityNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

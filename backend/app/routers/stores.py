@@ -1,117 +1,36 @@
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from sqlalchemy.orm import Session
 from typing import List
 from uuid import UUID
+
 import json
 
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
-from fastapi.responses import PlainTextResponse, Response
-from sqlalchemy.orm import Session
-
-from app.db.deps import get_db, get_current_user
 from app.controllers.store_controller import StoreController
-from app.services.store_service import StoreService
+from app.db.deps import get_current_user, get_db
 from app.repositories.store_repository import StoreRepository
-from app.schemas.store import (
-    StoreCreate,
-    StoreUpdate,
-    StoreResponse,
-    StoreSubcategoryAssign,
-    StoreSubcategoryLinkResponse,
+from app.routers.helpers.downloads import build_template_download
+from app.routers.templates.stores import (
+    TEMPLATE_CSV,
+    TEMPLATE_JSON,
+    TEMPLATE_YAML,
 )
 from app.schemas.bulk_import import ImportResult
+from app.schemas.store import (
+    StoreCreate,
+    StoreResponse,
+    StoreSubcategoryAssign,
+    StoreUpdate,
+)
+from app.schemas.subcategory import SubcategoryResponse
+from app.services.helpers.import_service import UnsupportedImportFormatError
+from app.services.store_service import (
+    DuplicateStoreError,
+    StoreNotFoundError,
+    StoreService,
+)
 
 
-router = APIRouter()
-
-
-TEMPLATE_CSV = """name,type,address,website,subcategory_names
-Exito,physical,Carrera 43A # 1 Sur-150,,Food|Groceries|Household
-Carulla,physical,Calle 10 # 43E-135,,Food|Groceries
-Spotify,subscription,,https://spotify.com,Music|Entertainment
-Netflix,subscription,,https://netflix.com,Streaming|Entertainment
-Steam,online,,https://store.steampowered.com,Games|Digital Products
-"""
-
-
-TEMPLATE_JSON = [
-    {
-        "name": "Exito",
-        "type": "physical",
-        "address": "Carrera 43A # 1 Sur-150",
-        "website": None,
-        "subcategories": ["Food", "Groceries", "Household"],
-    },
-    {
-        "name": "Carulla",
-        "type": "physical",
-        "address": "Calle 10 # 43E-135",
-        "website": None,
-        "subcategories": ["Food", "Groceries"],
-    },
-    {
-        "name": "Spotify",
-        "type": "subscription",
-        "address": None,
-        "website": "https://spotify.com",
-        "subcategories": ["Music", "Entertainment"],
-    },
-    {
-        "name": "Netflix",
-        "type": "subscription",
-        "address": None,
-        "website": "https://netflix.com",
-        "subcategories": ["Streaming", "Entertainment"],
-    },
-    {
-        "name": "Steam",
-        "type": "online",
-        "address": None,
-        "website": "https://store.steampowered.com",
-        "subcategories": ["Games", "Digital Products"],
-    },
-]
-
-
-TEMPLATE_YAML = """- name: Exito
-  type: physical
-  address: Carrera 43A # 1 Sur-150
-  website:
-  subcategories:
-    - Food
-    - Groceries
-    - Household
-
-- name: Carulla
-  type: physical
-  address: Calle 10 # 43E-135
-  website:
-  subcategories:
-    - Food
-    - Groceries
-
-- name: Spotify
-  type: subscription
-  address:
-  website: https://spotify.com
-  subcategories:
-    - Music
-    - Entertainment
-
-- name: Netflix
-  type: subscription
-  address:
-  website: https://netflix.com
-  subcategories:
-    - Streaming
-    - Entertainment
-
-- name: Steam
-  type: online
-  address:
-  website: https://store.steampowered.com
-  subcategories:
-    - Games
-    - Digital Products
-"""
+router = APIRouter(prefix="/stores", tags=["stores"])
 
 
 def get_controller(db: Session = Depends(get_db)) -> StoreController:
@@ -120,162 +39,138 @@ def get_controller(db: Session = Depends(get_db)) -> StoreController:
     return StoreController(service)
 
 
-# --------- IMPORT TEMPLATES ---------
+# ---------- Import templates ----------
 
-
-@router.get("/stores/import/template/csv", response_class=PlainTextResponse)
-def download_stores_template_csv(
-    current_user=Depends(get_current_user),
-):
-    return PlainTextResponse(
+@router.get("/import/template/csv")
+def download_stores_template_csv():
+    return build_template_download(
         content=TEMPLATE_CSV,
+        filename="stores_template.csv",
         media_type="text/csv",
-        headers={
-            "Content-Disposition": "attachment; filename=stores_template.csv",
-            "Access-Control-Expose-Headers": "Content-Disposition",
-        },
     )
 
 
-@router.get("/stores/import/template/json")
-def download_stores_template_json(
-    current_user=Depends(get_current_user),
-):
-    return Response(
+@router.get("/import/template/json")
+def download_stores_template_json():
+    return build_template_download(
         content=json.dumps(TEMPLATE_JSON, indent=2),
+        filename="stores_template.json",
         media_type="application/json",
-        headers={
-            "Content-Disposition": "attachment; filename=stores_template.json",
-            "Access-Control-Expose-Headers": "Content-Disposition",
-        },
     )
 
 
-@router.get("/stores/import/template/yaml", response_class=PlainTextResponse)
-def download_stores_template_yaml(
-    current_user=Depends(get_current_user),
-):
-    return PlainTextResponse(
+@router.get("/import/template/yaml")
+def download_stores_template_yaml():
+    return build_template_download(
         content=TEMPLATE_YAML,
+        filename="stores_template.yaml",
         media_type="application/x-yaml",
-        headers={
-            "Content-Disposition": "attachment; filename=stores_template.yaml",
-            "Access-Control-Expose-Headers": "Content-Disposition",
-        },
     )
 
 
-# --------- IMPORT ---------
+# ---------- Import ----------
 
-
-@router.post("/stores/import", response_model=ImportResult)
+@router.post("/import", response_model=ImportResult)
 async def import_stores(
     file: UploadFile = File(...),
     controller: StoreController = Depends(get_controller),
-    current_user=Depends(get_current_user),
+    user=Depends(get_current_user),
 ):
-    if not file.filename or not any(
-        file.filename.lower().endswith(ext)
-        for ext in (".csv", ".xlsx", ".xls", ".json", ".yaml", ".yml")
-    ):
-        raise HTTPException(
-            status_code=400,
-            detail="Unsupported format. Use CSV, XLSX, JSON or YAML.",
-        )
-
     try:
-        return await controller.import_stores(file, current_user)
+        return await controller.import_stores(file=file, current_user=user)
+    except UnsupportedImportFormatError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-# --------- CRUD ---------
+# ---------- Reads ----------
 
-
-@router.get("/stores", response_model=List[StoreResponse])
+@router.get("", response_model=List[StoreResponse])
 def list_stores(
     controller: StoreController = Depends(get_controller),
 ):
     return controller.list_stores()
 
 
-@router.get("/stores/{store_id}", response_model=StoreResponse)
+@router.get("/{store_id}", response_model=StoreResponse)
 def get_store(
     store_id: UUID,
     controller: StoreController = Depends(get_controller),
 ):
-    store = controller.get_store(store_id)
-    if not store:
-        raise HTTPException(status_code=404, detail="Store not found")
-    return store
+    try:
+        return controller.get_store(store_id)
+    except StoreNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
-@router.post("/stores", response_model=StoreResponse, status_code=201)
+# ---------- Writes ----------
+
+@router.post("", response_model=StoreResponse, status_code=status.HTTP_201_CREATED)
 def create_store(
     data: StoreCreate,
     controller: StoreController = Depends(get_controller),
-    current_user=Depends(get_current_user),
+    user=Depends(get_current_user),
 ):
-    return controller.create_store(data)
+    try:
+        return controller.create_store(data=data, user_id=user.id)
+    except DuplicateStoreError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.patch("/stores/{store_id}", response_model=StoreResponse)
+@router.patch("/{store_id}", response_model=StoreResponse)
 def update_store(
     store_id: UUID,
     data: StoreUpdate,
     controller: StoreController = Depends(get_controller),
-    current_user=Depends(get_current_user),
+    user=Depends(get_current_user),
 ):
-    store = controller.update_store(store_id, data)
-    if not store:
-        raise HTTPException(status_code=404, detail="Store not found")
-    return store
+    try:
+        return controller.update_store(store_id=store_id, data=data, user_id=user.id)
+    except StoreNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except DuplicateStoreError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.delete("/stores/{store_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{store_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_store(
     store_id: UUID,
     controller: StoreController = Depends(get_controller),
-    current_user=Depends(get_current_user),
+    user=Depends(get_current_user),
 ):
-    deleted = controller.delete_store(store_id)
-    if not deleted:
-        raise HTTPException(status_code=404, detail="Store not found")
-    return
+    try:
+        controller.delete_store(store_id=store_id, user_id=user.id)
+        return
+    except StoreNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
-# --------- STORE SUBCATEGORIES ---------
+# ---------- Store subcategories ----------
 
-
-@router.get(
-    "/stores/{store_id}/subcategories",
-    response_model=List[StoreSubcategoryLinkResponse],
-)
+@router.get("/{store_id}/subcategories", response_model=List[SubcategoryResponse])
 def list_store_subcategories(
     store_id: UUID,
     controller: StoreController = Depends(get_controller),
-    current_user=Depends(get_current_user),
 ):
     try:
         return controller.list_store_subcategories(store_id)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    except StoreNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
 @router.put(
-    "/stores/{store_id}/subcategories",
-    response_model=List[StoreSubcategoryLinkResponse],
+    "/{store_id}/subcategories",
+    response_model=List[SubcategoryResponse],
 )
 def replace_store_subcategories(
     store_id: UUID,
     data: StoreSubcategoryAssign,
     controller: StoreController = Depends(get_controller),
-    current_user=Depends(get_current_user),
 ):
     try:
-        return controller.replace_store_subcategories(store_id, data.subcategory_ids)
+        return controller.replace_store_subcategories(store_id=store_id, subcategory_ids=data.subcategory_ids)
+    except StoreNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except ValueError as e:
-        message = str(e)
-        if message == "Store not found":
-            raise HTTPException(status_code=404, detail=message)
-        raise HTTPException(status_code=400, detail=message)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

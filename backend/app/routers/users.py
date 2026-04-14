@@ -1,101 +1,143 @@
+from typing import List
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-
-from app.db.deps import get_db, require_admin, get_current_user
-from app.models.user import User, UserStatus
+from app.controllers.user_controller import UserController
+from app.db.deps import get_current_user, get_db, require_admin
+from app.models.user import User
+from app.repositories.account_repository import AccountRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.user import UserResponse, UserUpdate
+from app.services.user_service import UserNotFoundError, UserService
 
 
-router = APIRouter(tags=["users"], dependencies=[Depends(require_admin)])
+router = APIRouter(
+    prefix="/users",
+    tags=["users"],
+    dependencies=[Depends(require_admin)],
+)
 
 
-
-@router.get("/users")
-def list_all_users(db: Session = Depends(get_db)):
-    users = UserRepository(db).get_all()
-    return {"users": [UserResponse.model_validate(u) for u in users]}
-
-
-
-@router.get("/users/pending")
-def list_pending(db: Session = Depends(get_db)):
-    users = UserRepository(db).get_pending()
-    return {"users": [UserResponse.model_validate(u) for u in users]}
+def get_controller(db: Session = Depends(get_db)) -> UserController:
+    user_repository = UserRepository(db)
+    account_repository = AccountRepository(db)
+    service = UserService(
+        repository=user_repository,
+        account_repository=account_repository,
+    )
+    return UserController(service)
 
 
+# ---------- Reads ----------
 
-@router.get("/users/active")
-def list_active_users(db: Session = Depends(get_db)):
-    users = UserRepository(db).get_active()
-    return {"users": [UserResponse.model_validate(u) for u in users]}
-
-
-
-@router.get("/users/{user_id}")
-def get_user(user_id: UUID, db: Session = Depends(get_db)):
-    user = UserRepository(db).get_by_id(user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return {"user": UserResponse.model_validate(user)}
+@router.get("", response_model=List[UserResponse])
+def list_all_users(
+    controller: UserController = Depends(get_controller),
+):
+    return controller.list_users()
 
 
-
-@router.put("/users/{user_id}")
-def update_user(user_id: UUID, data: UserUpdate, db: Session = Depends(get_db)):
-    user = UserRepository(db).update(user_id, data.name, data.role)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return {"user": UserResponse.model_validate(user)}
+@router.get("/pending", response_model=List[UserResponse])
+def list_pending_users(
+    controller: UserController = Depends(get_controller),
+):
+    return controller.list_pending_users()
 
 
-
-@router.post("/users/{user_id}/approve")
-def approve_user(user_id: UUID, db: Session = Depends(get_db)):
-    user = UserRepository(db).update_status(user_id, UserStatus.active)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return {"user": UserResponse.model_validate(user)}
+@router.get("/active", response_model=List[UserResponse])
+def list_active_users(
+    controller: UserController = Depends(get_controller),
+):
+    return controller.list_active_users()
 
 
-
-@router.post("/users/{user_id}/reject")
-def reject_user(user_id: UUID, db: Session = Depends(get_db)):
-    user = UserRepository(db).update_status(user_id, UserStatus.inactive)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return {"user": UserResponse.model_validate(user)}
-
-
-
-@router.post("/users/{user_id}/ban")
-def ban_user(user_id: UUID, db: Session = Depends(get_db)):
-    user = UserRepository(db).update_status(user_id, UserStatus.banned)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return {"user": UserResponse.model_validate(user)}
+@router.get("/{user_id}", response_model=UserResponse)
+def get_user(
+    user_id: UUID,
+    controller: UserController = Depends(get_controller),
+):
+    try:
+        return controller.get_user(user_id)
+    except UserNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
 
 
+# ---------- Writes ----------
 
-@router.post("/users/{user_id}/unban")
-def unban_user(user_id: UUID, db: Session = Depends(get_db)):
-    user = UserRepository(db).update_status(user_id, UserStatus.active)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return {"user": UserResponse.model_validate(user)}
+@router.put("/{user_id}", response_model=UserResponse)
+def update_user(
+    user_id: UUID,
+    data: UserUpdate,
+    controller: UserController = Depends(get_controller),
+):
+    try:
+        return controller.update_user_by_admin(user_id=user_id, data=data)
+    except UserNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
+@router.post("/{user_id}/approve", response_model=UserResponse)
+def approve_user(
+    user_id: UUID,
+    controller: UserController = Depends(get_controller),
+):
+    try:
+        return controller.approve_user(user_id)
+    except UserNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
-@router.delete("/users/{user_id}", status_code=204)
+
+@router.post("/{user_id}/reject", response_model=UserResponse)
+def reject_user(
+    user_id: UUID,
+    controller: UserController = Depends(get_controller),
+):
+    try:
+        return controller.reject_user(user_id)
+    except UserNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.post("/{user_id}/ban", response_model=UserResponse)
+def ban_user(
+    user_id: UUID,
+    controller: UserController = Depends(get_controller),
+):
+    try:
+        return controller.ban_user(user_id)
+    except UserNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.post("/{user_id}/unban", response_model=UserResponse)
+def unban_user(
+    user_id: UUID,
+    controller: UserController = Depends(get_controller),
+):
+    try:
+        return controller.unban_user(user_id)
+    except UserNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(
     user_id: UUID,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    controller: UserController = Depends(get_controller),
 ):
-    if current_user.id == user_id:
-        raise HTTPException(status_code=400, detail="Cannot delete your own account")
-    deleted = UserRepository(db).delete(user_id)
-    if not deleted:
-        raise HTTPException(status_code=404, detail="User not found")
+    if user_id == user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete your own account",
+        )
+
+    try:
+        return controller.delete_user(user_id)
+    except UserNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
