@@ -31,7 +31,7 @@ class AuthService:
 
     def login(self, data: UserLogin) -> TokenResponse:
         try:
-            user = self.user_service.get_by_email(data.email)
+            user = self.user_service.get_user_by_email(data.email)
         except UserNotFoundError:
             raise HTTPException(status_code=401, detail="Invalid email or password")
 
@@ -52,7 +52,7 @@ class AuthService:
         Returns TokenResponse if active, None if pending approval.
         """
         try:
-            user = self.user_service.get_by_email(data.email)
+            user = self.user_service.get_user_by_email(data.email)
         except UserNotFoundError:
             self.user_service.create_oauth_user(data=data, user_id=None)
             return None
