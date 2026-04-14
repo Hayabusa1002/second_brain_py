@@ -41,7 +41,13 @@ class User(Base):
     updated_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
     # N:N with accounts
-    accounts = relationship("Account", secondary=account_owners, back_populates="owners")
+    accounts = relationship(
+        "Account",
+        secondary=account_owners,
+        primaryjoin=id == account_owners.c.user_id,
+        secondaryjoin="Account.id == account_owners.c.account_id",
+        back_populates="owners",
+    )
 
     # 1:N with transactions
     transactions = relationship(

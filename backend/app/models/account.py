@@ -28,7 +28,13 @@ class Account(Base):
     updated_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
     # N:N with users (intermediate pivot table)
-    owners = relationship("User", secondary=account_owners, back_populates="accounts")
+    owners = relationship(
+        "User",
+        secondary=account_owners,
+        primaryjoin=id == account_owners.c.account_id,
+        secondaryjoin="User.id == account_owners.c.user_id",
+        back_populates="accounts",
+    )
 
     # 1:N with transactions
     transactions = relationship("Transaction", back_populates="account", cascade="all, delete-orphan")
