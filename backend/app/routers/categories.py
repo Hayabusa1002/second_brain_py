@@ -82,7 +82,7 @@ async def import_categories(
 
 # ---------- Reads ----------
 
-@router.get("/", response_model=List[CategoryResponse])
+@router.get("", response_model=List[CategoryResponse])
 def list_categories(
     controller: CategoryController = Depends(get_controller),
 ):

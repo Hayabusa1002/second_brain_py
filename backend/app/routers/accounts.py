@@ -43,7 +43,7 @@ def get_controller(db: Session = Depends(get_db)) -> AccountController:
 
 # ---------- Reads ----------
 
-@router.get("/", response_model=List[AccountResponse])
+@router.get("", response_model=List[AccountResponse])
 def list_accounts(
     controller: AccountController = Depends(get_controller),
     user=Depends(get_current_user),

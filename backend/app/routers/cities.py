@@ -80,7 +80,7 @@ async def import_cities(
 
 # ---------- Reads ----------
 
-@router.get("/", response_model=List[CityResponse])
+@router.get("", response_model=List[CityResponse])
 def list_cities(
     controller: CityController = Depends(get_controller),
 ):

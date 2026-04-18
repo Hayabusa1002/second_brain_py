@@ -38,7 +38,7 @@ def get_controller(db: Session = Depends(get_db)) -> ItemController:
 
 # ---------- Reads ----------
 
-@router.get("/", response_model=List[ItemResponse])
+@router.get("", response_model=List[ItemResponse])
 def list_items(
     controller: ItemController = Depends(get_controller),
 ):
@@ -69,7 +69,7 @@ def list_item_subcategories(
 
 # ---------- Writes ----------
 
-@router.post("/", response_model=ItemResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ItemResponse, status_code=status.HTTP_201_CREATED)
 def create_item(
     data: ItemCreate,
     controller: ItemController = Depends(get_controller),
