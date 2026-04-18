@@ -63,9 +63,9 @@ class UserResponse(BaseModel):
     role:       UserRole
     status:     UserStatus
     
-    created_by: UUID
+    created_by: UUID | None = None
     created_at: datetime
-    updated_by: UUID | None
+    updated_by: UUID | None = None
     updated_at: datetime
 
     model_config = {"from_attributes": True}
