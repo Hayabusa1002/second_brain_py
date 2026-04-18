@@ -130,11 +130,12 @@ def delete_account(
 @router.post("/{account_id}/owners/{user_id}", status_code=status.HTTP_200_OK)
 def assign_owner(
     account_id: UUID,
+    user_id: UUID,
     controller: AccountController = Depends(get_controller),
     user=Depends(require_account_management_role),
 ):
     try:
-        controller.assign_owner(account_id=account_id, user_id=user.id)
+        controller.assign_owner(account_id=account_id, user_id=user_id)
         return {"detail": "Owner assigned"}
     except AccountNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
@@ -146,11 +147,12 @@ def assign_owner(
 @router.delete("/{account_id}/owners/{user_id}", status_code=status.HTTP_200_OK)
 def unassign_owner(
     account_id: UUID,
+    user_id: UUID,
     controller: AccountController = Depends(get_controller),
     user=Depends(require_account_management_role),
 ):
     try:
-        controller.unassign_owner(account_id=account_id, user_id=user.id)
+        controller.unassign_owner(account_id=account_id, user_id=user_id)
         return {"detail": "Owner removed"}
     except AccountNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

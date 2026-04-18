@@ -18,11 +18,12 @@ class AccountRepository:
     def list(self, user_id: UUID) -> list[Account]:
         return (
             self.db.query(Account)
-            .options(selectinload(Account.owners))
-            .filter(Account.created_by == user_id)
+            .join(account_owners, account_owners.c.account_id == Account.id)
+            .options(selectinload(Account.owners), selectinload(Account.transactions))
+            .filter(account_owners.c.user_id == user_id)
             .all()
         )
-    
+
     def list_owner_ids(self, account_id: UUID) -> list[UUID]:
         rows = self.db.execute(
             account_owners.select().where(
@@ -35,16 +36,22 @@ class AccountRepository:
     def get_by_id(self, account_id: UUID) -> Optional[Account]:
         return (
             self.db.query(Account)
-            .options(selectinload(Account.owners))
+            .options(selectinload(Account.owners), selectinload(Account.transactions))
             .filter(Account.id == account_id)
             .first()
         )
 
-    def get_by_name(self, name: str) -> Optional[Account]:
+    def get_by_name_for_user(self, name: str, user_id: UUID) -> Optional[Account]:
+        normalized_name = name.strip()
+
         return (
             self.db.query(Account)
-            .options(selectinload(Account.owners))
-            .filter(Account.name.ilike(name.strip()))
+            .join(account_owners, account_owners.c.account_id == Account.id)
+            .options(selectinload(Account.owners), selectinload(Account.transactions))
+            .filter(
+                account_owners.c.user_id == user_id,
+                Account.name.ilike(normalized_name),
+            )
             .first()
         )
 
@@ -67,8 +74,7 @@ class AccountRepository:
         account = self.get_by_id(account_id)
         if not account:
             return None
-        
-        # exclude_unset avoids update as None the non-sended fields
+
         for field, value in data.model_dump(exclude_unset=True).items():
             if isinstance(value, str):
                 value = value.strip()

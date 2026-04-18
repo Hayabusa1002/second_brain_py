@@ -24,7 +24,7 @@ class AccountController:
 
     def get_balance(self, account_id: UUID):
         account = self.get_account(account_id)
-        balance = self.balance_service.get_account_balance(account_id)
+        balance = self.balance_service.calculate_balance(account.transactions)
         return {"account_id": str(account.id), "balance": balance}
 
     # ---------- Writes ----------
