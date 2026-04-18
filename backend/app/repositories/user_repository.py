@@ -59,7 +59,7 @@ class UserRepository:
         user = User(
             name=data.name.strip(),
             email=data.email.strip().lower(),
-            provider=data.provider.strip(),
+            oauth_provider=data.provider.strip(),
             oauth_id=data.oauth_id.strip(),
             created_by=user_id,
             updated_by=user_id,
@@ -83,6 +83,18 @@ class UserRepository:
 
             setattr(user, field, value)
 
+        user.updated_by = user_id
+
+        self.db.commit()
+        self.db.refresh(user)
+        return self.get_by_id(user.id)
+    
+    def update_password(self, user_id: UUID, hashed_password: str) -> Optional[User]:
+        user = self.get_by_id(user_id)
+        if not user:
+            return None
+
+        user.password = hashed_password
         user.updated_by = user_id
 
         self.db.commit()
