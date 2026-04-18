@@ -42,16 +42,21 @@ class UserService:
         return user
 
     def get_user_by_email(self, email: str):
+        user = self.repository.get_by_email(email)
+        if not user:
+            raise UserNotFoundError()
+        return user
+    
+    def get_email_not_in_use(self, email: str) -> None:
         existing = self.repository.get_by_email(email)
         if existing:
             raise DuplicateUserEmailError(email)
-        return existing
 
     # ---------- Writes ----------
 
     def create_user(self, data: UserCreate, user_id: UUID):
         normalized_email = data.email.strip().lower()
-        self.get_user_by_email(normalized_email)
+        self.get_email_not_in_use(normalized_email)
 
         create_data = UserCreate(
             name=data.name.strip(),
@@ -67,7 +72,7 @@ class UserService:
 
     def create_oauth_user(self, data: UserOAuthCreate, user_id: UUID):
         normalized_email = data.email.strip().lower()
-        self.get_user_by_email(normalized_email)
+        self.get_email_not_in_use(normalized_email)
 
         oauth_data = UserOAuthCreate(
             name=data.name.strip(),
@@ -86,7 +91,7 @@ class UserService:
         normalized_email = None
         if data.email is not None:
             normalized_email = data.email.strip().lower()
-            self.get_user_by_email(normalized_email)
+            self.get_email_not_in_use(normalized_email)
 
         update_data = UserUpdate(
             name=data.name.strip() if data.name is not None else None,
