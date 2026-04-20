@@ -29,11 +29,11 @@ class ItemService:
         self,
         repository: ItemRepository,
         subcategory_repository: SubcategoryRepository,
-        item_import_service: ItemImportService,
+        import_service: ItemImportService | None = None,
     ):
         self.repository = repository
         self.subcategory_repository = subcategory_repository
-        self.item_import_service = item_import_service
+        import_service = import_service
 
     # ---------- Reads ----------
 
@@ -86,4 +86,4 @@ class ItemService:
     # ---------- Bulk import ----------
 
     async def import_items(self, file: UploadFile, user_id: UUID) -> ImportResult:
-        return await self.item_import_service.import_file(file=file, user_id=user_id)
+        return await self.import_service.import_file(file=file, user_id=user_id)

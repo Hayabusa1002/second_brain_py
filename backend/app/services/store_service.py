@@ -28,10 +28,10 @@ class StoreService:
     def __init__(
         self,
         repository: StoreRepository,
-        store_import_service: StoreImportService,
+        import_service: StoreImportService | None = None,
     ):
         self.repository = repository
-        self.store_import_service = store_import_service
+        self.import_service = import_service
 
     # ---------- Reads ----------
 
@@ -86,4 +86,4 @@ class StoreService:
     # ---------- Bulk import ----------
 
     async def import_stores(self, file: UploadFile, user_id: UUID) -> ImportResult:
-        return await self.store_import_service.import_file(file=file, user_id=user_id)
+        return await self.import_service.import_file(file=file, user_id=user_id)

@@ -17,7 +17,7 @@ class TransactionService:
     def __init__(
         self,
         repository: TransactionRepository,
-        import_service: TransactionImportService,
+        import_service: TransactionImportService | None = None,
     ):
         self.repository = repository
         self.import_service = import_service

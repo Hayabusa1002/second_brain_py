@@ -24,7 +24,7 @@ class CityService:
     def __init__(
         self,
         repository: CityRepository,
-        import_service: CityImportService,
+        import_service: CityImportService | None = None,
     ):
         self.repository = repository
         self.import_service = import_service
@@ -39,7 +39,7 @@ class CityService:
         if not city:
             raise CityNotFoundError()
         return city
-    
+
     def get_city_by_identity(
         self,
         city_name: str,

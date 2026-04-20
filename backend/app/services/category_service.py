@@ -39,7 +39,7 @@ class CategoryService:
     def __init__(
         self,
         repository: CategoryRepository,
-        import_service: CategoryImportService,
+        import_service: CategoryImportService | None = None,
     ):
         self.repository = repository
         self.import_service = import_service
