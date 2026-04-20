@@ -54,11 +54,10 @@ class SubcategoryRepository:
 
     # ---------- Writes ----------
 
-    def create(self, data: SubcategoryCreate, user_id: UUID) -> Subcategory:
+    def create(self, category_id: UUID, data: SubcategoryCreate, user_id: UUID) -> Subcategory:
         subcategory = Subcategory(
             name=data.name.strip(),
-            description=data.description.strip() if getattr(data, "description", None) else None,
-            category_id=data.category_id,
+            category_id=category_id,
             created_by=user_id,
             updated_by=user_id,
         )

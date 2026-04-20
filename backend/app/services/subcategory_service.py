@@ -39,25 +39,25 @@ class SubcategoryService:
         if not category:
             raise CategoryNotFoundError()
         return self.repository.list_by_category(category_id=category_id)
-    
+
     def get_category(self, category_id: UUID):
         category = self.category_repository.get_by_id(category_id)
         if not category:
             raise CategoryNotFoundError()
         return category
-    
+
     def get_subcategory(self, subcategory_id: UUID):
         subcategory = self.repository.get_by_id(subcategory_id)
         if not subcategory:
             raise SubcategoryNotFoundError()
         return subcategory
-    
+
     def get_subcategory_by_name(self, subcategory_name: str):
         existing = self.repository.get_by_name(subcategory_name)
         if existing:
             raise DuplicateSubcategoryError(subcategory_name)
         return existing
-    
+
     def get_subcategory_by_category(self, subcategory_id: UUID, category_id: UUID):
         self.get_category(category_id)
         subcategory = self.repository.get_by_id_and_category(subcategory_id, category_id)
@@ -70,7 +70,7 @@ class SubcategoryService:
     def create_subcategory(self, category_id: UUID, data: SubcategoryCreate, user_id: UUID):
         self.get_category(category_id)
         self.get_subcategory_by_name(data.name)
-        return self.repository.create(data=data, user_id=user_id)
+        return self.repository.create(category_id=category_id, data=data, user_id=user_id)
 
     def update_subcategory(self, category_id: UUID, subcategory_id: UUID, data: SubcategoryUpdate, user_id: UUID):
         self.get_subcategory_by_category(subcategory_id, category_id)
