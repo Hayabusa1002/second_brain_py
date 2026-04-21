@@ -24,7 +24,10 @@ from app.services.city_service import (
 from app.services.helpers.import_service import UnsupportedImportFormatError
 
 
-router = APIRouter(prefix="/cities")
+router = APIRouter(
+    prefix="/cities",
+    dependencies=[Depends(get_current_user)],
+)
 
 
 def get_controller(db: Session = Depends(get_db)) -> CityController:

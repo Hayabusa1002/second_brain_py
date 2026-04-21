@@ -22,7 +22,10 @@ from app.services.helpers.balance_service import BalanceService
 
 
 
-router = APIRouter(prefix="/accounts")
+router = APIRouter(
+    prefix="/accounts",
+    dependencies=[Depends(get_current_user)],
+)
 
 
 

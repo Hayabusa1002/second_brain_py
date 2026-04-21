@@ -18,7 +18,11 @@ from app.services.item_service import (
 )
 
 
-router = APIRouter(prefix="/items", tags=["items"])
+router = APIRouter(
+    prefix="/items", 
+    tags=["items"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 def get_controller(db: Session = Depends(get_db)) -> ItemController:

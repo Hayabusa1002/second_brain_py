@@ -25,7 +25,10 @@ from app.services.category_service import (
 )
 
 
-router = APIRouter(prefix="/categories")
+router = APIRouter(
+    prefix="/categories",
+    dependencies=[Depends(get_current_user)],
+)
 
 
 def get_controller(db: Session = Depends(get_db)) -> CategoryController:

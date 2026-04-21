@@ -30,7 +30,10 @@ from app.services.store_service import (
 )
 
 
-router = APIRouter(prefix="/stores", tags=["stores"])
+router = APIRouter(
+    prefix="/stores", tags=["stores"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 def get_controller(db: Session = Depends(get_db)) -> StoreController:
