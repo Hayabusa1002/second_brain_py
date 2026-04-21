@@ -71,10 +71,17 @@ class TransactionRepository:
     def create(self, data: TransactionCreate, user_id: UUID) -> Transaction:
         transaction = Transaction(
             account_id=data.account_id,
+            category_id=data.category_id,
+            subcategory_id=data.subcategory_id,
+            store_id=data.store_id,
+            city_id=data.city_id,
+            paid_by=data.paid_by,
+            paid_to=data.paid_to,
+            payment_method=data.payment_method,
             type=data.type,
             amount=data.amount,
             description=data.description.strip() if data.description else None,
-            transaction_date=data.transaction_date,
+            date=data.date,
             created_by=user_id,
             updated_by=user_id,
         )
@@ -85,9 +92,9 @@ class TransactionRepository:
 
         if hasattr(data, "item_ids") and data.item_ids is not None:
             transaction.items = data.item_ids
+            self.db.commit()
+            self.db.refresh(transaction)
 
-        self.db.commit()
-        self.db.refresh(transaction)
         return self.get_by_id(transaction.id)
 
     def update(self, transaction_id: UUID, data: TransactionUpdate, user_id: UUID) -> Optional[Transaction]:
@@ -105,8 +112,8 @@ class TransactionRepository:
 
             if field == "description" and value == "":
                 value = None
-
-            setattr(transaction, field, value)
+            else:
+                setattr(transaction, field, value)
 
         if item_ids is not None:
             transaction.items = item_ids
