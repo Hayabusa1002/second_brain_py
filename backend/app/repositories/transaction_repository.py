@@ -1,9 +1,10 @@
+from datetime import date
 from typing import Optional
 from uuid import UUID
 
 from sqlalchemy.orm import Session, joinedload
 
-from app.models.transaction import Transaction
+from app.models.transaction import Transaction, TransactionType
 from app.schemas.transaction import TransactionCreate, TransactionUpdate
 
 
@@ -13,31 +14,69 @@ class TransactionRepository:
 
     # ---------- Reads ----------
 
-    def list(self, page: int = 1, page_size: int = 20) -> list[Transaction]:
+    def list(
+        self,
+        page: int = 1,
+        page_size: int = 20,
+        type: str | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+    ) -> list[Transaction]:
         offset = (page - 1) * page_size
 
-        return (
+        query = (
             self.db.query(Transaction)
             .options(
                 joinedload(Transaction.account),
                 joinedload(Transaction.category),
             )
+        )
+
+        query = self._apply_filters(
+            query=query,
+            type=type,
+            date_from=date_from,
+            date_to=date_to,
+        )
+
+        return (
+            query
             .order_by(Transaction.created_at.desc())
             .offset(offset)
             .limit(page_size)
             .all()
         )
 
-    def list_by_account(self, account_id: UUID, page: int = 1, page_size: int = 20) -> list[Transaction]:
+    def list_by_account(
+        self,
+        account_id: UUID,
+        page: int = 1,
+        page_size: int = 20,
+        type: str | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+    ) -> list[Transaction]:
         offset = (page - 1) * page_size
 
-        return (
+        query = (
             self.db.query(Transaction)
             .options(
                 joinedload(Transaction.account),
                 joinedload(Transaction.items),
+                joinedload(Transaction.category),
             )
             .filter(Transaction.account_id == account_id)
+        )
+
+        query = self._apply_filters(
+            query=query,
+            type=type,
+            date_from=date_from,
+            date_to=date_to,
+        )
+
+        return (
+            query
             .order_by(Transaction.created_at.desc())
             .offset(offset)
             .limit(page_size)
@@ -55,16 +94,43 @@ class TransactionRepository:
             .first()
         )
 
-    def count(self) -> int:
-        return self.db.query(Transaction).count()
+    def count(
+        self,
+        type: str | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+    ) -> int:
+        query = self.db.query(Transaction)
 
-    def count_by_account(self, account_id: UUID) -> int:
-        return (
-            self.db.query(Transaction)
-            .filter(Transaction.account_id == account_id)
-            .count()
+        query = self._apply_filters(
+            query=query,
+            type=type,
+            date_from=date_from,
+            date_to=date_to,
         )
 
+        return query.count()
+
+    def count_by_account(
+        self,
+        account_id: UUID,
+        type: str | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+    ) -> int:
+        query = (
+            self.db.query(Transaction)
+            .filter(Transaction.account_id == account_id)
+        )
+
+        query = self._apply_filters(
+            query=query,
+            type=type,
+            date_from=date_from,
+            date_to=date_to,
+        )
+
+        return query.count()
 
     # ---------- Writes ----------
 
@@ -112,8 +178,8 @@ class TransactionRepository:
 
             if field == "description" and value == "":
                 value = None
-            else:
-                setattr(transaction, field, value)
+
+            setattr(transaction, field, value)
 
         if item_ids is not None:
             transaction.items = item_ids
@@ -132,3 +198,24 @@ class TransactionRepository:
         self.db.delete(transaction)
         self.db.commit()
         return True
+
+    # ---------- Helpers ----------
+
+    def _apply_filters(
+        self,
+        query,
+        type: str | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+    ):
+        if type is not None:
+            normalized_type = type.strip().lower()
+            query = query.filter(Transaction.type == TransactionType(normalized_type))
+
+        if date_from is not None:
+            query = query.filter(Transaction.date >= date_from)
+
+        if date_to is not None:
+            query = query.filter(Transaction.date <= date_to)
+
+        return query

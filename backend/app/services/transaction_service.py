@@ -1,3 +1,4 @@
+from datetime import date
 from uuid import UUID
 
 from fastapi import UploadFile
@@ -24,18 +25,44 @@ class TransactionService:
 
     # ---------- Reads ----------
 
-    def list_transactions(self, page: int = 1, page_size: int = 20, account_id: UUID | None = None):
+    def list_transactions(
+        self,
+        page: int = 1,
+        page_size: int = 20,
+        account_id: UUID | None = None,
+        type: str | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+    ):
         if account_id is not None:
             items = self.repository.list_by_account(
                 account_id=account_id,
                 page=page,
                 page_size=page_size,
+                type=type,
+                date_from=date_from,
+                date_to=date_to,
             )
-            total = self.repository.count_by_account(account_id)
+            total = self.repository.count_by_account(
+                account_id=account_id,
+                type=type,
+                date_from=date_from,
+                date_to=date_to,
+            )
             return items, total
 
-        items = self.repository.list(page=page, page_size=page_size)
-        total = self.repository.count()
+        items = self.repository.list(
+            page=page,
+            page_size=page_size,
+            type=type,
+            date_from=date_from,
+            date_to=date_to,
+        )
+        total = self.repository.count(
+            type=type,
+            date_from=date_from,
+            date_to=date_to,
+        )
         return items, total
 
     def get_transaction(self, transaction_id: UUID):

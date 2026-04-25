@@ -1,4 +1,4 @@
-from typing import Tuple
+from datetime import date
 from uuid import UUID
 
 from fastapi import UploadFile
@@ -19,11 +19,17 @@ class TransactionController:
         page: int = 1,
         page_size: int = 20,
         account_id: UUID | None = None,
-    ) -> Tuple[list, int]:
+        type: str | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+    ):
         return self.service.list_transactions(
             page=page,
             page_size=page_size,
             account_id=account_id,
+            type=type,
+            date_from=date_from,
+            date_to=date_to,
         )
 
     def get_transaction(self, transaction_id: UUID):
@@ -34,12 +40,7 @@ class TransactionController:
     def create_transaction(self, data: TransactionCreate, user_id: UUID):
         return self.service.create_transaction(data=data, user_id=user_id)
 
-    def update_transaction(
-        self,
-        transaction_id: UUID,
-        data: TransactionUpdate,
-        user_id: UUID,
-    ):
+    def update_transaction(self, transaction_id: UUID, data: TransactionUpdate, user_id: UUID):
         return self.service.update_transaction(
             transaction_id=transaction_id,
             data=data,

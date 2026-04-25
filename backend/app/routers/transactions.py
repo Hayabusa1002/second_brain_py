@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Optional
 from uuid import UUID
 
@@ -23,7 +24,6 @@ from app.services.transaction_service import (
     TransactionService,
 )
 
-
 router = APIRouter(
     prefix="/transactions",
     tags=["transactions"],
@@ -33,7 +33,7 @@ router = APIRouter(
 
 def get_controller(db: Session = Depends(get_db)) -> TransactionController:
     repository = TransactionRepository(db)
-    service = TransactionService(repository)
+    service = TransactionService(repository=repository)
     return TransactionController(service)
 
 
@@ -43,7 +43,7 @@ def get_controller(db: Session = Depends(get_db)) -> TransactionController:
 def download_template():
     return build_template_download(
         content=TEMPLATE_CSV,
-        filename="transactions_template.csv",
+        filename="import_template.csv",  # <-- lo que espera el test
         media_type="text/csv",
     )
 
@@ -56,6 +56,14 @@ async def import_transactions(
     controller: TransactionController = Depends(get_controller),
     user=Depends(get_current_user),
 ):
+    filename = (file.filename or "").lower().strip()
+
+    if not (filename.endswith(".csv") or filename.endswith(".xlsx")):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unsupported format. Use .csv or .xlsx",
+        )
+
     try:
         return await controller.import_transactions(file=file, current_user=user)
     except UnsupportedImportFormatError as e:
@@ -71,12 +79,18 @@ def list_transactions(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     account_id: Optional[UUID] = Query(default=None),
+    type: Optional[str] = Query(default=None),
+    date_from: Optional[date] = Query(default=None),
+    date_to: Optional[date] = Query(default=None),
     controller: TransactionController = Depends(get_controller),
 ):
     items, total = controller.list_transactions(
         page=page,
         page_size=page_size,
         account_id=account_id,
+        type=type,
+        date_from=date_from,
+        date_to=date_to,
     )
     return TransactionListResponse(
         items=items,
@@ -116,7 +130,11 @@ def update_transaction(
     user=Depends(get_current_user),
 ):
     try:
-        return controller.update_transaction(transaction_id=transaction_id, data=data, user_id=user.id)
+        return controller.update_transaction(
+            transaction_id=transaction_id,
+            data=data,
+            user_id=user.id,
+        )
     except TransactionNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
