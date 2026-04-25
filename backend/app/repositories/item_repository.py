@@ -42,7 +42,7 @@ class ItemRepository:
     def create(self, data: ItemCreate, user_id: UUID) -> Item:
         item = Item(
             name=data.name.strip(),
-            description=data.description.strip() if data.description else None,
+            notes=data.notes.strip() if data.notes else None,
             subcategory_id=data.subcategory_id,
             created_by=user_id,
             updated_by=user_id,
@@ -62,7 +62,7 @@ class ItemRepository:
             if isinstance(value, str):
                 value = value.strip()
 
-            if field == "description" and value == "":
+            if field == "notes" and value == "":
                 value = None
 
             setattr(item, field, value)

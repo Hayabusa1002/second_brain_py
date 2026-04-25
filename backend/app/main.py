@@ -17,6 +17,7 @@ from app.routers import (
     auth,
     categories,
     cities,
+    items,
     stores,
     subcategories,
     transactions,
@@ -78,6 +79,7 @@ def register_routers(app: FastAPI) -> None:
         subcategories.router,
         subcategories.base_router,
         cities.router,
+        items.router,
     ]
 
     for router in api_routers:

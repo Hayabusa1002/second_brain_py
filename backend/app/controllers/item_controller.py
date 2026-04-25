@@ -30,8 +30,8 @@ class ItemController:
     def update_item(self, item_id: UUID, data: ItemUpdate, user_id: UUID):
         return self.service.update_item(item_id=item_id, data=data, user_id=user_id)
 
-    def delete_item(self, item_id: UUID) -> bool:
-        return self.service.delete_item(item_id)
+    def delete_item(self, item_id: UUID, user_id: UUID) -> bool:
+        return self.service.delete_item(item_id=item_id, user_id=user_id)
 
     # ---------- Bulk import ----------
 

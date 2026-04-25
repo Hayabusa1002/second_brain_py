@@ -9,6 +9,7 @@ from app.db.deps import get_current_user, get_db
 from app.repositories.item_repository import ItemRepository
 from app.repositories.subcategory_repository import SubcategoryRepository
 from app.schemas.item import ItemCreate, ItemResponse, ItemUpdate
+from app.services.helpers.import_service import BulkImportService
 from app.services.imports.item_import import ItemImportService
 from app.services.item_service import (
     DuplicateItemError,
@@ -19,23 +20,27 @@ from app.services.item_service import (
 
 
 router = APIRouter(
-    prefix="/items", 
+    prefix="/items",
     tags=["items"],
     dependencies=[Depends(get_current_user)],
 )
 
 
 def get_controller(db: Session = Depends(get_db)) -> ItemController:
-    item_repository = ItemRepository(db)
+    repository = ItemRepository(db)
     subcategory_repository = SubcategoryRepository(db)
-    item_import_service = ItemImportService(
-        item_repository=item_repository,
+    bulk_import_service = BulkImportService()
+
+    import_service = ItemImportService(
+        repository=repository,
         subcategory_repository=subcategory_repository,
+        bulk_import_service=bulk_import_service,
     )
+
     service = ItemService(
-        repository=item_repository,
+        repository=repository,
         subcategory_repository=subcategory_repository,
-        item_import_service=item_import_service,
+        import_service=import_service,
     )
     return ItemController(service)
 
