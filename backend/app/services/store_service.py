@@ -1,210 +1,89 @@
-import csv
-import io
-import json
-from typing import List
 from uuid import UUID
 
-import pandas as pd
-import yaml
 from fastapi import UploadFile
 
+from app.models.store import StoreType
 from app.repositories.store_repository import StoreRepository
-from app.schemas.store import (
-    StoreCreate,
-    StoreUpdate,
-    StoreSubcategoryLinkResponse,
-)
-from app.schemas.bulk_import import ImportResult, ImportError, ImportLogItem
+from app.schemas.store import StoreCreate, StoreUpdate, StoreSubcategoryAssign
+from app.schemas.bulk_import import ImportResult
+from app.services.imports.store_import import StoreImportService
+
+
+class StoreNotFoundError(Exception):
+    def __init__(self, message: str = "Store not found"):
+        super().__init__(message)
+
+
+class DuplicateStoreError(Exception):
+    def __init__(self, name: str, store_type: str):
+        super().__init__(f"Store '{name}' ({store_type}) already exists")
+
+
+class StoreSubcategoriesNotFoundError(Exception):
+    def __init__(self, message: str = "One or more subcategories were not found"):
+        super().__init__(message)
 
 
 class StoreService:
-    VALID_EXTENSIONS = (".csv", ".xlsx", ".xls", ".json", ".yaml", ".yml")
-
-    def __init__(self, repository: StoreRepository):
+    def __init__(
+        self,
+        repository: StoreRepository,
+        import_service: StoreImportService | None = None,
+    ):
         self.repository = repository
+        self.import_service = import_service
+
+    # ---------- Reads ----------
 
     def list_stores(self):
         return self.repository.list()
 
+    def list_store_subcategories(self, store_id: UUID):
+        store = self.repository.get_by_id(store_id)
+        if not store:
+            raise StoreNotFoundError()
+        return self.repository.list_subcategories(store_id)
+
     def get_store(self, store_id: UUID):
-        return self.repository.get_by_id(store_id)
-
-    def create_store(self, data: StoreCreate):
-        existing = self.repository.get_by_name(data.name)
+        store = self.repository.get_by_id(store_id)
+        if not store:
+            raise StoreNotFoundError()
+        return store
+    
+    def get_store_by_identity(self, store_name: str, store_tpye: StoreType):
+        existing = self.repository.get_by_name_and_type(store_name, store_tpye)
         if existing:
-            return existing
-        return self.repository.add(data)
+            raise DuplicateStoreError(store_name, store_tpye)
+        return existing
 
-    def update_store(self, store_id: UUID, data: StoreUpdate):
-        return self.repository.update(store_id, data)
+    # ---------- Writes ----------
 
-    def delete_store(self, store_id: UUID):
+    def create_store(self, data: StoreCreate, user_id: UUID):
+        self.get_store_by_identity(data.name, data.type)
+        return self.repository.create(data=data, user_id=user_id)
+
+    def update_store(self, store_id: UUID, data: StoreUpdate, user_id: UUID):
+        store = self.get_store(store_id)
+        if data.name is not None:
+            store_type = data.type or store.type
+            self.get_store_by_identity(data.name, store_type)
+        return self.repository.update(store_id=store_id, data=data, user_id=user_id)
+
+    def delete_store(self, store_id: UUID) -> bool:
+        self.get_store(store_id)
         return self.repository.delete(store_id)
 
-    def list_store_subcategories(self, store_id: UUID) -> List[StoreSubcategoryLinkResponse]:
-        store = self.repository.get_by_id(store_id)
-        if not store:
-            raise ValueError("Store not found")
+    # ---------- Subcategories assignation ----------
 
-        links = self.repository.list_store_subcategories(store_id)
-        return [
-            StoreSubcategoryLinkResponse(
-                id=link.id,
-                store_id=link.store_id,
-                subcategory_id=link.subcategory_id,
-                created_at=link.created_at,
-                subcategory=link.subcategory,
-            )
-            for link in links
-        ]
+    def replace_store_subcategories(self, store_id: UUID, data: StoreSubcategoryAssign, user_id: UUID):
+        self.get_store(store_id)
+        unique_ids = list(dict.fromkeys(data.subcategory_ids))
+        existing_subcategories = self.repository.get_subcategories_by_ids(unique_ids)
+        if len(existing_subcategories) != len(unique_ids):
+            raise StoreSubcategoriesNotFoundError()
+        return self.repository.replace_subcategories(store_id=store_id, subcategory_ids=data.subcategory_ids, user_id=user_id)
 
-    def replace_store_subcategories(
-        self,
-        store_id: UUID,
-        subcategory_ids: List[UUID],
-    ) -> List[StoreSubcategoryLinkResponse]:
-        store = self.repository.get_by_id(store_id)
-        if not store:
-            raise ValueError("Store not found")
+    # ---------- Bulk import ----------
 
-        unique_ids = list(dict.fromkeys(subcategory_ids))
-        subcategories = self.repository.get_subcategories_by_ids(unique_ids)
-
-        if len(subcategories) != len(unique_ids):
-            raise ValueError("One or more subcategories were not found")
-
-        links = self.repository.replace_store_subcategories(store_id, unique_ids)
-
-        return [
-            StoreSubcategoryLinkResponse(
-                id=link.id,
-                store_id=link.store_id,
-                subcategory_id=link.subcategory_id,
-                created_at=link.created_at,
-                subcategory=link.subcategory,
-            )
-            for link in links
-        ]
-
-    async def import_stores(self, file: UploadFile, current_user=None) -> ImportResult:
-        result = ImportResult()
-        filename = (file.filename or "").lower()
-
-        rows = await self._parse_file(file, filename)
-        result.total = len(rows)
-
-        for index, raw_row in enumerate(rows, start=1):
-            result.processed += 1
-
-            try:
-                normalized = self._normalize_row(raw_row)
-                store_data = StoreCreate(**normalized)
-
-                existing = self.repository.get_by_name(store_data.name)
-                if existing:
-                    result.skipped += 1
-                    result.logs.append(
-                        ImportLogItem(
-                            row=index,
-                            level="warning",
-                            entity="file",
-                            name=store_data.name,
-                            message="Store already exists, skipped.",
-                        )
-                    )
-                    result.warnings += 1
-                    continue
-
-                self.repository.add(store_data)
-                result.imported += 1
-                result.logs.append(
-                    ImportLogItem(
-                        row=index,
-                        level="info",
-                        entity="file",
-                        name=store_data.name,
-                        message="Store imported successfully.",
-                    )
-                )
-
-            except Exception as e:
-                result.errors_count += 1
-                result.errors.append(
-                    ImportError(
-                        row=index,
-                        error=str(e),
-                    )
-                )
-                result.logs.append(
-                    ImportLogItem(
-                        row=index,
-                        level="error",
-                        entity="file",
-                        name=self._safe_name(raw_row),
-                        message=str(e),
-                    )
-                )
-
-        return result
-
-    async def _parse_file(self, file: UploadFile, filename: str) -> list[dict]:
-        content = await file.read()
-
-        if filename.endswith(".csv"):
-            text = content.decode("utf-8-sig")
-            reader = csv.DictReader(io.StringIO(text))
-            return [dict(row) for row in reader]
-
-        if filename.endswith(".json"):
-            data = json.loads(content.decode("utf-8"))
-            if not isinstance(data, list):
-                raise ValueError("JSON file must contain a list of stores.")
-            return data
-
-        if filename.endswith(".yaml") or filename.endswith(".yml"):
-            data = yaml.safe_load(content.decode("utf-8"))
-            if not isinstance(data, list):
-                raise ValueError("YAML file must contain a list of stores.")
-            return data
-
-        if filename.endswith(".xlsx") or filename.endswith(".xls"):
-            df = pd.read_excel(io.BytesIO(content))
-            df = df.where(pd.notnull(df), None)
-            return df.to_dict(orient="records")
-
-        raise ValueError("Unsupported format. Use CSV, XLSX, JSON or YAML.")
-
-    def _normalize_row(self, row: dict) -> dict:
-        name = self._clean_value(row.get("name"))
-        store_type = self._clean_value(row.get("type"))
-        address = self._clean_value(row.get("address"))
-        website = self._clean_value(row.get("website"))
-
-        if not name:
-            raise ValueError("Field 'name' is required.")
-
-        if not store_type:
-            raise ValueError("Field 'type' is required.")
-
-        return {
-            "name": name,
-            "type": store_type,
-            "address": address,
-            "website": website,
-        }
-
-    def _clean_value(self, value):
-        if value is None:
-            return None
-        if isinstance(value, str):
-            value = value.strip()
-            return value or None
-        return value
-
-    def _safe_name(self, row: dict) -> str | None:
-        if not isinstance(row, dict):
-            return None
-        value = row.get("name")
-        if value is None:
-            return None
-        return str(value).strip() or None
+    async def import_stores(self, file: UploadFile, user_id: UUID) -> ImportResult:
+        return await self.import_service.import_file(file=file, user_id=user_id)

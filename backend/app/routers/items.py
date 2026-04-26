@@ -1,56 +1,126 @@
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.db.deps import get_db, get_current_user
-from app.schemas.item import ItemCreate, ItemUpdate, ItemResponse
-from app.services.item_service import ItemService
+from app.controllers.item_controller import ItemController
+from app.db.deps import get_current_user, get_db
+from app.repositories.item_repository import ItemRepository
+from app.repositories.subcategory_repository import SubcategoryRepository
+from app.schemas.item import ItemCreate, ItemResponse, ItemUpdate
+from app.services.helpers.import_service import BulkImportService
+from app.services.imports.item_import import ItemImportService
+from app.services.item_service import (
+    DuplicateItemError,
+    ItemNotFoundError,
+    ItemService,
+    ItemSubcategoryNotFoundError,
+)
 
 
 router = APIRouter(
     prefix="/items",
     tags=["items"],
+    dependencies=[Depends(get_current_user)],
 )
 
 
-def get_service(db: Session = Depends(get_db)) -> ItemService:
-    return ItemService(db)
+def get_controller(db: Session = Depends(get_db)) -> ItemController:
+    repository = ItemRepository(db)
+    subcategory_repository = SubcategoryRepository(db)
+    bulk_import_service = BulkImportService()
+
+    import_service = ItemImportService(
+        repository=repository,
+        subcategory_repository=subcategory_repository,
+        bulk_import_service=bulk_import_service,
+    )
+
+    service = ItemService(
+        repository=repository,
+        subcategory_repository=subcategory_repository,
+        import_service=import_service,
+    )
+    return ItemController(service)
 
 
-@router.get("/by-transaction/{transaction_id}", response_model=List[ItemResponse])
-def list_items_by_transaction(
-    transaction_id: UUID,
-    service: ItemService = Depends(get_service),
-    current_user=Depends(get_current_user),
+# ---------- Reads ----------
+
+@router.get("", response_model=List[ItemResponse])
+def list_items(
+    controller: ItemController = Depends(get_controller),
 ):
-    items = service.list_items(transaction_id, current_user.id)
-    if items is None:
-        raise HTTPException(status_code=404, detail="Transaction not found")
-    return items
+    return controller.list_items()
 
 
-@router.post("/transactions/{transaction_id}", response_model=ItemResponse, status_code=201)
-def create_item_for_transaction(
-    transaction_id: UUID,
+@router.get("/{item_id}", response_model=ItemResponse)
+def get_item(
+    item_id: UUID,
+    controller: ItemController = Depends(get_controller),
+):
+    try:
+        return controller.get_item(item_id)
+    except ItemNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.get("/{item_id}/subcategories")
+def list_item_subcategories(
+    item_id: UUID,
+    controller: ItemController = Depends(get_controller),
+):
+    try:
+        return controller.list_item_subcategories(item_id)
+    except ItemNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+# ---------- Writes ----------
+
+@router.post("", response_model=ItemResponse, status_code=status.HTTP_201_CREATED)
+def create_item(
     data: ItemCreate,
-    service: ItemService = Depends(get_service),
-    current_user=Depends(get_current_user),
+    controller: ItemController = Depends(get_controller),
+    user=Depends(get_current_user),
 ):
-    item = service.create_item(transaction_id, data, current_user.id)
-    if item is None:
-        raise HTTPException(status_code=404, detail="Transaction not found")
-    return item
+    try:
+        return controller.create_item(data=data, user_id=user.id)
+    except DuplicateItemError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except ItemSubcategoryNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
 @router.patch("/{item_id}", response_model=ItemResponse)
 def update_item(
     item_id: UUID,
     data: ItemUpdate,
-    service: ItemService = Depends(get_service),
-    current_user=Depends(get_current_user),
+    controller: ItemController = Depends(get_controller),
+    user=Depends(get_current_user),
 ):
-    # Aquí necesitarías que ItemService resuelva el transaction_id internamente
-    # o expongas un método get/update por item_id.
-    raise HTTPException(status_code=501, detail="Not implemented")
+    try:
+        return controller.update_item(
+            item_id=item_id,
+            data=data,
+            user_id=user.id,
+        )
+    except ItemNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except DuplicateItemError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except ItemSubcategoryNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_item(
+    item_id: UUID,
+    controller: ItemController = Depends(get_controller),
+    user=Depends(get_current_user),
+):
+    try:
+        controller.delete_item(item_id=item_id, user_id=user.id)
+        return
+    except ItemNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

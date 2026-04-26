@@ -1,24 +1,26 @@
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.subcategory import Subcategory
+from app.schemas.subcategory import SubcategoryCreate, SubcategoryUpdate
 
 
 class SubcategoryRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def list_all(self) -> List[Subcategory]:
+    # ---------- Reads ----------
+
+    def list(self) -> list[Subcategory]:
         return (
             self.db.query(Subcategory)
             .order_by(Subcategory.name.asc())
             .all()
         )
-
-    def list(self, category_id: UUID) -> List[Subcategory]:
+    
+    def list_by_category(self, category_id: UUID) -> list[Subcategory]:
         return (
             self.db.query(Subcategory)
             .filter(Subcategory.category_id == category_id)
@@ -33,6 +35,13 @@ class SubcategoryRepository:
             .first()
         )
 
+    def get_by_name(self, name: str) -> Optional[Subcategory]:
+        return (
+            self.db.query(Subcategory)
+            .filter(Subcategory.name.ilike(name.strip()))
+            .first()
+        )
+
     def get_by_id_and_category(self, subcategory_id: UUID, category_id: UUID) -> Optional[Subcategory]:
         return (
             self.db.query(Subcategory)
@@ -43,39 +52,35 @@ class SubcategoryRepository:
             .first()
         )
 
-    def get_by_name_and_category(self, name: str, category_id: UUID) -> Optional[Subcategory]:
-        normalized_name = name.strip()
-        return (
-            self.db.query(Subcategory)
-            .filter(
-                Subcategory.name.ilike(normalized_name),
-                Subcategory.category_id == category_id,
-            )
-            .first()
-        )
+    # ---------- Writes ----------
 
-    def add(self, category_id: UUID, data) -> Subcategory:
+    def create(self, category_id: UUID, data: SubcategoryCreate, user_id: UUID) -> Subcategory:
         subcategory = Subcategory(
             name=data.name.strip(),
             category_id=category_id,
+            created_by=user_id,
+            updated_by=user_id,
         )
         self.db.add(subcategory)
         self.db.commit()
         self.db.refresh(subcategory)
-        return subcategory
+        return self.get_by_id(subcategory.id)
 
-    def update(self, subcategory_id: UUID, data) -> Optional[Subcategory]:
+    def update(self, subcategory_id: UUID, data: SubcategoryUpdate, user_id: UUID) -> Optional[Subcategory]:
         subcategory = self.get_by_id(subcategory_id)
         if not subcategory:
             return None
 
-        payload = data.model_dump(exclude_unset=True)
-        payload.pop("category_id", None)
-
-        for field, value in payload.items():
+        for field, value in data.model_dump(exclude_unset=True).items():
             if isinstance(value, str):
                 value = value.strip()
+
+            if field == "description" and value == "":
+                value = None
+
             setattr(subcategory, field, value)
+
+        subcategory.updated_by = user_id
 
         self.db.commit()
         self.db.refresh(subcategory)
@@ -86,13 +91,6 @@ class SubcategoryRepository:
         if not subcategory:
             return False
 
-        if subcategory.transactions:
-            raise ValueError("Subcategory has transactions. Remove them first.")
-
-        try:
-            self.db.delete(subcategory)
-            self.db.commit()
-            return True
-        except IntegrityError:
-            self.db.rollback()
-            raise ValueError("Subcategory cannot be deleted because it is in use.")
+        self.db.delete(subcategory)
+        self.db.commit()
+        return True

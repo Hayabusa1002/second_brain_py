@@ -1,5 +1,4 @@
 def test_export_json_returns_200_and_json_list(auth_client_with_account):
-    # Create one transaction and export it as JSON
     client, account_id, category_id = auth_client_with_account
 
     r_create = client.post(
@@ -27,7 +26,6 @@ def test_export_json_returns_200_and_json_list(auth_client_with_account):
 
 
 def test_export_json_with_type_filter_returns_filtered_results(auth_client_with_account):
-    # Create one expense transaction and filter export by type
     client, account_id, category_id = auth_client_with_account
 
     r_create = client.post(
@@ -52,7 +50,6 @@ def test_export_json_with_type_filter_returns_filtered_results(auth_client_with_
 
 
 def test_export_json_with_search_filter_returns_matching_results(auth_client_with_account):
-    # Create one transaction and filter export by description text
     client, account_id, category_id = auth_client_with_account
 
     r_create = client.post(
@@ -78,7 +75,6 @@ def test_export_json_with_search_filter_returns_matching_results(auth_client_wit
 
 
 def test_export_csv_returns_200_and_csv_content(auth_client_with_account):
-    # Export should return CSV content with expected content type and filename
     client, _, _ = auth_client_with_account
 
     r = client.get("/api/export/csv")
@@ -89,7 +85,6 @@ def test_export_csv_returns_200_and_csv_content(auth_client_with_account):
 
 
 def test_export_xlsx_returns_200_and_binary_content(auth_client_with_account):
-    # Export should return a non-empty XLSX file
     client, _, _ = auth_client_with_account
 
     r = client.get("/api/export/xlsx")
@@ -100,7 +95,6 @@ def test_export_xlsx_returns_200_and_binary_content(auth_client_with_account):
 
 
 def test_export_pdf_returns_200_and_pdf_signature(auth_client_with_account):
-    # Export should return a valid PDF file signature
     client, _, _ = auth_client_with_account
 
     r = client.get("/api/export/pdf")
@@ -111,14 +105,12 @@ def test_export_pdf_returns_200_and_pdf_signature(auth_client_with_account):
 
 
 def test_export_endpoints_without_auth_return_401_or_403(client):
-    # Anonymous users should not be able to export data
     for fmt in ["json", "csv", "xlsx", "pdf"]:
         r = client.get(f"/api/export/{fmt}")
         assert r.status_code in (401, 403)
 
 
 def test_export_json_with_date_filter_returns_200(auth_client_with_account):
-    # Export with date filters should return a valid response
     client, account_id, category_id = auth_client_with_account
 
     r_create = client.post(
@@ -143,7 +135,6 @@ def test_export_json_with_date_filter_returns_200(auth_client_with_account):
 
 
 def test_export_json_with_account_filter_returns_matching_results(auth_client_with_account):
-    # Export filtered by account_id should return a valid JSON list
     client, account_id, category_id = auth_client_with_account
 
     r_create = client.post(

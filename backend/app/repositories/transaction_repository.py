@@ -1,151 +1,87 @@
-from typing import List, Optional, Tuple
-from uuid import UUID
 from datetime import date
+from typing import Optional
+from uuid import UUID
 
 from sqlalchemy.orm import Session, joinedload
 
-from app.models.transaction import Transaction, PaymentMethod
+from app.models.transaction import Transaction, TransactionType
+from app.schemas.transaction import TransactionCreate, TransactionUpdate
 
 
 class TransactionRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def _base_query(
+    # ---------- Reads ----------
+
+    def list(
         self,
-        *,
-        user_id: UUID,
-        type: Optional[str] = None,
-        payment_method: Optional[PaymentMethod] = None,
-        category_id: Optional[UUID] = None,
-        subcategory_id: Optional[UUID] = None,
-        account_id: Optional[UUID] = None,
-        store_id: Optional[UUID] = None,
-        city_id: Optional[UUID] = None,
-        paid_by: Optional[UUID] = None,
-        paid_to: Optional[UUID] = None,
-        date_from: Optional[date] = None,
-        date_to: Optional[date] = None,
-        q: Optional[str] = None,
-    ):
+        page: int = 1,
+        page_size: int = 20,
+        type: str | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+    ) -> list[Transaction]:
+        offset = (page - 1) * page_size
+
         query = (
             self.db.query(Transaction)
             .options(
                 joinedload(Transaction.account),
                 joinedload(Transaction.category),
-                joinedload(Transaction.subcategory),
-                joinedload(Transaction.store),
-                joinedload(Transaction.city),
-                joinedload(Transaction.creator),
-                joinedload(Transaction.payer),
-                joinedload(Transaction.payee),
             )
-            .filter(Transaction.created_by == user_id)
         )
 
-        if type:
-            query = query.filter(Transaction.type == type)
-        if payment_method:
-            query = query.filter(Transaction.payment_method == payment_method)
-        if category_id:
-            query = query.filter(Transaction.category_id == category_id)
-        if subcategory_id:
-            query = query.filter(Transaction.subcategory_id == subcategory_id)
-        if account_id:
-            query = query.filter(Transaction.account_id == account_id)
-        if store_id:
-            query = query.filter(Transaction.store_id == store_id)
-        if city_id:
-            query = query.filter(Transaction.city_id == city_id)
-        if paid_by:
-            query = query.filter(Transaction.paid_by == paid_by)
-        if paid_to:
-            query = query.filter(Transaction.paid_to == paid_to)
-        if date_from:
-            query = query.filter(Transaction.date >= date_from)
-        if date_to:
-            query = query.filter(Transaction.date <= date_to)
-        if q:
-            query = query.filter(Transaction.description.ilike(f"%{q}%"))
-
-        return query
-
-    def list(
-        self,
-        user_id: UUID,
-        type: Optional[str] = None,
-        payment_method: Optional[PaymentMethod] = None,
-        category_id: Optional[UUID] = None,
-        subcategory_id: Optional[UUID] = None,
-        account_id: Optional[UUID] = None,
-        store_id: Optional[UUID] = None,
-        city_id: Optional[UUID] = None,
-        paid_by: Optional[UUID] = None,
-        paid_to: Optional[UUID] = None,
-        date_from: Optional[date] = None,
-        date_to: Optional[date] = None,
-        q: Optional[str] = None,
-    ) -> List[Transaction]:
-        query = self._base_query(
-            user_id=user_id,
+        query = self._apply_filters(
+            query=query,
             type=type,
-            payment_method=payment_method,
-            category_id=category_id,
-            subcategory_id=subcategory_id,
-            account_id=account_id,
-            store_id=store_id,
-            city_id=city_id,
-            paid_by=paid_by,
-            paid_to=paid_to,
             date_from=date_from,
             date_to=date_to,
-            q=q,
-        )
-        return query.order_by(Transaction.date.desc(), Transaction.created_at.desc()).all()
-
-    def list_paginated(
-        self,
-        *,
-        user_id: UUID,
-        page: int,
-        limit: int,
-        type: Optional[str] = None,
-        payment_method: Optional[PaymentMethod] = None,
-        category_id: Optional[UUID] = None,
-        subcategory_id: Optional[UUID] = None,
-        account_id: Optional[UUID] = None,
-        store_id: Optional[UUID] = None,
-        city_id: Optional[UUID] = None,
-        paid_by: Optional[UUID] = None,
-        paid_to: Optional[UUID] = None,
-        date_from: Optional[date] = None,
-        date_to: Optional[date] = None,
-        q: Optional[str] = None,
-    ) -> Tuple[List[Transaction], int]:
-        query = self._base_query(
-            user_id=user_id,
-            type=type,
-            payment_method=payment_method,
-            category_id=category_id,
-            subcategory_id=subcategory_id,
-            account_id=account_id,
-            store_id=store_id,
-            city_id=city_id,
-            paid_by=paid_by,
-            paid_to=paid_to,
-            date_from=date_from,
-            date_to=date_to,
-            q=q,
         )
 
-        total = query.count()
-        items = (
-            query.order_by(Transaction.date.desc(), Transaction.created_at.desc())
-            .offset((page - 1) * limit)
-            .limit(limit)
+        return (
+            query
+            .order_by(Transaction.created_at.desc())
+            .offset(offset)
+            .limit(page_size)
             .all()
         )
-        return items, total
+
+    def list_by_account(
+        self,
+        account_id: UUID,
+        page: int = 1,
+        page_size: int = 20,
+        type: str | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+    ) -> list[Transaction]:
+        offset = (page - 1) * page_size
+
+        query = (
+            self.db.query(Transaction)
+            .options(
+                joinedload(Transaction.account),
+                joinedload(Transaction.items),
+                joinedload(Transaction.category),
+            )
+            .filter(Transaction.account_id == account_id)
+        )
+
+        query = self._apply_filters(
+            query=query,
+            type=type,
+            date_from=date_from,
+            date_to=date_to,
+        )
+
+        return (
+            query
+            .order_by(Transaction.created_at.desc())
+            .offset(offset)
+            .limit(page_size)
+            .all()
+        )
 
     def get_by_id(self, transaction_id: UUID) -> Optional[Transaction]:
         return (
@@ -153,49 +89,133 @@ class TransactionRepository:
             .options(
                 joinedload(Transaction.account),
                 joinedload(Transaction.category),
-                joinedload(Transaction.subcategory),
-                joinedload(Transaction.store),
-                joinedload(Transaction.city),
-                joinedload(Transaction.creator),
-                joinedload(Transaction.payer),
-                joinedload(Transaction.payee),
-                joinedload(Transaction.items),
             )
             .filter(Transaction.id == transaction_id)
             .first()
         )
 
-    def get_by_account(self, account_id: UUID) -> List[Transaction]:
-        return (
-            self.db.query(Transaction)
-            .filter(Transaction.account_id == account_id)
-            .order_by(Transaction.date.desc(), Transaction.created_at.desc())
-            .all()
+    def count(
+        self,
+        type: str | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+    ) -> int:
+        query = self.db.query(Transaction)
+
+        query = self._apply_filters(
+            query=query,
+            type=type,
+            date_from=date_from,
+            date_to=date_to,
         )
 
-    def add(self, transaction: Transaction) -> Transaction:
+        return query.count()
+
+    def count_by_account(
+        self,
+        account_id: UUID,
+        type: str | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+    ) -> int:
+        query = (
+            self.db.query(Transaction)
+            .filter(Transaction.account_id == account_id)
+        )
+
+        query = self._apply_filters(
+            query=query,
+            type=type,
+            date_from=date_from,
+            date_to=date_to,
+        )
+
+        return query.count()
+
+    # ---------- Writes ----------
+
+    def create(self, data: TransactionCreate, user_id: UUID) -> Transaction:
+        transaction = Transaction(
+            account_id=data.account_id,
+            category_id=data.category_id,
+            subcategory_id=data.subcategory_id,
+            store_id=data.store_id,
+            city_id=data.city_id,
+            paid_by=data.paid_by,
+            paid_to=data.paid_to,
+            payment_method=data.payment_method,
+            type=data.type,
+            amount=data.amount,
+            description=data.description.strip() if data.description else None,
+            date=data.date,
+            created_by=user_id,
+            updated_by=user_id,
+        )
+
         self.db.add(transaction)
         self.db.commit()
         self.db.refresh(transaction)
-        return transaction
 
-    def update(self, transaction_id: UUID, data) -> Optional[Transaction]:
-        tx = self.get_by_id(transaction_id)
-        if not tx:
+        if hasattr(data, "item_ids") and data.item_ids is not None:
+            transaction.items = data.item_ids
+            self.db.commit()
+            self.db.refresh(transaction)
+
+        return self.get_by_id(transaction.id)
+
+    def update(self, transaction_id: UUID, data: TransactionUpdate, user_id: UUID) -> Optional[Transaction]:
+        transaction = self.get_by_id(transaction_id)
+        if not transaction:
             return None
 
-        for field, value in data.model_dump(exclude_unset=True).items():
-            setattr(tx, field, value)
+        update_data = data.model_dump(exclude_unset=True)
+
+        item_ids = update_data.pop("item_ids", None) if "item_ids" in update_data else None
+
+        for field, value in update_data.items():
+            if isinstance(value, str):
+                value = value.strip()
+
+            if field == "description" and value == "":
+                value = None
+
+            setattr(transaction, field, value)
+
+        if item_ids is not None:
+            transaction.items = item_ids
+
+        transaction.updated_by = user_id
 
         self.db.commit()
-        self.db.refresh(tx)
-        return tx
+        self.db.refresh(transaction)
+        return self.get_by_id(transaction.id)
 
     def delete(self, transaction_id: UUID) -> bool:
-        tx = self.get_by_id(transaction_id)
-        if not tx:
+        transaction = self.get_by_id(transaction_id)
+        if not transaction:
             return False
 
-        self.db.delete(tx)
+        self.db.delete(transaction)
         self.db.commit()
         return True
+
+    # ---------- Helpers ----------
+
+    def _apply_filters(
+        self,
+        query,
+        type: str | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+    ):
+        if type is not None:
+            normalized_type = type.strip().lower()
+            query = query.filter(Transaction.type == TransactionType(normalized_type))
+
+        if date_from is not None:
+            query = query.filter(Transaction.date >= date_from)
+
+        if date_to is not None:
+            query = query.filter(Transaction.date <= date_to)
+
+        return query

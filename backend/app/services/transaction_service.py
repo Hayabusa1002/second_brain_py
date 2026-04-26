@@ -1,122 +1,126 @@
-import uuid
-from typing import Optional, Tuple
-from uuid import UUID
 from datetime import date
+from uuid import UUID
 
-from app.models.transaction import Transaction, TransactionType, PaymentMethod
+from fastapi import UploadFile
+
 from app.repositories.transaction_repository import TransactionRepository
+from app.schemas.bulk_import import ImportResult
+from app.schemas.transaction import TransactionCreate, TransactionUpdate
+from app.services.imports.transaction_import import TransactionImportService
+
+
+class TransactionNotFoundError(Exception):
+    def __init__(self, message: str = "Transaction not found"):
+        super().__init__(message)
 
 
 class TransactionService:
-    def __init__(self, repository: TransactionRepository):
+    def __init__(
+        self,
+        repository: TransactionRepository,
+        import_service: TransactionImportService | None = None,
+    ):
         self.repository = repository
+        self.import_service = import_service
+
+    # ---------- Reads ----------
 
     def list_transactions(
         self,
-        user_id: UUID,
-        type: Optional[TransactionType] = None,
-        payment_method: Optional[PaymentMethod] = None,
-        category_id: Optional[UUID] = None,
-        subcategory_id: Optional[UUID] = None,
-        account_id: Optional[UUID] = None,
-        store_id: Optional[UUID] = None,
-        city_id: Optional[UUID] = None,
-        paid_by: Optional[UUID] = None,
-        paid_to: Optional[UUID] = None,
-        date_from: Optional[date] = None,
-        date_to: Optional[date] = None,
-        q: Optional[str] = None,
-        page: Optional[int] = None,
-        limit: Optional[int] = None,
-    ) -> Tuple[list[Transaction], int]:
-        if page is None or limit is None:
-            items = self.repository.list(
-                user_id=user_id,
-                type=type,
-                payment_method=payment_method,
-                category_id=category_id,
-                subcategory_id=subcategory_id,
+        page: int = 1,
+        page_size: int = 20,
+        account_id: UUID | None = None,
+        type: str | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+    ):
+        if account_id is not None:
+            items = self.repository.list_by_account(
                 account_id=account_id,
-                store_id=store_id,
-                city_id=city_id,
-                paid_by=paid_by,
-                paid_to=paid_to,
+                page=page,
+                page_size=page_size,
+                type=type,
                 date_from=date_from,
                 date_to=date_to,
-                q=q,
             )
-            return items, len(items)
+            total = self.repository.count_by_account(
+                account_id=account_id,
+                type=type,
+                date_from=date_from,
+                date_to=date_to,
+            )
+            return items, total
 
-        return self.repository.list_paginated(
-            user_id=user_id,
+        items = self.repository.list(
             page=page,
-            limit=limit,
+            page_size=page_size,
             type=type,
-            payment_method=payment_method,
-            category_id=category_id,
-            subcategory_id=subcategory_id,
-            account_id=account_id,
-            store_id=store_id,
-            city_id=city_id,
-            paid_by=paid_by,
-            paid_to=paid_to,
             date_from=date_from,
             date_to=date_to,
-            q=q,
         )
-
-    def create_transaction(self, data, created_by_id: UUID) -> Transaction:
-        paid_by = getattr(data, "paid_by", None)
-        paid_to = getattr(data, "paid_to", None) or paid_by
-
-        transaction = Transaction(
-            id=uuid.uuid4(),
-            account_id=data.account_id,
-            store_id=getattr(data, "store_id", None),
-            category_id=data.category_id,
-            subcategory_id=getattr(data, "subcategory_id", None),
-            city_id=getattr(data, "city_id", None),
-            amount=data.amount,
-            type=data.type,
-            payment_method=data.payment_method,
-            description=getattr(data, "description", None),
-            date=data.date,
-            created_by=created_by_id,
-            paid_by=paid_by,
-            paid_to=paid_to,
+        total = self.repository.count(
+            type=type,
+            date_from=date_from,
+            date_to=date_to,
         )
-        return self.repository.add(transaction)
+        return items, total
 
-    def update(self, transaction_id: UUID, data, user_id: UUID) -> Optional[Transaction]:
-        tx = self.get_by_id(transaction_id, user_id)
-        if not tx:
-            return None
+    def get_transaction(self, transaction_id: UUID):
+        transaction = self.repository.get_by_id(transaction_id)
+        if not transaction:
+            raise TransactionNotFoundError()
+        return transaction
 
+    # ---------- Writes ----------
+
+    def create_transaction(self, data: TransactionCreate, user_id: UUID):
+        create_data = self._build_create_data(data)
+        return self.repository.create(data=create_data, user_id=user_id)
+
+    def update_transaction(self, transaction_id: UUID, data: TransactionUpdate, user_id: UUID):
+        self.get_transaction(transaction_id)
         update_data = data.model_dump(exclude_unset=True)
+
+        if "description" in update_data and update_data["description"] is not None:
+            update_data["description"] = update_data["description"].strip() or None
 
         if "paid_by" in update_data and "paid_to" not in update_data:
             update_data["paid_to"] = update_data["paid_by"]
 
-        for field, value in update_data.items():
-            setattr(tx, field, value)
+        payload = TransactionUpdate(**update_data)
 
-        self.repository.db.commit()
-        self.repository.db.refresh(tx)
-        return tx
+        updated = self.repository.update(
+            transaction_id=transaction_id,
+            data=payload,
+            user_id=user_id,
+        )
+        if not updated:
+            raise TransactionNotFoundError()
+        return updated
 
-    def get_by_id(self, transaction_id: UUID, user_id: UUID | None = None) -> Optional[Transaction]:
-        tx = self.repository.get_by_id(transaction_id)
-        if not tx:
-            return None
-
-        if user_id and tx.created_by != user_id:
-            return None
-
-        return tx
-
-    def delete(self, transaction_id: UUID, user_id: UUID) -> bool:
-        tx = self.get_by_id(transaction_id, user_id)
-        if not tx:
-            return False
-
+    def delete_transaction(self, transaction_id: UUID) -> bool:
+        self.get_transaction(transaction_id)
         return self.repository.delete(transaction_id)
+
+    # ---------- Bulk import ----------
+
+    async def import_transactions(self, file: UploadFile, user_id: UUID) -> ImportResult:
+        return await self.import_service.import_file(file=file, user_id=user_id)
+
+    # ---------- Helpers ----------
+
+    def _build_create_data(self, data: TransactionCreate) -> TransactionCreate:
+        return TransactionCreate(
+            type=data.type,
+            payment_method=data.payment_method,
+            amount=data.amount,
+            description=data.description.strip() if data.description else None,
+            date=data.date,
+            account_id=data.account_id,
+            category_id=data.category_id,
+            subcategory_id=data.subcategory_id,
+            store_id=data.store_id,
+            city_id=data.city_id,
+            paid_by=data.paid_by,
+            paid_to=data.paid_to or data.paid_by,
+        )

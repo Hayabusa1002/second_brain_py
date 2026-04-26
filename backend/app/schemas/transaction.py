@@ -10,22 +10,23 @@ from app.schemas.account import AccountResponse
 from app.schemas.city import CityResponse
 from app.schemas.store import StoreResponse
 from app.schemas.subcategory import SubcategoryResponse
-from app.schemas.item import ItemResponse
+from app.schemas.transaction_item import TransactionItemResponse
 
 
 class TransactionBase(BaseModel):
-    account_id: UUID
-    category_id: UUID
-    subcategory_id: UUID | None = None
-    store_id: UUID | None = None
-    city_id: UUID | None = None
-    paid_by: UUID | None = None
-    paid_to: UUID | None = None
-    amount: Decimal
-    type: TransactionType
+    type:           TransactionType
     payment_method: PaymentMethod
-    date: datetime.date
-    description: str | None = None
+    amount:         Decimal
+    description:    str | None = None
+    date:           datetime.date
+
+    account_id:     UUID
+    category_id:    UUID
+    subcategory_id: UUID | None = None
+    store_id:       UUID | None = None
+    city_id:        UUID | None = None
+    paid_by:        UUID | None = None
+    paid_to:        UUID | None = None
 
 
 class TransactionCreate(TransactionBase):
@@ -33,73 +34,64 @@ class TransactionCreate(TransactionBase):
 
 
 class TransactionUpdate(BaseModel):
-    account_id: UUID | None = None
-    category_id: UUID | None = None
-    subcategory_id: UUID | None = None
-    store_id: UUID | None = None
-    city_id: UUID | None = None
-    paid_by: UUID | None = None
-    paid_to: UUID | None = None
-    amount: Decimal | None = None
-    type: TransactionType | None = None
+    type:           TransactionType | None = None
     payment_method: PaymentMethod | None = None
-    date: datetime.date | None = None
-    description: str | None = None
+    amount:         Decimal | None = None
+    description:    str | None = None
+    date:           datetime.date | None = None
 
-
-class TransactionResponse(BaseModel):
-    id: UUID
-    account_id: UUID
-    category_id: UUID
+    account_id:     UUID | None = None
+    category_id:    UUID | None = None
     subcategory_id: UUID | None = None
-    store_id: UUID | None = None
-    city_id: UUID | None = None
+    store_id:       UUID | None = None
+    city_id:        UUID | None = None
+    paid_by:        UUID | None = None
+    paid_to:        UUID | None = None
+
+
+class TransactionResponse(TransactionBase):
+    id:         UUID
     created_by: UUID
-    paid_by: UUID | None = None
-    paid_to: UUID | None = None
-    amount: Decimal
-    type: TransactionType
-    payment_method: PaymentMethod
-    date: datetime.date
-    description: str | None = None
     created_at: datetime.datetime
+    updated_by: UUID
+    updated_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
 
-class TransactionDetailResponse(BaseModel):
-    id: UUID
-    amount: Decimal
-    type: TransactionType
-    payment_method: PaymentMethod
-    date: datetime.date
-    description: str | None = None
-    created_at: datetime.datetime
-
-    account_id: UUID
-    category_id: UUID
-    subcategory_id: UUID | None = None
-    store_id: UUID | None = None
-    city_id: UUID | None = None
-    created_by: UUID
-    paid_by: UUID | None = None
-    paid_to: UUID | None = None
-
+class TransactionDetailResponse(TransactionResponse):
+    # N:1 with account
     account: AccountResponse
+
+    # N:1 with category
     category: CategoryResponse
+
+    # N:1 with subcategory
     subcategory: SubcategoryResponse | None = None
+
+    # N:1 with store
     store: StoreResponse | None = None
+
+    # N:1 with city
     city: CityResponse | None = None
+
+    # N:1 with user
     creator: UserResponse
+
+    # N:1 with user
     payer: UserResponse | None = None
+
+    # N:1 with user
     payee: UserResponse | None = None
-    items: list[ItemResponse] = []
+
+    # 1:N with transaction items
+    items: list[TransactionItemResponse] = []
 
     model_config = {"from_attributes": True}
 
 
 class TransactionListResponse(BaseModel):
-    items: list[TransactionResponse]
-    total: int
-    page: int
-    limit: int
+    items:  list[TransactionResponse]
+    total:  int
+    page:   int
+    limit:  int

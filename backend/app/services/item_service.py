@@ -1,91 +1,107 @@
-from decimal import Decimal
 from uuid import UUID
 
-from app.models.item import TransactionItem
+from fastapi import UploadFile
+
 from app.repositories.item_repository import ItemRepository
-from app.repositories.transaction_repository import TransactionRepository
+from app.repositories.subcategory_repository import SubcategoryRepository
+from app.schemas.bulk_import import ImportResult
+from app.schemas.item import ItemCreate, ItemUpdate
+from app.services.imports.item_import import ItemImportService
+
+
+class ItemNotFoundError(Exception):
+    def __init__(self, message: str = "Item not found"):
+        super().__init__(message)
+
+
+class DuplicateItemError(Exception):
+    def __init__(self, name: str):
+        super().__init__(f"Item '{name}' already exists")
+
+
+class ItemSubcategoryNotFoundError(Exception):
+    def __init__(self, message: str = "Subcategory not found"):
+        super().__init__(message)
 
 
 class ItemService:
-    def __init__(self, db):
-        self.db = db
-        self.item_repository = ItemRepository(db)
-        self.transaction_repository = TransactionRepository(db)
+    def __init__(
+        self,
+        repository: ItemRepository,
+        subcategory_repository: SubcategoryRepository,
+        import_service: ItemImportService | None = None,
+    ):
+        self.repository = repository
+        self.subcategory_repository = subcategory_repository
+        self.import_service = import_service
 
-    def list_items(self, transaction_id: UUID, user_id: UUID):
-        tx = self.transaction_repository.get_by_id(transaction_id)
-        if not tx or tx.created_by != user_id:
-            return None
+    # ---------- Helpers ----------
 
-        return self.item_repository.list_by_transaction(transaction_id)
+    def get_item_name_not_in_use(
+        self,
+        name: str,
+        exclude_item_id: UUID | None = None,
+    ) -> None:
+        normalized_name = name.strip()
+        existing = self.repository.get_by_name(normalized_name)
 
-    def create_item(self, transaction_id: UUID, data, user_id: UUID):
-        tx = self.transaction_repository.get_by_id(transaction_id)
-        if not tx or tx.created_by != user_id:
-            return None
+        if existing and (
+            exclude_item_id is None or existing.id != exclude_item_id
+        ):
+            raise DuplicateItemError(normalized_name)
 
-        quantity = Decimal(str(data.quantity))
-        unit_price = Decimal(str(data.unit_price))
-        subtotal = quantity * unit_price
+    def get_item_subcategory(self, subcategory_id: UUID):
+        subcategory = self.subcategory_repository.get_by_id(subcategory_id)
+        if not subcategory:
+            raise ItemSubcategoryNotFoundError()
+        return subcategory
 
-        item = TransactionItem(
-            transaction_id=transaction_id,
-            name=data.name,
-            quantity=quantity,
-            unit_price=unit_price,
-            subtotal=subtotal,
-            notes=data.notes,
-        )
+    # ---------- Reads ----------
 
-        created = self.item_repository.add(item)
-        self._sync_transaction_amount(transaction_id)
-        return created
+    def list_items(self):
+        return self.repository.list()
 
-    def update_item(self, transaction_id: UUID, item_id: UUID, data, user_id: UUID):
-        tx = self.transaction_repository.get_by_id(transaction_id)
-        if not tx or tx.created_by != user_id:
-            return None
-
-        item = self.item_repository.get_by_transaction_and_id(transaction_id, item_id)
+    def list_item_subcategories(self, item_id: UUID):
+        item = self.repository.get_by_id(item_id)
         if not item:
-            return None
+            raise ItemNotFoundError()
+        return self.repository.list_subcategories(item_id)
 
-        update_data = data.model_dump(exclude_unset=True)
-
-        quantity = Decimal(str(update_data.get("quantity", item.quantity)))
-        unit_price = Decimal(str(update_data.get("unit_price", item.unit_price)))
-
-        update_data["subtotal"] = quantity * unit_price
-
-        for field, value in update_data.items():
-            setattr(item, field, value)
-
-        self.db.commit()
-        self.db.refresh(item)
-
-        self._sync_transaction_amount(transaction_id)
+    def get_item(self, item_id: UUID):
+        item = self.repository.get_by_id(item_id)
+        if not item:
+            raise ItemNotFoundError()
         return item
 
-    def delete_item(self, transaction_id: UUID, item_id: UUID, user_id: UUID):
-        tx = self.transaction_repository.get_by_id(transaction_id)
-        if not tx or tx.created_by != user_id:
-            return False
+    # ---------- Writes ----------
 
-        item = self.item_repository.get_by_transaction_and_id(transaction_id, item_id)
-        if not item:
-            return False
+    def create_item(self, data: ItemCreate, user_id: UUID):
+        self.get_item_name_not_in_use(data.name)
 
-        self.item_repository.delete(item)
-        self._sync_transaction_amount(transaction_id)
-        return True
+        if data.subcategory_id is not None:
+            self.get_item_subcategory(data.subcategory_id)
 
-    def _sync_transaction_amount(self, transaction_id: UUID):
-        tx = self.transaction_repository.get_by_id(transaction_id)
-        if not tx:
-            return
+        return self.repository.create(data=data, user_id=user_id)
 
-        items = self.item_repository.list_by_transaction(transaction_id)
-        if items:
-            tx.amount = sum((item.subtotal for item in items), Decimal("0.00"))
-            self.db.commit()
-            self.db.refresh(tx)
+    def update_item(self, item_id: UUID, data: ItemUpdate, user_id: UUID):
+        item = self.get_item(item_id)
+
+        if data.name is not None:
+            self.get_item_name_not_in_use(
+                name=data.name,
+                exclude_item_id=item.id,
+            )
+
+        if data.subcategory_id is not None:
+            self.get_item_subcategory(data.subcategory_id)
+
+        return self.repository.update(item_id=item_id, data=data, user_id=user_id)
+
+    def delete_item(self, item_id: UUID, user_id: UUID) -> bool:
+        self.get_item(item_id)
+        return self.repository.delete(item_id)
+
+    # ---------- Bulk import ----------
+
+    async def import_items(self, file: UploadFile, user_id: UUID) -> ImportResult:
+        return await self.import_service.import_file(file=file, user_id=user_id)

@@ -17,10 +17,14 @@ class CategoryUpdate(BaseModel):
 
 
 class CategoryResponse(BaseModel):
-    id: UUID
-    name: str
-    type: CategoryType
-    created_at: datetime
+    id:            UUID
+    name:          str
+    type:          CategoryType
     subcategories: list[SubcategoryResponse] = []
+
+    created_by:    UUID
+    created_at:    datetime
+    updated_by:    UUID
+    updated_at:    datetime
 
     model_config = {"from_attributes": True}
