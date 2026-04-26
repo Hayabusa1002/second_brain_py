@@ -61,8 +61,8 @@ export default function Accounts() {
 
   async function fetchUsers() {
     try {
-      const { data } = await client.get('/accounts/users/active')
-      setAllUsers(data.users)
+      const { data } = await client.get('/users/active')
+      setAllUsers(data)
     } catch (err) {
       if (err.response?.status !== 403) {
         console.error('users error:', err)
