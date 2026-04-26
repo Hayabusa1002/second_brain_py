@@ -16,7 +16,7 @@ class StoreRepository:
     # ---------- Reads ----------
 
     def list(self) -> List[Store]:
-        return (v
+        return (
             self.db.query(Store)
             .options(selectinload(Store.subcategories))
             .order_by(Store.name.asc())
