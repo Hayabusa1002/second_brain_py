@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 
 from sqlalchemy import or_
@@ -14,7 +14,7 @@ class CityRepository:
 
     # ---------- Reads ----------
 
-    def list(self) -> list[City]:
+    def list(self) -> List[City]:
         return (
             self.db.query(City)
             .order_by(City.name.asc())

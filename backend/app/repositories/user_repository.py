@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 
 from sqlalchemy.orm import Session, selectinload
@@ -13,7 +13,7 @@ class UserRepository:
 
     # ---------- Reads ----------
 
-    def list(self) -> list[User]:
+    def list(self) -> List[User]:
         return (
             self.db.query(User)
             .options(selectinload(User.accounts))
@@ -21,7 +21,7 @@ class UserRepository:
             .all()
         )
 
-    def list_by_status(self, status: UserStatus) -> list[User]:
+    def list_by_status(self, status: UserStatus) -> List[User]:
         return (
             self.db.query(User)
             .options(selectinload(User.accounts))

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 
 from sqlalchemy.orm import Session, joinedload
@@ -13,7 +13,7 @@ class ItemRepository:
 
     # ---------- Reads ----------
 
-    def list(self) -> list[Item]:
+    def list(self) -> List[Item]:
         return (
             self.db.query(Item)
             .options(joinedload(Item.subcategory))
