@@ -8,14 +8,21 @@ def test_list_stores_returns_list(admin_client):
 
 
 def test_create_store_with_valid_data_returns_201(admin_client):
-    r = admin_client.post("/api/stores/", json={"name": "Exito"})
+    r = admin_client.post(
+        "/api/stores/",
+        json={"name": "Exito", "type": "physical"},
+    )
     assert r.status_code == 201
     data = r.json()
     assert data["name"] == "Exito"
+    assert data["type"] == "physical"
 
 
 def test_get_store_by_id_returns_200_for_existing_store(admin_client):
-    r_create = admin_client.post("/api/stores/", json={"name": "Carulla"})
+    r_create = admin_client.post(
+        "/api/stores/",
+        json={"name": "Carulla", "type": "physical"},
+    )
     assert r_create.status_code == 201
     store_id = r_create.json()["id"]
 
@@ -24,6 +31,7 @@ def test_get_store_by_id_returns_200_for_existing_store(admin_client):
     data = r.json()
     assert data["id"] == store_id
     assert data["name"] == "Carulla"
+    assert data["type"] == "physical"
 
 
 def test_get_store_by_id_returns_404_for_missing_store(admin_client):
@@ -33,7 +41,10 @@ def test_get_store_by_id_returns_404_for_missing_store(admin_client):
 
 
 def test_update_store_with_valid_data_returns_200(admin_client):
-    r_create = admin_client.post("/api/stores/", json={"name": "Jumbo"})
+    r_create = admin_client.post(
+        "/api/stores/",
+        json={"name": "Jumbo", "type": "physical"},
+    )
     assert r_create.status_code == 201
     store_id = r_create.json()["id"]
 
@@ -62,7 +73,10 @@ def test_create_store_without_name_returns_422(admin_client):
 
 
 def test_create_store_without_auth_returns_401_or_403(client):
-    r = client.post("/api/stores/", json={"name": "D1"})
+    r = client.post(
+        "/api/stores/",
+        json={"name": "D1", "type": "physical"},
+    )
     assert r.status_code in (401, 403)
 
 
