@@ -70,7 +70,7 @@ class UserService:
             email=normalized_email,
             password=hash_password(data.password),
             role=data.role,
-            status=data.status,
+            status=UserStatus.active,
         )
 
         user = self.repository.create(data=create_data, user_id=user_id)

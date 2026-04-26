@@ -9,7 +9,7 @@ from app.db.deps import get_current_user, get_db, require_admin
 from app.models.user import User
 from app.repositories.account_repository import AccountRepository
 from app.repositories.user_repository import UserRepository
-from app.schemas.user import UserResponse, UserUpdate
+from app.schemas.user import UserResponse, UserCreate, UserUpdate
 from app.services.user_service import UserNotFoundError, UserService
 
 
@@ -68,6 +68,15 @@ def get_user(
 
 
 # ---------- Writes ----------
+
+@router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+def create_user(
+    data: UserCreate,
+    user: User = Depends(get_current_user),
+    controller: UserController = Depends(get_controller),
+):
+    return controller.create_user(data=data, user_id=user.id)
+
 
 @router.put("/{user_id}", response_model=UserResponse)
 def update_user(
