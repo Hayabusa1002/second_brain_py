@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 
 from sqlalchemy.exc import IntegrityError
@@ -14,7 +14,7 @@ class CategoryRepository:
 
     # ---------- Reads ----------
 
-    def list(self) -> list[Category]:
+    def list(self) -> List[Category]:
         return (
             self.db.query(Category)
             .options(selectinload(Category.subcategories))

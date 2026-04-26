@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -13,14 +13,14 @@ class SubcategoryRepository:
 
     # ---------- Reads ----------
 
-    def list(self) -> list[Subcategory]:
+    def list(self) -> List[Subcategory]:
         return (
             self.db.query(Subcategory)
             .order_by(Subcategory.name.asc())
             .all()
         )
     
-    def list_by_category(self, category_id: UUID) -> list[Subcategory]:
+    def list_by_category(self, category_id: UUID) -> List[Subcategory]:
         return (
             self.db.query(Subcategory)
             .filter(Subcategory.category_id == category_id)

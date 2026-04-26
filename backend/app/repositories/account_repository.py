@@ -1,5 +1,5 @@
 import uuid
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 
 from sqlalchemy.orm import Session, selectinload
@@ -15,7 +15,7 @@ class AccountRepository:
 
     # ---------- Reads ----------
 
-    def list(self, user_id: UUID) -> list[Account]:
+    def list(self, user_id: UUID) -> List[Account]:
         return (
             self.db.query(Account)
             .join(account_owners, account_owners.c.account_id == Account.id)
@@ -24,7 +24,7 @@ class AccountRepository:
             .all()
         )
 
-    def list_owner_ids(self, account_id: UUID) -> list[UUID]:
+    def list_owner_ids(self, account_id: UUID) -> List[UUID]:
         rows = self.db.execute(
             account_owners.select().where(
                 account_owners.c.account_id == account_id

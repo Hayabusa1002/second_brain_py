@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 
 from sqlalchemy.orm import Session, joinedload
@@ -21,7 +21,7 @@ class TransactionRepository:
         type: str | None = None,
         date_from: date | None = None,
         date_to: date | None = None,
-    ) -> list[Transaction]:
+    ) -> List[Transaction]:
         offset = (page - 1) * page_size
 
         query = (
@@ -55,7 +55,7 @@ class TransactionRepository:
         type: str | None = None,
         date_from: date | None = None,
         date_to: date | None = None,
-    ) -> list[Transaction]:
+    ) -> List[Transaction]:
         offset = (page - 1) * page_size
 
         query = (

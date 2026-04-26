@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 
 from sqlalchemy.orm import Session, selectinload
@@ -15,15 +15,15 @@ class StoreRepository:
 
     # ---------- Reads ----------
 
-    def list(self) -> list[Store]:
-        return (
+    def list(self) -> List[Store]:
+        return (v
             self.db.query(Store)
             .options(selectinload(Store.subcategories))
             .order_by(Store.name.asc())
             .all()
         )
 
-    def list_subcategories(self, store_id: UUID) -> list[Subcategory]:
+    def list_subcategories(self, store_id: UUID) -> List[Subcategory]:
         return (
             self.db.query(Subcategory)
             .join(
@@ -54,7 +54,7 @@ class StoreRepository:
             .first()
         )
     
-    def get_subcategories_by_ids(self, subcategory_ids: list[UUID]) -> list[Subcategory]:
+    def get_subcategories_by_ids(self, subcategory_ids: List[UUID]) -> List[Subcategory]:
         if not subcategory_ids:
             return []
 
@@ -111,7 +111,7 @@ class StoreRepository:
     
     # ---------- Subcategories assignation ----------
 
-    def replace_subcategories(self, store_id: UUID, subcategory_ids: list[UUID], user_id: UUID) -> list[Subcategory]:
+    def replace_subcategories(self, store_id: UUID, subcategory_ids: List[UUID], user_id: UUID) -> List[Subcategory]:
         # Unassign all the subcategories
         self.db.execute(
             store_subcategories.delete().where(
