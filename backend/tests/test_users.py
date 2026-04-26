@@ -220,9 +220,9 @@ def test_delete_user_returns_404_for_missing_user(admin_client):
     assert r.status_code == 404
 
 
-def test_delete_user_cannot_delete_own_account(auth_user):
-    client = auth_user["client"]
-    current = auth_user["user"]
+def test_admin_cannot_delete_own_account(auth_admin):
+    client = auth_admin["client"]
+    current = auth_admin["user"]
 
     r = client.delete(f"/api/users/{current.id}")
     assert r.status_code == 400
@@ -235,3 +235,11 @@ def test_users_endpoints_without_auth_return_401_or_403(client):
 
     r2 = client.get("/api/users/active")
     assert r2.status_code in (401, 403)
+
+
+def test_non_admin_cannot_access_delete_user_endpoint(auth_user):
+    client = auth_user["client"]
+    current = auth_user["user"]
+
+    r = client.delete(f"/api/users/{current.id}")
+    assert r.status_code in (401, 403)

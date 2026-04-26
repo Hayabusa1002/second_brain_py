@@ -142,6 +142,21 @@ def auth_user(client, db):
 
 
 @pytest.fixture()
+def auth_admin(client, db):
+    email = _unique_email("auth-admin")
+    password = "Admin1234!"
+    _client, user = _register_and_activate(
+        client,
+        db,
+        email=email,
+        password=password,
+        name="Auth Admin",
+        role=UserRole.admin,
+    )
+    return {"client": _client, "user": user, "email": email, "password": password}
+
+
+@pytest.fixture()
 def auth_client_with_account(auth_client):
     r_acc = auth_client.post(
         "/api/accounts",

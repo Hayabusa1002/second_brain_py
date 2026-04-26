@@ -1,10 +1,9 @@
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import or_
 from sqlalchemy.orm import Session, selectinload
 
-from app.models.user import User
+from app.models.user import User, UserStatus
 from app.schemas.user import UserCreate, UserOAuthCreate, UserUpdate
 
 
@@ -18,6 +17,15 @@ class UserRepository:
         return (
             self.db.query(User)
             .options(selectinload(User.accounts))
+            .order_by(User.name.asc())
+            .all()
+        )
+
+    def list_by_status(self, status: UserStatus) -> list[User]:
+        return (
+            self.db.query(User)
+            .options(selectinload(User.accounts))
+            .filter(User.status == status)
             .order_by(User.name.asc())
             .all()
         )
@@ -88,7 +96,45 @@ class UserRepository:
         self.db.commit()
         self.db.refresh(user)
         return self.get_by_id(user.id)
-    
+
+    def update_by_id(self, user_id: UUID, data: UserUpdate) -> Optional[User]:
+        user = self.get_by_id(user_id)
+        if not user:
+            return None
+
+        allowed_fields = {"name", "email", "role", "status"}
+        update_data = data.model_dump(exclude_unset=True)
+
+        for field, value in update_data.items():
+            if field not in allowed_fields:
+                continue
+
+            if isinstance(value, str):
+                value = value.strip()
+
+            if field == "email" and value:
+                value = value.lower()
+
+            setattr(user, field, value)
+
+        user.updated_by = user_id
+
+        self.db.commit()
+        self.db.refresh(user)
+        return self.get_by_id(user.id)
+
+    def update_status(self, user_id: UUID, status: UserStatus) -> Optional[User]:
+        user = self.get_by_id(user_id)
+        if not user:
+            return None
+
+        user.status = status
+        user.updated_by = user_id
+
+        self.db.commit()
+        self.db.refresh(user)
+        return self.get_by_id(user.id)
+
     def update_password(self, user_id: UUID, hashed_password: str) -> Optional[User]:
         user = self.get_by_id(user_id)
         if not user:
