@@ -3,7 +3,7 @@ import uuid
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 
 os.environ.setdefault("DATABASE_URL", "sqlite:///./test.db")
@@ -22,7 +22,8 @@ engine = create_engine(
     SQLALCHEMY_TEST_URL,
     connect_args={"check_same_thread": False},
 )
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -39,12 +40,24 @@ def setup_db():
 
 @pytest.fixture()
 def db():
-    session = TestingSessionLocal()
+    connection = engine.connect()
+    transaction = connection.begin()
+
+    session = TestingSessionLocal(bind=connection)
+    nested = connection.begin_nested()
+
+    @event.listens_for(session, "after_transaction_end")
+    def restart_savepoint(sess, trans):
+        nonlocal nested
+        if trans.nested and not nested.is_active:
+            nested = connection.begin_nested()
+
     try:
         yield session
     finally:
-        session.rollback()
         session.close()
+        transaction.rollback()
+        connection.close()
 
 
 @pytest.fixture()
