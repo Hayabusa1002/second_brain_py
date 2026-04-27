@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../hooks/useTheme'
 import client from '../../api/client'
@@ -16,7 +16,9 @@ const API_URL = import.meta.env.VITE_API_URL
 export default function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const { theme, toggleTheme } = useTheme()
+
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
@@ -24,10 +26,21 @@ export default function Login() {
 
   const set = (field) => (e) => setForm({ ...form, [field]: e.target.value })
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const oauthError = params.get('error') || params.get('detail')
+
+    if (oauthError) {
+      setError(oauthError)
+      navigate('/login', { replace: true })
+    }
+  }, [location.search, navigate])
+
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
     setLoading(true)
+
     try {
       const { data } = await client.post('/auth/login', form)
       login(data.user)
@@ -41,8 +54,6 @@ export default function Login() {
 
   return (
     <PageCenter>
-
-      {/* Theme toggle */}
       <div style={{ position: 'fixed', top: '1rem', right: '1rem' }}>
         <button
           onClick={toggleTheme}
@@ -56,7 +67,6 @@ export default function Login() {
         </button>
       </div>
 
-      {/* Header */}
       <div className="text-center mb-4">
         <h1 className="h1 d-flex align-items-center justify-content-center gap-2">
           <IconBrain size={36} stroke={1.5} color="#066fd1" />
@@ -64,12 +74,10 @@ export default function Login() {
         </h1>
       </div>
 
-      {/* Card */}
       <div className="card card-md">
-
-        {/* Form */}
         <div className="card-body">
           <h2 className="h2 text-center mb-4">Login to your account</h2>
+
           <form onSubmit={handleSubmit} autoComplete="off" noValidate>
             <Alert message={error} />
 
@@ -92,6 +100,7 @@ export default function Login() {
                   <a href="#">I forgot password</a>
                 </span>
               </label>
+
               <div className="input-group input-group-flat">
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -133,10 +142,8 @@ export default function Login() {
           </form>
         </div>
 
-        {/* Divider */}
         <div className="hr-text">or</div>
 
-        {/* Social buttons */}
         <div className="card-body">
           <div className="row">
             <div className="col">
@@ -153,14 +160,11 @@ export default function Login() {
             </div>
           </div>
         </div>
-
       </div>
 
-      {/* Footer */}
       <div className="text-center text-secondary mt-3">
         Don&apos;t have account yet? <Link to="/register">Sign up</Link>
       </div>
-
     </PageCenter>
   )
 }
