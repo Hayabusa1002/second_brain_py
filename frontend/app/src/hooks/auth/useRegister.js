@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import client from '../../api/client'
 import validateForm from '../../utils/auth/register/validateForm'
-import parseErrors from '../../utils/auth/register/parseErrors'
+import parseErrors from '../../utils/forms/parseErrors'
 
 export default function useRegisterForm() {
   const navigate = useNavigate()

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useTheme } from '../../hooks/useTheme'
-import useRegisterForm from '../../hooks/auth/useRegisterForm'
+import useRegisterForm from '../../hooks/auth/useRegister'
 import PageCenter from '../../components/ui/PageCenter'
 import Alert from '../../components/ui/Alert'
 

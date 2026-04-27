@@ -1,12 +1,9 @@
-import { useEffect, useState } from 'react'
-import { useNavigate, Link, useLocation } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
+import { Link } from 'react-router-dom'
 import { useTheme } from '../../hooks/useTheme'
-import client from '../../api/client'
+import useLoginForm from '../../hooks/auth/useLogin'
 import PageCenter from '../../components/ui/PageCenter'
 import Alert from '../../components/ui/Alert'
 
-// Icons
 import { IconBrain, IconEye, IconEyeOff, IconSun, IconMoon } from '@tabler/icons-react'
 import { FcGoogle } from 'react-icons/fc'
 import { FaGithub } from 'react-icons/fa'
@@ -14,43 +11,18 @@ import { FaGithub } from 'react-icons/fa'
 const API_URL = import.meta.env.VITE_API_URL
 
 export default function Login() {
-  const { login } = useAuth()
-  const navigate = useNavigate()
-  const location = useLocation()
   const { theme, toggleTheme } = useTheme()
 
-  const [form, setForm] = useState({ email: '', password: '' })
-  const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-
-  const set = (field) => (e) => setForm({ ...form, [field]: e.target.value })
-
-  useEffect(() => {
-    const params = new URLSearchParams(location.search)
-    const oauthError = params.get('error') || params.get('detail')
-
-    if (oauthError) {
-      setError(oauthError)
-      navigate('/login', { replace: true })
-    }
-  }, [location.search, navigate])
-
-  async function handleSubmit(e) {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
-
-    try {
-      const { data } = await client.post('/auth/login', form)
-      login(data.user)
-      navigate('/')
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Login failed. Try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const {
+    form,
+    showPassword,
+    error,
+    fieldErrors,
+    loading,
+    handleChange,
+    handleSubmit,
+    togglePassword,
+  } = useLoginForm()
 
   return (
     <PageCenter>
@@ -59,6 +31,7 @@ export default function Login() {
           onClick={toggleTheme}
           className="btn btn-outline-secondary btn-icon"
           title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+          type="button"
         >
           {theme === 'light'
             ? <IconMoon size={18} stroke={1.5} />
@@ -85,12 +58,15 @@ export default function Login() {
               <label className="form-label">Email</label>
               <input
                 type="email"
-                className="form-control"
+                className={`form-control ${fieldErrors.email ? 'is-invalid' : ''}`}
                 placeholder="your@email.com"
                 value={form.email}
-                onChange={set('email')}
+                onChange={handleChange('email')}
                 required
               />
+              {fieldErrors.email && (
+                <div className="invalid-feedback d-block">{fieldErrors.email}</div>
+              )}
             </div>
 
             <div className="mb-2">
@@ -104,10 +80,10 @@ export default function Login() {
               <div className="input-group input-group-flat">
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  className="form-control"
+                  className={`form-control ${fieldErrors.password ? 'is-invalid' : ''}`}
                   placeholder="Your password"
                   value={form.password}
-                  onChange={set('password')}
+                  onChange={handleChange('password')}
                   required
                 />
                 <span className="input-group-text">
@@ -115,7 +91,7 @@ export default function Login() {
                     type="button"
                     className="link-secondary"
                     style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={togglePassword}
                     title={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword
@@ -125,6 +101,9 @@ export default function Login() {
                   </button>
                 </span>
               </div>
+              {fieldErrors.password && (
+                <div className="invalid-feedback d-block">{fieldErrors.password}</div>
+              )}
             </div>
 
             <div className="mb-2">
