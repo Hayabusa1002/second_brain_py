@@ -14,5 +14,5 @@ class AuthController:
     def login(self, data: UserLogin) -> TokenResponse:
         return self.service.login(data)
 
-    def login_or_create_oauth_user(self, data: UserOAuthCreate) -> TokenResponse | None:
+    def login_or_create_oauth_user(self, data: UserOAuthCreate) -> TokenResponse:
         return self.service.login_or_create_oauth_user(data)

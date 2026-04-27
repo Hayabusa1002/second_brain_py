@@ -1,4 +1,5 @@
 import uuid
+from urllib.parse import quote
 
 from authlib.integrations.starlette_client import OAuth
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
@@ -22,7 +23,6 @@ from app.repositories.account_repository import AccountRepository
 from app.repositories.user_repository import UserRepository
 from app.services.auth_service import AuthService
 from app.services.user_service import UserService
-
 
 router = APIRouter(prefix="/auth")
 
@@ -92,6 +92,24 @@ def _set_auth_cookies(response: Response, result: TokenResponse):
     )
 
 
+def _frontend_base_url() -> str:
+    return settings.ALLOWED_ORIGINS[0].rstrip("/")
+
+
+def _frontend_redirect(path: str) -> RedirectResponse:
+    return RedirectResponse(
+        url=f"{_frontend_base_url()}{path}",
+        status_code=status.HTTP_302_FOUND,
+    )
+
+
+def _login_error_redirect(message: str) -> RedirectResponse:
+    return RedirectResponse(
+        url=f"{_frontend_base_url()}/login?error={quote(message)}",
+        status_code=status.HTTP_302_FOUND,
+    )
+
+
 # ---------- Me / Login / Register / Logout ----------
 
 @router.get("/me")
@@ -122,7 +140,7 @@ def login(
 @router.post("/logout")
 def logout(response: Response):
     response.delete_cookie("access_token", path="/")
-    response.delete_cookie("refresh_token", path="/auth/refresh")
+    response.delete_cookie("refresh_token", path="/api/auth/refresh")
     return {"message": "Logged out"}
 
 
@@ -189,8 +207,10 @@ def change_password(
 @router.get("/google")
 async def google_login(request: Request):
     if not settings.GOOGLE_CLIENT_ID:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Google OAuth not configured")
-
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Google OAuth not configured",
+        )
 
     redirect_uri = f"{settings.APP_BASE_URL}/api/auth/google/callback"
     return await oauth.google.authorize_redirect(request, redirect_uri)
@@ -201,37 +221,43 @@ async def google_callback(
     request: Request,
     db: Session = Depends(get_db),
 ):
-    token = await oauth.google.authorize_access_token(request)
-    user_info = token.get("userinfo")
+    try:
+        token = await oauth.google.authorize_access_token(request)
+        user_info = token.get("userinfo")
 
+        if not user_info:
+            return _login_error_redirect("Google account data is invalid")
 
-    user_service = UserService(
-        UserRepository(db),
-        AccountRepository(db),
-    )
-    auth_service = AuthService(user_service)
-    controller = AuthController(auth_service)
+        email = user_info.get("email")
+        oauth_id = user_info.get("sub")
 
-    oauth_data = UserOAuthCreate(
-        name=user_info.get("name", user_info["email"]),
-        email=user_info["email"],
-        provider="google",
-        oauth_id=user_info["sub"],
-    )
+        if not email or not oauth_id:
+            return _login_error_redirect("Google account data is invalid")
 
-    result = controller.login_or_create_oauth_user(oauth_data)
-    if result is None:
-        return RedirectResponse(
-            f"{settings.ALLOWED_ORIGINS[0]}/login?status=pending",
-            status_code=status.HTTP_302_FOUND,
+        user_service = UserService(
+            UserRepository(db),
+            AccountRepository(db),
+        )
+        auth_service = AuthService(user_service)
+        controller = AuthController(auth_service)
+
+        oauth_data = UserOAuthCreate(
+            name=user_info.get("name", email),
+            email=email,
+            provider="google",
+            oauth_id=oauth_id,
         )
 
-    redirect = RedirectResponse(
-        f"{settings.ALLOWED_ORIGINS[0]}/", 
-        status_code=status.HTTP_302_FOUND
-    )
-    _set_auth_cookies(redirect, result)
-    return redirect
+        result = controller.login_or_create_oauth_user(oauth_data)
+
+        redirect = _frontend_redirect("/")
+        _set_auth_cookies(redirect, result)
+        return redirect
+
+    except HTTPException as exc:
+        return _login_error_redirect(str(exc.detail))
+    except Exception:
+        return _login_error_redirect("Login failed. Try again.")
 
 
 # ---------- GitHub OAuth ----------
@@ -239,7 +265,10 @@ async def google_callback(
 @router.get("/github")
 async def github_login(request: Request):
     if not settings.GITHUB_CLIENT_ID:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="GitHub OAuth not configured")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="GitHub OAuth not configured",
+        )
 
     redirect_uri = f"{settings.APP_BASE_URL}/api/auth/github/callback"
     return await oauth.github.authorize_redirect(request, redirect_uri)
@@ -250,47 +279,45 @@ async def github_callback(
     request: Request,
     db: Session = Depends(get_db),
 ):
-    token = await oauth.github.authorize_access_token(request)
-    resp = await oauth.github.get("user", token=token)
-    github_user = resp.json()
+    try:
+        token = await oauth.github.authorize_access_token(request)
+        resp = await oauth.github.get("user", token=token)
+        github_user = resp.json()
 
-    email = github_user.get("email")
-    if not email:
-        email_resp = await oauth.github.get("user/emails", token=token)
-        emails = email_resp.json()
-        primary = next(
-            (e for e in emails if e.get("primary") and e.get("verified")),
-            None,
+        email = github_user.get("email")
+        if not email:
+            email_resp = await oauth.github.get("user/emails", token=token)
+            emails = email_resp.json()
+            primary = next(
+                (e for e in emails if e.get("primary") and e.get("verified")),
+                None,
+            )
+            email = primary["email"] if primary else None
+
+        if not email:
+            return _login_error_redirect("GitHub email not available")
+
+        user_service = UserService(
+            UserRepository(db),
+            AccountRepository(db),
         )
-        email = primary["email"] if primary else None
+        auth_service = AuthService(user_service)
+        controller = AuthController(auth_service)
 
-    if not email:
-        return RedirectResponse(
-            f"{settings.ALLOWED_ORIGINS[0]}/login?status=no_email",
-            status_code=status.HTTP_302_FOUND,
-        )
-
-    user_service = UserService(
-        UserRepository(db),
-        AccountRepository(db),
-    )
-    auth_service = AuthService(user_service)
-    controller = AuthController(auth_service)
-
-    oauth_data = UserOAuthCreate(
-        name=github_user.get("name") or github_user.get("login"),
-        email=email,
-        provider="github",
-        oauth_id=str(github_user["id"]),
-    )
-
-    result = controller.login_or_create_oauth_user(oauth_data)
-    if result is None:
-        return RedirectResponse(
-            f"{settings.ALLOWED_ORIGINS[0]}/login?status=pending",
-            status_code=status.HTTP_302_FOUND,
+        oauth_data = UserOAuthCreate(
+            name=github_user.get("name") or github_user.get("login") or email,
+            email=email,
+            provider="github",
+            oauth_id=str(github_user["id"]),
         )
 
-    redirect = RedirectResponse(f"{settings.ALLOWED_ORIGINS[0]}/", status_code=status.HTTP_302_FOUND)
-    _set_auth_cookies(redirect, result)
-    return redirect
+        result = controller.login_or_create_oauth_user(oauth_data)
+
+        redirect = _frontend_redirect("/")
+        _set_auth_cookies(redirect, result)
+        return redirect
+
+    except HTTPException as exc:
+        return _login_error_redirect(str(exc.detail))
+    except Exception:
+        return _login_error_redirect("Login failed. Try again.")

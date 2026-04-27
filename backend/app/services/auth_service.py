@@ -45,17 +45,18 @@ class AuthService:
             raise HTTPException(status_code=403, detail="Account disabled")
 
         return self._build_token_response(user)
-    
-    def login_or_create_oauth_user(self, data: UserOAuthCreate) -> TokenResponse | None:
+
+    def login_or_create_oauth_user(self, data: UserOAuthCreate) -> TokenResponse:
         """
         Links OAuth to existing account or creates a new pending user.
-        Returns TokenResponse if active, None if pending approval.
+        Raises HTTPException for pending/disabled users so the router can
+        redirect to /login?error=... with the same messages as normal login.
         """
         try:
             user = self.user_service.get_user_by_email(data.email)
         except UserNotFoundError:
             self.user_service.create_oauth_user(data=data, user_id=None)
-            return None
+            raise HTTPException(status_code=403, detail="Pending request")
 
         if not getattr(user, "oauth_provider", None):
             self.user_service.update_oauth(
@@ -65,7 +66,7 @@ class AuthService:
             )
 
         if user.status == UserStatus.pending:
-            return None
+            raise HTTPException(status_code=403, detail="Pending request")
 
         if user.status != UserStatus.active:
             raise HTTPException(status_code=403, detail="Account disabled")
