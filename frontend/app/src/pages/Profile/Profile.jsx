@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   IconPencil,
@@ -9,19 +8,9 @@ import {
   IconShield,
   IconClock,
 } from '@tabler/icons-react'
-import { useAuth } from '../../context/AuthContext'
-import client from '../../api/client'
 import Alert from '../../components/ui/Alert'
-
-const EMPTY_PROFILE = {
-  id: '',
-  name: '',
-  email: '',
-  role: '',
-  status: '',
-  created_at: '',
-  last_login: '',
-}
+import useProfile from '../../hooks/profile/useProfile'
+import formatDateTime from '../../utils/profile/profile/formatDateTime'
 
 const ROLE_BADGE = {
   admin: 'bg-purple-lt text-purple',
@@ -36,102 +25,23 @@ const STATUS_BADGE = {
   banned: 'bg-red-lt text-red',
 }
 
-const fmtDateTime = (value) => {
-  if (!value) return '—'
-  try {
-    return new Date(value).toLocaleString('es-CO', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  } catch {
-    return '—'
-  }
-}
-
 export default function Profile() {
   const navigate = useNavigate()
-  const { user: currentUser, setUser } = useAuth?.() ?? { user: null, setUser: () => {} }
 
-  const [profile, setProfile] = useState(EMPTY_PROFILE)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [formError, setFormError] = useState('')
-  const [isEditing, setIsEditing] = useState(false)
-
-  useEffect(() => {
-    fetchProfile()
-  }, [])
-
-  async function fetchProfile() {
-    setLoading(true)
-    setError('')
-    try {
-      const { data } = await client.get('/auth/me')
-      const user = data.user ?? data
-
-      setProfile({
-        id: user.id ?? '',
-        name: user.name ?? '',
-        email: user.email ?? '',
-        role: user.role ?? '',
-        status: user.status ?? '',
-        created_at: user.created_at ?? '',
-        last_login: user.last_login ?? user.last_seen ?? '',
-      })
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to load profile.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const setField =
-    (field) =>
-    (e) =>
-      setProfile((prev) => ({ ...prev, [field]: e.target.value }))
-
-  async function handleSave(e) {
-    e.preventDefault()
-    setSaving(true)
-    setFormError('')
-
-    try {
-      const userId = currentUser?.id ?? profile.id
-
-      const { data } = await client.put(`/users/${userId}`, {
-        name: profile.name,
-        email: profile.email,
-      })
-
-      const updatedUser = data.user ?? data
-
-      if (setUser) {
-        setUser((prev) => ({
-          ...prev,
-          ...updatedUser,
-          name: profile.name,
-          email: profile.email,
-        }))
-      }
-
-      setIsEditing(false)
-      fetchProfile()
-    } catch (err) {
-      setFormError(err.response?.data?.detail || 'Failed to update profile.')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  function handleCancel() {
-    setIsEditing(false)
-    setFormError('')
-    fetchProfile()
-  }
+  const {
+    profile,
+    loading,
+    error,
+    saving,
+    formError,
+    fieldErrors,
+    success,
+    isEditing,
+    setIsEditing,
+    setField,
+    handleSave,
+    handleCancel,
+  } = useProfile()
 
   return (
     <div className="container-xl py-4">
@@ -147,6 +57,7 @@ export default function Profile() {
           {!loading && !error && (
             <div className="col-auto ms-auto d-flex gap-2">
               <button
+                type="button"
                 className="btn btn-outline-secondary d-flex align-items-center gap-1"
                 onClick={() => navigate('/profile/change-password')}
               >
@@ -156,6 +67,7 @@ export default function Profile() {
 
               {!isEditing && (
                 <button
+                  type="button"
                   className="btn btn-primary d-flex align-items-center gap-1"
                   onClick={() => setIsEditing(true)}
                 >
@@ -168,7 +80,8 @@ export default function Profile() {
         </div>
       </div>
 
-      <Alert message={error || formError} />
+      <Alert message={error || formError} type="danger" />
+      <Alert message={success} type="success" />
 
       {loading ? (
         <div className="card">
@@ -188,13 +101,21 @@ export default function Profile() {
 
                 <div className="mt-3 d-flex justify-content-center gap-2 flex-wrap">
                   {profile.role ? (
-                    <span className={`badge ${ROLE_BADGE[profile.role] ?? 'bg-secondary-lt text-secondary'}`}>
+                    <span
+                      className={`badge ${
+                        ROLE_BADGE[profile.role] ?? 'bg-secondary-lt text-secondary'
+                      }`}
+                    >
                       {profile.role}
                     </span>
                   ) : null}
 
                   {profile.status ? (
-                    <span className={`badge ${STATUS_BADGE[profile.status] ?? 'bg-secondary-lt text-secondary'}`}>
+                    <span
+                      className={`badge ${
+                        STATUS_BADGE[profile.status] ?? 'bg-secondary-lt text-secondary'
+                      }`}
+                    >
                       {profile.status}
                     </span>
                   ) : null}
@@ -234,7 +155,7 @@ export default function Profile() {
                       </div>
                       <div className="col text-truncate">
                         <div className="text-secondary small">Created</div>
-                        <div>{fmtDateTime(profile.created_at)}</div>
+                        <div>{formatDateTime(profile.created_at)}</div>
                       </div>
                     </div>
                   </div>
@@ -246,7 +167,7 @@ export default function Profile() {
                       </div>
                       <div className="col text-truncate">
                         <div className="text-secondary small">Last login</div>
-                        <div>{fmtDateTime(profile.last_login)}</div>
+                        <div>{formatDateTime(profile.last_login)}</div>
                       </div>
                     </div>
                   </div>
@@ -276,26 +197,50 @@ export default function Profile() {
 
                     <div className="col-md-6">
                       <label className="form-label">Role</label>
-                      <div className="form-control-plaintext">{profile.role || '—'}</div>
+                      <div className="form-control-plaintext">
+                        {profile.role ? (
+                          <span
+                            className={`badge ${
+                              ROLE_BADGE[profile.role] ?? 'bg-secondary-lt text-secondary'
+                            }`}
+                          >
+                            {profile.role}
+                          </span>
+                        ) : '—'}
+                      </div>
                     </div>
 
                     <div className="col-md-6">
                       <label className="form-label">Status</label>
-                      <div className="form-control-plaintext">{profile.status || '—'}</div>
+                      <div className="form-control-plaintext">
+                        {profile.status ? (
+                          <span
+                            className={`badge ${
+                              STATUS_BADGE[profile.status] ?? 'bg-secondary-lt text-secondary'
+                            }`}
+                          >
+                            {profile.status}
+                          </span>
+                        ) : '—'}
+                      </div>
                     </div>
 
                     <div className="col-md-6">
                       <label className="form-label">Created at</label>
-                      <div className="form-control-plaintext">{fmtDateTime(profile.created_at)}</div>
+                      <div className="form-control-plaintext">
+                        {formatDateTime(profile.created_at)}
+                      </div>
                     </div>
 
                     <div className="col-md-6">
                       <label className="form-label">Last login</label>
-                      <div className="form-control-plaintext">{fmtDateTime(profile.last_login)}</div>
+                      <div className="form-control-plaintext">
+                        {formatDateTime(profile.last_login)}
+                      </div>
                     </div>
                   </div>
                 ) : (
-                  <form onSubmit={handleSave}>
+                  <form onSubmit={handleSave} noValidate>
                     <div className="row g-3">
                       <div className="col-md-6">
                         <label className="form-label">Name</label>
@@ -305,12 +250,15 @@ export default function Profile() {
                           </span>
                           <input
                             type="text"
-                            className="form-control"
+                            className={`form-control ${fieldErrors.name ? 'is-invalid' : ''}`}
                             value={profile.name}
                             onChange={setField('name')}
                             required
                           />
                         </div>
+                        {fieldErrors.name && (
+                          <div className="invalid-feedback d-block">{fieldErrors.name}</div>
+                        )}
                       </div>
 
                       <div className="col-md-6">
@@ -321,32 +269,45 @@ export default function Profile() {
                           </span>
                           <input
                             type="email"
-                            className="form-control"
+                            className={`form-control ${fieldErrors.email ? 'is-invalid' : ''}`}
                             value={profile.email}
                             onChange={setField('email')}
                             required
                           />
                         </div>
+                        {fieldErrors.email && (
+                          <div className="invalid-feedback d-block">{fieldErrors.email}</div>
+                        )}
                       </div>
 
                       <div className="col-md-6">
                         <label className="form-label">Role</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          value={profile.role || ''}
-                          disabled
-                        />
+                        <div className="form-control-plaintext">
+                          {profile.role ? (
+                            <span
+                              className={`badge ${
+                                ROLE_BADGE[profile.role] ?? 'bg-secondary-lt text-secondary'
+                              }`}
+                            >
+                              {profile.role}
+                            </span>
+                          ) : '—'}
+                        </div>
                       </div>
 
                       <div className="col-md-6">
                         <label className="form-label">Status</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          value={profile.status || ''}
-                          disabled
-                        />
+                        <div className="form-control-plaintext">
+                          {profile.status ? (
+                            <span
+                              className={`badge ${
+                                STATUS_BADGE[profile.status] ?? 'bg-secondary-lt text-secondary'
+                              }`}
+                            >
+                              {profile.status}
+                            </span>
+                          ) : '—'}
+                        </div>
                       </div>
                     </div>
 
