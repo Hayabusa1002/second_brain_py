@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
-import client from '../../api/client'
 import Alert from '../../components/ui/Alert'
 import Navbar from '../../components/layout/Navbar'
+import useAccessRequests from '../../hooks/auth/useAccessRequests'
+import formatDate from '../../utils/auth/accessRequests/formatDate'
 
 const ROLE_BADGE = {
   admin: 'bg-purple-lt text-purple',
@@ -9,70 +9,17 @@ const ROLE_BADGE = {
   partner: 'bg-teal-lt text-teal',
 }
 
-const fmtDate = (d) =>
-  d
-    ? new Date(d).toLocaleDateString('es-CO', {
-        day: '2-digit',
-        month: 'numeric',
-        year: 'numeric',
-      })
-    : '—'
-
 export default function AccessRequests() {
-  const [requests, setRequests] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [actionError, setActionError] = useState('')
-  const [processingId, setProcessingId] = useState(null)
-
-  useEffect(() => {
-    fetchRequests()
-  }, [])
-
-  async function fetchRequests() {
-    setLoading(true)
-    setError('')
-    try {
-      const { data } = await client.get('/users/pending')
-      setRequests(data.users ?? data.items ?? data)
-    } catch (err) {
-      if (err.response?.status === 403) {
-        setError('You do not have permission to view access requests.')
-      } else {
-        setError('Failed to load access requests.')
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function handleApprove(user) {
-    setProcessingId(user.id)
-    setActionError('')
-    try {
-      await client.post(`/users/${user.id}/approve`)
-      setRequests((prev) => prev.filter((u) => u.id !== user.id))
-    } catch (err) {
-      setActionError(err.response?.data?.detail || 'Failed to approve request.')
-    } finally {
-      setProcessingId(null)
-    }
-  }
-
-  async function handleReject(user) {
-    setProcessingId(user.id)
-    setActionError('')
-    try {
-      await client.post(`/users/${user.id}/reject`)
-      setRequests((prev) => prev.filter((u) => u.id !== user.id))
-    } catch (err) {
-      setActionError(err.response?.data?.detail || 'Failed to reject request.')
-    } finally {
-      setProcessingId(null)
-    }
-  }
-
-  const isForbidden = error === 'You do not have permission to view access requests.'
+  const {
+    requests,
+    loading,
+    error,
+    actionError,
+    processingId,
+    isForbidden,
+    handleApprove,
+    handleReject,
+  } = useAccessRequests()
 
   return (
     <div className="page">
@@ -140,7 +87,7 @@ export default function AccessRequests() {
                                 </span>
                               </td>
                               <td className="text-secondary">
-                                {fmtDate(u.created_at)}
+                                {formatDate(u.created_at)}
                               </td>
                               <td>
                                 <div className="d-flex gap-2 justify-content-end">
