@@ -8,6 +8,7 @@ export default function FormModal({
   mode,
   saving,
   error,
+  fieldErrors = {},
   onChange,
   onSave,
   onCancel,
@@ -31,29 +32,35 @@ export default function FormModal({
           <div className="modal-body">
             {error && <div className="alert alert-danger mb-3">{error}</div>}
 
-            <form id="user-form" onSubmit={onSave}>
+            <form id="user-form" onSubmit={onSave} noValidate>
               <div className="mb-3">
                 <label className="form-label">Name</label>
                 <input
                   type="text"
-                  className="form-control"
+                  className={`form-control ${fieldErrors.name ? 'is-invalid' : ''}`}
                   placeholder="Full name"
                   value={form.name ?? ''}
                   onChange={onChange('name')}
                   required
                 />
+                {fieldErrors.name && (
+                  <div className="invalid-feedback d-block">{fieldErrors.name}</div>
+                )}
               </div>
 
               <div className="mb-3">
                 <label className="form-label">Email</label>
                 <input
                   type="email"
-                  className="form-control"
+                  className={`form-control ${fieldErrors.email ? 'is-invalid' : ''}`}
                   placeholder="email@example.com"
                   value={form.email ?? ''}
                   onChange={onChange('email')}
                   required
                 />
+                {fieldErrors.email && (
+                  <div className="invalid-feedback d-block">{fieldErrors.email}</div>
+                )}
               </div>
 
               {mode === 'add' && (
@@ -62,8 +69,8 @@ export default function FormModal({
                   <div className="input-group">
                     <input
                       type={showPassword ? 'text' : 'password'}
-                      className="form-control"
-                      placeholder="Password"
+                      className={`form-control ${fieldErrors.password ? 'is-invalid' : ''}`}
+                      placeholder='Password'
                       value={form.password ?? ''}
                       onChange={onChange('password')}
                       required
@@ -73,20 +80,19 @@ export default function FormModal({
                       className="btn btn-outline-secondary"
                       onClick={() => setShowPassword((v) => !v)}
                     >
-                      {showPassword ? (
-                        <IconEyeOff size={16} />
-                      ) : (
-                        <IconEye size={16} />
-                      )}
+                      {showPassword ? <IconEyeOff size={16} /> : <IconEye size={16} />}
                     </button>
                   </div>
+                  {fieldErrors.password && (
+                    <div className="invalid-feedback d-block">{fieldErrors.password}</div>
+                  )}
                 </div>
               )}
 
               <div className="mb-3">
                 <label className="form-label">Role</label>
                 <select
-                  className="form-select"
+                  className={`form-select ${fieldErrors.role ? 'is-invalid' : ''}`}
                   value={form.role ?? 'partner'}
                   onChange={onChange('role')}
                   required
@@ -97,6 +103,9 @@ export default function FormModal({
                     </option>
                   ))}
                 </select>
+                {fieldErrors.role && (
+                  <div className="invalid-feedback d-block">{fieldErrors.role}</div>
+                )}
               </div>
             </form>
           </div>
